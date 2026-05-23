@@ -215,6 +215,12 @@ The focus is trust, provenance, and verification.
 
 ---
 
+# Documentation
+
+Detailed MVP requirements live in [docs/specs/](docs/specs/README.md): an overview with delivery matrix (Must / Should / Deferred), foundation specs (architecture, API, metadata model), and feature specs for publishing, signing, provenance, policy, and developer experience.
+
+---
+
 # Roadmap
 
 ## Phase 1

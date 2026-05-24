@@ -1,4 +1,4 @@
-.PHONY: build test lint compose-up compose-down smoke smoke-registry
+.PHONY: build test test-integration lint compose-up compose-down smoke smoke-registry
 
 # Override for CI (Linux): make test TEST_FLAGS=-race
 # On Windows, leave empty; -race requires CGO.
@@ -9,6 +9,8 @@ build:
 	go build -o bin/verity-api ./cmd/verity-api
 test:
 	go test $(TEST_FLAGS) -coverprofile=coverage.out ./...
+test-integration:
+	go test -p 1 $(TEST_FLAGS) -tags=integration -coverprofile=coverage-integration.out ./internal/metadata/... ./internal/db/...
 lint:
 	golangci-lint run ./...
 compose-up:

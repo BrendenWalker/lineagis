@@ -3,8 +3,6 @@ log:
   level: info
 storage:
   s3:
-    accesskey: minioadmin
-    secretkey: minioadmin
     region: us-east-1
     bucket: registry
     regionendpoint: http://minio:9000

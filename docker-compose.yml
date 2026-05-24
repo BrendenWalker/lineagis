@@ -54,6 +54,16 @@ services:
     depends_on:
       minio-init:
         condition: service_completed_successfully
+    environment:
+      REGISTRY_STORAGE_S3_ACCESSKEY: ${MINIO_ROOT_USER:-minioadmin}
+      REGISTRY_STORAGE_S3_SECRETKEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      REGISTRY_STORAGE_S3_BUCKET: ${MINIO_REGISTRY_BUCKET:-registry}
+      REGISTRY_STORAGE_S3_REGION: us-east-1
+      REGISTRY_STORAGE_S3_REGIONENDPOINT: http://minio:9000
+      REGISTRY_STORAGE_S3_SECURE: "false"
+      REGISTRY_STORAGE_S3_V4AUTH: "true"
+      REGISTRY_STORAGE_S3_FORCEPATHSTYLE: "true"
+      REGISTRY_STORAGE_S3_ROOTDIRECTORY: /registry
     ports:
       - "5000:5000"
     volumes:
@@ -72,16 +82,23 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      registry:
+        condition: service_healthy
     environment:
       VERITY_API_ADDR: ${VERITY_API_ADDR:-:8080}
+      VERITY_DATABASE_URL: postgres://${POSTGRES_USER:-verity}:${POSTGRES_PASSWORD:-verity}@postgres:5432/${POSTGRES_DB:-verity}?sslmode=disable
+      VERITY_REGISTRY_URL: http://registry:5000
+      VERITY_LOG_LEVEL: ${VERITY_LOG_LEVEL:-info}
+      VERITY_LOG_FORMAT: ${VERITY_LOG_FORMAT:-json}
+      VERITY_MIGRATE_ON_STARTUP: ${VERITY_MIGRATE_ON_STARTUP:-true}
     ports:
       - "${VERITY_API_PORT:-8080}:8080"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz | grep -qx ok"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/readyz | grep -qx ok"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
 
 volumes:
   postgres_data:

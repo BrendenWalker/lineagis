@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,12 +16,40 @@ import (
 	"github.com/BrendenWalker/verity/internal/metadata"
 )
 
+var (
+	testDBOnce sync.Once
+	testDBErr  error
+)
+
+func TestMain(m *testing.M) {
+	url := os.Getenv("VERITY_TEST_DATABASE_URL")
+	if url != "" {
+		testDBOnce.Do(func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			defer cancel()
+
+			pool, err := db.OpenPool(ctx, url)
+			if err != nil {
+				testDBErr = err
+				return
+			}
+			defer pool.Close()
+
+			testDBErr = db.MigrateUp(ctx, pool)
+		})
+	}
+	os.Exit(m.Run())
+}
+
 func testStore(t *testing.T) (*metadata.Store, *pgxpool.Pool) {
 	t.Helper()
 
 	url := os.Getenv("VERITY_TEST_DATABASE_URL")
 	if url == "" {
 		t.Skip("VERITY_TEST_DATABASE_URL not set")
+	}
+	if testDBErr != nil {
+		t.Fatalf("test database migrate: %v", testDBErr)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -32,9 +61,6 @@ func testStore(t *testing.T) (*metadata.Store, *pgxpool.Pool) {
 	}
 	t.Cleanup(func() { pool.Close() })
 
-	if err := db.MigrateReset(ctx, pool); err != nil {
-		t.Fatalf("migrate reset: %v", err)
-	}
 	if err := truncateMetadata(ctx, pool); err != nil {
 		t.Fatalf("truncate metadata: %v", err)
 	}

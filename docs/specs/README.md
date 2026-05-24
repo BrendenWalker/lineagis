@@ -2,6 +2,8 @@
 
 Requirements-focused specifications for the Verity MVP. These documents define *what* the system must do—not implementation details such as OpenAPI schemas or database migrations.
 
+For how specs connect to milestones, stories, and pull requests (human + AI workflow), see [docs/sdlc/README.md](../sdlc/README.md) and [AGENTS.md](../../AGENTS.md).
+
 ## Reading order
 
 1. [00-overview.md](00-overview.md) — MVP boundaries, delivery matrix, glossary, end-to-end flows

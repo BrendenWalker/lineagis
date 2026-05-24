@@ -200,7 +200,6 @@ Foundation and feature specs:
 | OQ-META-002 | Store Sigstore bundle only in DB vs also as OCI artifact layer? | [metadata-model.md](metadata-model.md), [02-signing-verification.md](02-signing-verification.md) |
 | OQ-API-001 | REST path layout convention? | [api.md](api.md) |
 | OQ-API-002 | Support API keys for local dev in addition to OIDC? | [api.md](api.md) |
-| OQ-PUB-001 | OCI artifact media type for generic packages? | [01-artifact-publishing.md](01-artifact-publishing.md) |
 | OQ-PUB-002 | Maximum artifact size limits for MVP? | [01-artifact-publishing.md](01-artifact-publishing.md) |
 | OQ-SIGN-001 | Pin Sigstore public good vs self-hosted? | [02-signing-verification.md](02-signing-verification.md) |
 | OQ-SIGN-002 | Allow cosign attach-signatures vs integrated sign-only? | [02-signing-verification.md](02-signing-verification.md) |
@@ -208,6 +207,12 @@ Foundation and feature specs:
 | OQ-POL-002 | Warn vs fail for Should policies not met on MVP release? | [04-policy-enforcement.md](04-policy-enforcement.md) |
 | OQ-DX-001 | Monolithic `verity` binary vs separate CLI and server? | [05-developer-experience.md](05-developer-experience.md) |
 | OQ-DX-002 | Default config file path? | [05-developer-experience.md](05-developer-experience.md) |
+
+## Resolved open questions
+
+| ID | Question | Resolution |
+|----|----------|------------|
+| OQ-PUB-001 | OCI artifact media type for generic packages? | [ADR-0001](../adr/0001-artifact-manifest-layout.md) — OCI Artifact manifest; see [01-artifact-publishing.md](01-artifact-publishing.md#resolved-open-questions). |
 
 ## Open questions
 

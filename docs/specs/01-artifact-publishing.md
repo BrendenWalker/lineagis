@@ -49,7 +49,7 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 | FR-PUB-006 | Must | Tag resolution SHALL return the digest currently mapped to that tag. |
 | FR-PUB-007 | Must | Re-pushing identical content SHALL NOT create a new digest. |
 | FR-PUB-008 | Must | Moving a tag to a new digest SHALL be explicit via publish/tag API, not silent overwrite of blob content. |
-| FR-PUB-009 | Should | Multi-file releases (e.g. `dist/*`) SHALL be published as a single OCI manifest referencing multiple layers or equivalent layout. |
+| FR-PUB-009 | Should | Multi-file releases (e.g. `dist/*`) SHALL be published as a single OCI manifest referencing multiple layers or equivalent layout. Layout: [ADR-0001](../adr/0001-artifact-manifest-layout.md). |
 | FR-PUB-010 | Should | Supported artifact types for MVP SHALL include at least: generic files (blobs), container images, and Python wheels. |
 
 ## Non-functional requirements
@@ -63,6 +63,7 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 
 - [OCI Distribution Spec](https://github.com/opencontainers/distribution-spec)
 - [OCI Image Spec](https://github.com/opencontainers/image-spec)
+- [ADR-0001: Artifact manifest layout](../adr/0001-artifact-manifest-layout.md) — OCI Artifact manifest, layer layout ([FR-PUB-009](#functional-requirements))
 - [metadata-model.md](metadata-model.md) — tag and digest semantics
 - [api.md](api.md) — `RegisterDigest`, `SetTag`
 
@@ -88,5 +89,10 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 
 | ID | Question |
 |----|----------|
-| OQ-PUB-001 | Standard OCI artifact type vs custom manifest media type for generic packages? |
 | OQ-PUB-002 | Maximum artifact size limits for MVP? |
+
+## Resolved open questions
+
+| ID | Question | Resolution |
+|----|----------|------------|
+| OQ-PUB-001 | Standard OCI artifact type vs custom manifest media type for generic packages? | [ADR-0001](../adr/0001-artifact-manifest-layout.md) — OCI Artifact manifest (`application/vnd.oci.artifact.manifest.v1+json`); one layer per file; layers sorted by `dev.verity.path`. |

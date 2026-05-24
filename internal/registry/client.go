@@ -79,6 +79,25 @@ func (c *Client) blobURL(repo, digest string) (string, error) {
 	return base.String(), nil
 }
 
+func (c *Client) manifestURL(repo, reference string) (string, error) {
+	if err := validateRepo(repo); err != nil {
+		return "", err
+	}
+	reference = strings.TrimSpace(reference)
+	if reference == "" {
+		return "", errors.New("registry: manifest reference is required")
+	}
+
+	base, err := url.Parse(c.baseURL)
+	if err != nil {
+		return "", fmt.Errorf("registry: parse base URL: %w", err)
+	}
+
+	pathPrefix := strings.TrimSuffix(base.Path, "/")
+	base.Path = pathPrefix + "/v2/" + repo + "/manifests/" + reference
+	return base.String(), nil
+}
+
 func (c *Client) uploadsURL(repo string) (string, error) {
 	if err := validateRepo(repo); err != nil {
 		return "", err

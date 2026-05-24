@@ -5,3 +5,5 @@
 dist/
 testdata/
 coverage*
+/dist-inspect-test/
+/tmp*.json

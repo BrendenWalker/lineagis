@@ -276,7 +276,7 @@ Run the placeholder CLI:
 ./bin/verity --version
 ```
 
-CI runs on every pull request and on pushes to `main` (build, test, lint). Coverage is uploaded as a workflow artifact when tests run.
+CI runs on every pull request and on pushes to `main` as three status checks: `lint`, `test`, and `build`. Coverage is uploaded as a workflow artifact when tests run. To block merges until CI passes, require those checks on `main` — see [.github/BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md).
 
 ## Local development stack
 

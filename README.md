@@ -223,10 +223,44 @@ The focus is trust, provenance, and verification.
 
 * Go 1.23 or newer
 * [golangci-lint](https://golangci-lint.run/welcome/install/) v2 (for local linting)
+* Docker Engine and Compose v2 (for the local dev stack)
 
 ```bash
 choco install golangci-lint
 ```
+
+### Windows notes
+
+Go installs to `C:\Program Files\Go\bin`. If `go` is not found after install, **restart your terminal** (or Cursor) so it picks up the updated PATH.
+
+**Git Bash** — if `go` still is not found, add this to `~/.bashrc`:
+
+```bash
+export PATH="$PATH:/c/Program Files/Go/bin"
+```
+
+**GNU Make** — use MinGW's `mingw32-make` (not Embarcadero `make`). Ensure its `bin` directory is on PATH *before* Delphi/Embarcadero, then verify:
+
+```powershell
+mingw32-make --version   # should say "GNU Make"
+```
+
+If `make` still resolves to Embarcadero, call `mingw32-make` explicitly:
+
+```powershell
+mingw32-make test
+mingw32-make build
+```
+
+**PowerShell 5.1** does not support `&&` to chain commands. Use separate lines, or `;`:
+
+```powershell
+mingw32-make test; mingw32-make build
+```
+
+On Windows, run tests without the race detector (requires CGO). CI on Linux passes `TEST_FLAGS=-race`.
+
+Run the CLI on Windows as `.\bin\verity.exe --version` (Git Bash: `./bin/verity.exe --version`).
 
 ## Build and test
 
@@ -243,6 +277,53 @@ Run the placeholder CLI:
 ```
 
 CI runs on every pull request and on pushes to `main` (build, test, lint). Coverage is uploaded as a workflow artifact when tests run.
+
+## Local development stack
+
+Start Postgres, MinIO (S3-compatible storage), an OCI Distribution registry, and a placeholder Verity API:
+
+```bash
+cp .env.example .env   # optional; defaults match .env.example
+make compose-up
+```
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| Verity API | http://localhost:8080 (or `$VERITY_API_PORT`) | Placeholder API (`GET /healthz`) |
+| OCI Registry | http://localhost:5000 | Distribution-compatible registry (S3 backend) |
+| PostgreSQL | localhost:5432 | Metadata database |
+| MinIO API | http://localhost:9000 | S3-compatible object storage |
+| MinIO Console | http://localhost:9001 | MinIO web UI |
+
+Environment variables (see [`.env.example`](.env.example)):
+
+| Variable | Default | Used by |
+|----------|---------|---------|
+| `POSTGRES_USER` | `verity` | PostgreSQL |
+| `POSTGRES_PASSWORD` | `verity` | PostgreSQL |
+| `POSTGRES_DB` | `verity` | PostgreSQL |
+| `MINIO_ROOT_USER` | `minioadmin` | MinIO |
+| `MINIO_ROOT_PASSWORD` | `minioadmin` | MinIO |
+| `MINIO_REGISTRY_BUCKET` | `registry` | MinIO init (registry blob bucket) |
+| `VERITY_API_ADDR` | `:8080` | Verity API |
+| `VERITY_API_PORT` | `8080` | Host port mapped to the API container |
+
+If port 8080 is already in use, set `VERITY_API_PORT=18080` in `.env` before `make compose-up`.
+
+Verify health endpoints:
+
+```bash
+curl http://localhost:8080/healthz
+curl http://localhost:5000/v2/
+```
+
+Stop the stack:
+
+```bash
+make compose-down
+```
+
+E02 will add database migrations, API configuration, registry push/pull smoke tests, and connectivity checks across all components.
 
 ---
 

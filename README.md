@@ -215,6 +215,37 @@ The focus is trust, provenance, and verification.
 
 ---
 
+# Development
+
+[![CI](https://github.com/BrendenWalker/verity/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/BrendenWalker/verity/actions/workflows/ci.yml)
+
+## Prerequisites
+
+* Go 1.23 or newer
+* [golangci-lint](https://golangci-lint.run/welcome/install/) v2 (for local linting)
+
+```bash
+choco install golangci-lint
+```
+
+## Build and test
+
+```bash
+make build    # produces bin/verity
+make test     # race detector + coverage.out
+make lint     # golangci-lint
+```
+
+Run the placeholder CLI:
+
+```bash
+./bin/verity --version
+```
+
+CI runs on every pull request and on pushes to `main` (build, test, lint). Coverage is uploaded as a workflow artifact when tests run.
+
+---
+
 # Documentation
 
 Detailed MVP requirements live in [docs/specs/](docs/specs/README.md): an overview with delivery matrix (Must / Should / Deferred), foundation specs (architecture, API, metadata model), and feature specs for publishing, signing, provenance, policy, and developer experience.

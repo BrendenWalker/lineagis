@@ -31,6 +31,31 @@ func MigrateUp(ctx context.Context, pool *pgxpool.Pool) error {
 	return nil
 }
 
+// MigrateDown rolls back all applied migrations.
+func MigrateDown(ctx context.Context, pool *pgxpool.Pool) error {
+	sqlDB := stdlib.OpenDBFromPool(pool)
+	defer func() { _ = sqlDB.Close() }()
+
+	goose.SetBaseFS(migrations)
+	if err := goose.SetDialect("postgres"); err != nil {
+		return fmt.Errorf("set goose dialect: %w", err)
+	}
+
+	if err := goose.DownToContext(ctx, sqlDB, "migrations", 0); err != nil {
+		return fmt.Errorf("run migrations down: %w", err)
+	}
+
+	return nil
+}
+
+// MigrateReset reapplies all migrations from scratch.
+func MigrateReset(ctx context.Context, pool *pgxpool.Pool) error {
+	if err := MigrateDown(ctx, pool); err != nil {
+		return err
+	}
+	return MigrateUp(ctx, pool)
+}
+
 // Ping verifies database connectivity.
 func Ping(ctx context.Context, pool *pgxpool.Pool) error {
 	var one int

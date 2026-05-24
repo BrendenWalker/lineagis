@@ -2,6 +2,8 @@ version: 0.1
 log:
   level: info
 storage:
+  redirect:
+    disable: true
   s3:
     region: us-east-1
     bucket: registry

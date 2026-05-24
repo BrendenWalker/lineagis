@@ -3,6 +3,7 @@ module github.com/BrendenWalker/verity
 go 1.25.7
 
 require (
+	github.com/google/go-containerregistry v0.20.3
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/pressly/goose/v3 v3.27.1
 )

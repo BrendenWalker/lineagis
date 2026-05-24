@@ -265,7 +265,7 @@ Run the CLI on Windows as `.\bin\verity.exe --version` (Git Bash: `./bin/verity.
 ## Build and test
 
 ```bash
-make build    # produces bin/verity
+make build    # produces bin/verity and bin/verity-api
 make test     # race detector + coverage.out
 make lint     # golangci-lint
 ```
@@ -280,7 +280,7 @@ CI runs on every pull request and on pushes to `main` (build, test, lint). Cover
 
 ## Local development stack
 
-Start Postgres, MinIO (S3-compatible storage), an OCI Distribution registry, and a placeholder Verity API:
+Start Postgres, MinIO (S3-compatible storage), an OCI Distribution registry, and the Verity API:
 
 ```bash
 cp .env.example .env   # optional; defaults match .env.example
@@ -289,7 +289,7 @@ make compose-up
 
 | Service | URL | Purpose |
 |---------|-----|---------|
-| Verity API | http://localhost:8080 (or `$VERITY_API_PORT`) | Placeholder API (`GET /healthz`) |
+| Verity API | http://localhost:8080 (or `$VERITY_API_PORT`) | API (`GET /healthz`, `GET /readyz`) |
 | OCI Registry | http://localhost:5000 | Distribution-compatible registry (S3 backend) |
 | PostgreSQL | localhost:5432 | Metadata database |
 | MinIO API | http://localhost:9000 | S3-compatible object storage |
@@ -302,11 +302,16 @@ Environment variables (see [`.env.example`](.env.example)):
 | `POSTGRES_USER` | `verity` | PostgreSQL |
 | `POSTGRES_PASSWORD` | `verity` | PostgreSQL |
 | `POSTGRES_DB` | `verity` | PostgreSQL |
-| `MINIO_ROOT_USER` | `minioadmin` | MinIO |
-| `MINIO_ROOT_PASSWORD` | `minioadmin` | MinIO |
+| `MINIO_ROOT_USER` | `minioadmin` | MinIO, registry S3 backend |
+| `MINIO_ROOT_PASSWORD` | `minioadmin` | MinIO, registry S3 backend |
 | `MINIO_REGISTRY_BUCKET` | `registry` | MinIO init (registry blob bucket) |
-| `VERITY_API_ADDR` | `:8080` | Verity API |
+| `VERITY_API_ADDR` | `:8080` | Verity API listen address |
 | `VERITY_API_PORT` | `8080` | Host port mapped to the API container |
+| `VERITY_DATABASE_URL` | `postgres://verity:verity@localhost:5432/verity?sslmode=disable` | Verity API (local); compose sets internal URL |
+| `VERITY_REGISTRY_URL` | `http://localhost:5000` | Verity API registry connectivity check |
+| `VERITY_LOG_LEVEL` | `info` | Verity API structured logging |
+| `VERITY_LOG_FORMAT` | `text` (local), `json` (compose) | Verity API log format |
+| `VERITY_MIGRATE_ON_STARTUP` | `true` | Run goose migrations on API startup |
 
 If port 8080 is already in use, set `VERITY_API_PORT=18080` in `.env` before `make compose-up`.
 
@@ -314,7 +319,22 @@ Verify health endpoints:
 
 ```bash
 curl http://localhost:8080/healthz
+curl http://localhost:8080/readyz
 curl http://localhost:5000/v2/
+```
+
+Run the full operator-stack smoke test (AC-ARCH-001). Requires Git Bash on Windows (`bash` on PATH):
+
+```bash
+make build          # optional; verifies CLI hop
+make smoke          # compose-up + scripts/smoke-stack.sh
+```
+
+Registry push/pull only (requires [crane](https://github.com/google/go-containerregistry/tree/main/cmd/crane)):
+
+```bash
+go install github.com/google/go-containerregistry/cmd/crane@latest
+make smoke-registry
 ```
 
 Stop the stack:
@@ -322,8 +342,6 @@ Stop the stack:
 ```bash
 make compose-down
 ```
-
-E02 will add database migrations, API configuration, registry push/pull smoke tests, and connectivity checks across all components.
 
 ---
 

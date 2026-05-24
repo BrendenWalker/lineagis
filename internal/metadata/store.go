@@ -186,7 +186,8 @@ func (s *Store) SetTag(ctx context.Context, artifactID int64, tagName string, di
 			}
 			return &tag, nil
 		}
-		fromDigestID = &tag.DigestID
+		prevDigestID := tag.DigestID
+		fromDigestID = &prevDigestID
 		err = tx.QueryRow(ctx, `
 			UPDATE tags SET digest_id = $1, updated_at = now()
 			WHERE id = $2
@@ -231,7 +232,7 @@ func (s *Store) GetTag(ctx context.Context, artifactID int64, tagName string) (*
 func (s *Store) ListTagEvents(ctx context.Context, tagID int64) ([]TagEvent, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT id, tag_id, from_digest_id, to_digest_id, actor, created_at
-		FROM tag_events WHERE tag_id = $1 ORDER BY created_at ASC
+		FROM tag_events WHERE tag_id = $1 ORDER BY created_at ASC, id ASC
 	`, tagID)
 	if err != nil {
 		return nil, fmt.Errorf("list tag events: %w", err)

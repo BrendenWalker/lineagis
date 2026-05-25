@@ -78,6 +78,34 @@ func (c *Client) RegisterDigest(ctx context.Context, namespace, artifact, digest
 	return c.do(req, http.StatusCreated, nil)
 }
 
+// AttachSignature stores a Sigstore bundle for a registered digest (FR-SIGN-009).
+func (c *Client) AttachSignature(ctx context.Context, namespace, artifact, digest string, bundle json.RawMessage, issuer, subject *string) error {
+	body := map[string]any{
+		"digest": digest,
+		"bundle": bundle,
+	}
+	if issuer != nil {
+		body["issuer"] = *issuer
+	}
+	if subject != nil {
+		body["subject"] = *subject
+	}
+	encoded, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	path, err := joinURL(c.baseURL, "v1", "namespaces", namespace, "artifacts", artifact, "signatures")
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, path, bytes.NewReader(encoded))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return c.do(req, http.StatusCreated, nil)
+}
+
 // SetTag maps a semver tag to a digest.
 func (c *Client) SetTag(ctx context.Context, namespace, artifact, tag, digest string) error {
 	body, err := json.Marshal(map[string]string{"digest": digest})

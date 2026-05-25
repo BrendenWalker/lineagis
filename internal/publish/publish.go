@@ -2,6 +2,7 @@ package publish
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -9,7 +10,13 @@ import (
 
 	"github.com/BrendenWalker/verity/internal/apiclient"
 	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/verity/internal/signing"
 )
+
+// ManifestSigner signs manifest bytes and returns a Sigstore bundle (FR-SIGN-001–003).
+type ManifestSigner interface {
+	SignManifest(ctx context.Context, manifestJSON []byte) (bundle json.RawMessage, issuer, subject *string, err error)
+}
 
 // Options configures a publish run.
 type Options struct {
@@ -17,6 +24,8 @@ type Options struct {
 	Artifact  string
 	Tag       string
 	Path      string
+	SkipSign  bool
+	Signer    ManifestSigner
 }
 
 // RegistryRepo returns the OCI repository name {namespace}/{artifact}.
@@ -72,6 +81,21 @@ func Publish(ctx context.Context, reg *registry.Client, api *apiclient.Client, o
 	if err := api.RegisterDigest(ctx, opts.Namespace, opts.Artifact, digest, &mediaType, &size); err != nil {
 		return "", fmt.Errorf("register digest: %w", err)
 	}
+
+	if !opts.SkipSign {
+		signer := opts.Signer
+		if signer == nil {
+			signer = defaultManifestSigner{}
+		}
+		bundle, issuer, subject, err := signer.SignManifest(ctx, manifestJSON)
+		if err != nil {
+			return "", fmt.Errorf("sign manifest: %w", err)
+		}
+		if err := api.AttachSignature(ctx, opts.Namespace, opts.Artifact, digest, bundle, issuer, subject); err != nil {
+			return "", fmt.Errorf("attach signature: %w", err)
+		}
+	}
+
 	if opts.Tag != "" {
 		if err := api.SetTag(ctx, opts.Namespace, opts.Artifact, opts.Tag, digest); err != nil {
 			return "", fmt.Errorf("set tag: %w", err)
@@ -79,6 +103,24 @@ func Publish(ctx context.Context, reg *registry.Client, api *apiclient.Client, o
 	}
 
 	return digest, nil
+}
+
+type defaultManifestSigner struct{}
+
+func (defaultManifestSigner) SignManifest(ctx context.Context, manifestJSON []byte) (json.RawMessage, *string, *string, error) {
+	cfg := signing.LoadConfig()
+	bundle, id, err := signing.SignManifest(ctx, cfg, manifestJSON)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	var issuer, subject *string
+	if id.Issuer != "" {
+		issuer = &id.Issuer
+	}
+	if id.Subject != "" {
+		subject = &id.Subject
+	}
+	return bundle, issuer, subject, nil
 }
 
 // ManifestDigest computes manifest digest without pushing (for tests).

@@ -17,8 +17,15 @@ import (
 )
 
 const (
-	// ArtifactManifestMediaType is the OCI Artifact manifest media type (ADR-0001).
-	ArtifactManifestMediaType = "application/vnd.oci.artifact.manifest.v1+json"
+	// ArtifactManifestMediaType is the manifest Content-Type for registry upload.
+	// Zot v2+ and OCI Image Spec v1.1 use an OCI image manifest with artifactType
+	// and an empty config descriptor instead of application/vnd.oci.artifact.manifest.v1+json.
+	ArtifactManifestMediaType = "application/vnd.oci.image.manifest.v1+json"
+
+	// VerityReleaseArtifactType identifies generic/multi-file releases (ADR-0001 layout).
+	VerityReleaseArtifactType = "application/vnd.verity.release.v1+json"
+
+	emptyConfigMediaType = "application/vnd.oci.empty.v1+json"
 
 	// MaxLayersPerManifest is the maximum number of layers per release (ADR-0001).
 	MaxLayersPerManifest = 256
@@ -45,9 +52,28 @@ type ManifestOptions struct {
 	PublishRoot string
 }
 
-type artifactManifest struct {
+// emptyConfigJSON is the OCI empty JSON blob (RFC 8785 canonical {}).
+var emptyConfigJSON = []byte("{}")
+
+var emptyConfigDescriptor v1.Descriptor
+
+func init() {
+	h, _, err := v1.SHA256(bytes.NewReader(emptyConfigJSON))
+	if err != nil {
+		panic(fmt.Sprintf("registry: empty config digest: %v", err))
+	}
+	emptyConfigDescriptor = v1.Descriptor{
+		MediaType: emptyConfigMediaType,
+		Digest:    h,
+		Size:      int64(len(emptyConfigJSON)),
+	}
+}
+
+type releaseManifest struct {
 	SchemaVersion int64             `json:"schemaVersion"`
 	MediaType     string            `json:"mediaType"`
+	ArtifactType  string            `json:"artifactType"`
+	Config        v1.Descriptor     `json:"config"`
 	Annotations   map[string]string `json:"annotations,omitempty"`
 	Layers        []v1.Descriptor   `json:"layers"`
 }
@@ -108,9 +134,11 @@ func BuildArtifactManifest(layers []FileLayer, opts ManifestOptions) ([]byte, v1
 		})
 	}
 
-	manifest := artifactManifest{
+	manifest := releaseManifest{
 		SchemaVersion: 2,
 		MediaType:     ArtifactManifestMediaType,
+		ArtifactType:  VerityReleaseArtifactType,
+		Config:        emptyConfigDescriptor,
 		Layers:        manifestLayers,
 	}
 
@@ -156,9 +184,13 @@ func layerMediaType(filePath string) string {
 	}
 }
 
-// PushManifest uploads an artifact manifest. Identical bytes yield the same digest;
+// PushManifest uploads a release manifest. Identical bytes yield the same digest;
 // an existing manifest is not re-uploaded.
 func (c *Client) PushManifest(ctx context.Context, repo string, data []byte) (v1.Hash, error) {
+	if _, err := c.PushBlob(ctx, repo, emptyConfigJSON); err != nil {
+		return v1.Hash{}, fmt.Errorf("registry: upload empty config blob: %w", err)
+	}
+
 	h, _, err := v1.SHA256(bytes.NewReader(data))
 	if err != nil {
 		return v1.Hash{}, fmt.Errorf("registry: compute manifest digest: %w", err)

@@ -43,8 +43,13 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
+      registry:
+        image: ghcr.io/project-zot/zot:v2.1.11
+        ports:
+          - 5000:5000
     env:
       VERITY_TEST_DATABASE_URL: postgres://verity:verity@localhost:5432/verity?sslmode=disable
+      VERITY_TEST_REGISTRY_URL: http://localhost:5000
     steps:
       - uses: actions/checkout@v4
 
@@ -55,6 +60,17 @@ jobs:
 
       - name: Test
         run: make test TEST_FLAGS=-race
+
+      - name: Wait for registry
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5000/v2/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "registry not ready" >&2
+          exit 1
 
       - name: Integration test
         run: make test-integration TEST_FLAGS=-race

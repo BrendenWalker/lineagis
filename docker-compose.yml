@@ -50,30 +50,16 @@ services:
     restart: "no"
 
   registry:
-    image: registry:2
+    image: ghcr.io/project-zot/zot:v2.1.11
     depends_on:
       minio-init:
         condition: service_completed_successfully
-    environment:
-      REGISTRY_STORAGE_S3_ACCESSKEY: ${MINIO_ROOT_USER:-minioadmin}
-      REGISTRY_STORAGE_S3_SECRETKEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      REGISTRY_STORAGE_S3_BUCKET: ${MINIO_REGISTRY_BUCKET:-registry}
-      REGISTRY_STORAGE_S3_REGION: us-east-1
-      REGISTRY_STORAGE_S3_REGIONENDPOINT: http://minio:9000
-      REGISTRY_STORAGE_S3_SECURE: "false"
-      REGISTRY_STORAGE_S3_V4AUTH: "true"
-      REGISTRY_STORAGE_S3_FORCEPATHSTYLE: "true"
-      REGISTRY_STORAGE_S3_ROOTDIRECTORY: /registry
+    command: ["serve", "/etc/zot/config.json"]
     ports:
       - "5000:5000"
     volumes:
-      - ./deploy/registry/config.yml:/etc/docker/registry/config.yml:ro
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5000/v2/ | grep -q '{}'"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      - ./deploy/registry/config.json:/etc/zot/config.json:ro
+    # Zot image is distroless (no shell/wget); API probes /livez at runtime.
 
   api:
     build:
@@ -83,7 +69,7 @@ services:
       postgres:
         condition: service_healthy
       registry:
-        condition: service_healthy
+        condition: service_started
     environment:
       VERITY_API_ADDR: ${VERITY_API_ADDR:-:8080}
       VERITY_DATABASE_URL: postgres://${POSTGRES_USER:-verity}:${POSTGRES_PASSWORD:-verity}@postgres:5432/${POSTGRES_DB:-verity}?sslmode=disable

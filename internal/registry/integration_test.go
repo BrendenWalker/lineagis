@@ -88,3 +88,52 @@ func TestIntegrationPushBlobIdempotent(t *testing.T) {
 		t.Fatal("BlobExists = false, want true")
 	}
 }
+
+func TestIntegrationPushPullManifest(t *testing.T) {
+	client := testRegistryClient(t)
+	repo := testRepo(t)
+
+	layers := []registry.FileLayer{
+		{Path: "SHA256SUMS", Data: []byte("deadbeef")},
+		{Path: "release.tar.gz", Data: []byte("gzip-bytes-here")},
+		{Path: "package.whl", Data: []byte("zip-bytes-here")},
+	}
+	manifestData, wantDigest, err := registry.BuildArtifactManifest(layers, registry.ManifestOptions{
+		PublishRoot: "dist/",
+	})
+	if err != nil {
+		t.Fatalf("BuildArtifactManifest: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	for _, layer := range layers {
+		if _, err := client.PushBlob(ctx, repo, layer.Data); err != nil {
+			t.Fatalf("PushBlob %q: %v", layer.Path, err)
+		}
+	}
+
+	first, err := client.PushManifest(ctx, repo, manifestData)
+	if err != nil {
+		t.Fatalf("first PushManifest: %v", err)
+	}
+	second, err := client.PushManifest(ctx, repo, manifestData)
+	if err != nil {
+		t.Fatalf("second PushManifest: %v", err)
+	}
+	if first != second || first != wantDigest {
+		t.Fatalf("manifest digests differ: %s vs %s (want %s)", first, second, wantDigest)
+	}
+
+	pulled, gotDigest, err := client.PullManifest(ctx, repo, wantDigest.String())
+	if err != nil {
+		t.Fatalf("PullManifest: %v", err)
+	}
+	if gotDigest != wantDigest {
+		t.Fatalf("pulled digest = %s, want %s", gotDigest, wantDigest)
+	}
+	if string(pulled) != string(manifestData) {
+		t.Fatal("pulled manifest bytes differ from pushed manifest")
+	}
+}

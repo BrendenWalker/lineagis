@@ -69,6 +69,39 @@ func (s *Store) RegisterArtifact(ctx context.Context, namespaceID int64, name st
 	return &a, nil
 }
 
+// ListArtifacts returns artifacts in a namespace (paginated).
+func (s *Store) ListArtifacts(ctx context.Context, namespaceID int64, limit, offset int) ([]Artifact, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, namespace_id, name, created_at
+		FROM artifacts WHERE namespace_id = $1
+		ORDER BY name ASC
+		LIMIT $2 OFFSET $3
+	`, namespaceID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("list artifacts: %w", err)
+	}
+	defer rows.Close()
+
+	var arts []Artifact
+	for rows.Next() {
+		var a Artifact
+		if err := rows.Scan(&a.ID, &a.NamespaceID, &a.Name, &a.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan artifact: %w", err)
+		}
+		arts = append(arts, a)
+	}
+	return arts, rows.Err()
+}
+
 // GetArtifact returns an artifact by namespace and name.
 func (s *Store) GetArtifact(ctx context.Context, namespaceID int64, name string) (*Artifact, error) {
 	var a Artifact
@@ -212,6 +245,28 @@ func (s *Store) SetTag(ctx context.Context, artifactID int64, tagName string, di
 	return &tag, nil
 }
 
+// ListTagsForArtifact returns all tags for an artifact.
+func (s *Store) ListTagsForArtifact(ctx context.Context, artifactID int64) ([]Tag, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, artifact_id, name, digest_id, updated_at
+		FROM tags WHERE artifact_id = $1 ORDER BY name ASC
+	`, artifactID)
+	if err != nil {
+		return nil, fmt.Errorf("list tags: %w", err)
+	}
+	defer rows.Close()
+
+	var tags []Tag
+	for rows.Next() {
+		var tag Tag
+		if err := rows.Scan(&tag.ID, &tag.ArtifactID, &tag.Name, &tag.DigestID, &tag.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("scan tag: %w", err)
+		}
+		tags = append(tags, tag)
+	}
+	return tags, rows.Err()
+}
+
 // GetTag returns the current tag mapping for an artifact.
 func (s *Store) GetTag(ctx context.Context, artifactID int64, tagName string) (*Tag, error) {
 	var tag Tag
@@ -291,6 +346,28 @@ func (s *Store) ListSignatures(ctx context.Context, digestID int64) ([]Signature
 	return sigs, rows.Err()
 }
 
+// ListAttestations returns attestations indexed for a digest.
+func (s *Store) ListAttestations(ctx context.Context, digestID int64) ([]Attestation, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, digest_id, predicate_type, envelope_ref, envelope_digest, created_at
+		FROM attestations WHERE digest_id = $1 ORDER BY created_at ASC
+	`, digestID)
+	if err != nil {
+		return nil, fmt.Errorf("list attestations: %w", err)
+	}
+	defer rows.Close()
+
+	var atts []Attestation
+	for rows.Next() {
+		var att Attestation
+		if err := rows.Scan(&att.ID, &att.DigestID, &att.PredicateType, &att.EnvelopeRef, &att.EnvelopeDigest, &att.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan attestation: %w", err)
+		}
+		atts = append(atts, att)
+	}
+	return atts, rows.Err()
+}
+
 // AttachAttestation stores an attestation index row for a digest.
 func (s *Store) AttachAttestation(ctx context.Context, digestID int64, predicateType string, envelopeRef, envelopeDigest *string) (*Attestation, error) {
 	if _, err := s.GetDigestByID(ctx, digestID); err != nil {
@@ -365,6 +442,23 @@ func (s *Store) PutPolicy(ctx context.Context, namespaceID int64, document json.
 		return nil, fmt.Errorf("commit tx: %w", err)
 	}
 	return &p, nil
+}
+
+// LatestPolicyDecision returns the most recent policy decision for a digest, if any.
+func (s *Store) LatestPolicyDecision(ctx context.Context, digestID int64) (*PolicyDecision, error) {
+	var d PolicyDecision
+	err := s.pool.QueryRow(ctx, `
+		SELECT id, digest_id, policy_id, outcome, reasons, evaluated_at
+		FROM policy_decisions WHERE digest_id = $1
+		ORDER BY evaluated_at DESC, id DESC LIMIT 1
+	`, digestID).Scan(&d.ID, &d.DigestID, &d.PolicyID, &d.Outcome, &d.Reasons, &d.EvaluatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("latest policy decision: %w", err)
+	}
+	return &d, nil
 }
 
 // GetActivePolicy returns the active policy for a namespace.

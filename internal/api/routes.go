@@ -22,6 +22,25 @@ func (h *Handler) routeV1(w http.ResponseWriter, r *http.Request) {
 	if rest == "" {
 		rest = r.PathValue("path")
 	}
+
+	if ns, ok := parseNamespacePolicyPath(rest); ok {
+		if r.Method == http.MethodPut {
+			h.putPolicy(w, r, ns)
+			return
+		}
+		WriteError(w, http.StatusNotFound, "NOT_FOUND", "unknown route", nil)
+		return
+	}
+
+	if ns, ok := parseNamespaceArtifactsListPath(rest); ok {
+		if r.Method == http.MethodGet {
+			h.listArtifacts(w, r, ns)
+			return
+		}
+		WriteError(w, http.StatusNotFound, "NOT_FOUND", "unknown route", nil)
+		return
+	}
+
 	ns, artifact, suffix, ok := parseNamespacesPath(rest)
 	if !ok {
 		WriteError(w, http.StatusNotFound, "NOT_FOUND", "unknown route", nil)
@@ -29,6 +48,17 @@ func (h *Handler) routeV1(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch {
+	case r.Method == http.MethodGet && suffix == "":
+		h.getArtifact(w, r, ns, artifact)
+	case r.Method == http.MethodGet && suffix == "trust":
+		h.getTrustStatus(w, r, ns, artifact)
+	case r.Method == http.MethodGet && strings.HasPrefix(suffix, "tags/"):
+		tag := strings.TrimPrefix(suffix, "tags/")
+		if tag == "" || strings.Contains(tag, "/") {
+			WriteError(w, http.StatusNotFound, "NOT_FOUND", "unknown route", nil)
+			return
+		}
+		h.getTag(w, r, ns, artifact, tag)
 	case r.Method == http.MethodPut && suffix == "":
 		h.putArtifact(w, r, ns, artifact)
 	case r.Method == http.MethodPost && suffix == "digests":
@@ -43,6 +73,42 @@ func (h *Handler) routeV1(w http.ResponseWriter, r *http.Request) {
 	default:
 		WriteError(w, http.StatusNotFound, "NOT_FOUND", "unknown route", nil)
 	}
+}
+
+// parseNamespaceArtifactsListPath parses namespaces/{ns}/artifacts.
+func parseNamespaceArtifactsListPath(path string) (namespace string, ok bool) {
+	const prefix = "namespaces/"
+	if !strings.HasPrefix(path, prefix) {
+		return "", false
+	}
+	rest := strings.TrimPrefix(path, prefix)
+	if rest == "" {
+		return "", false
+	}
+	const suffix = "/artifacts"
+	if !strings.HasSuffix(rest, suffix) {
+		return "", false
+	}
+	ns := strings.TrimSuffix(rest, suffix)
+	if ns == "" || strings.Contains(ns, "/artifacts") {
+		return "", false
+	}
+	return ns, true
+}
+
+// parseNamespacePolicyPath parses namespaces/{ns}/policy.
+func parseNamespacePolicyPath(path string) (namespace string, ok bool) {
+	const prefix = "namespaces/"
+	const suffix = "/policy"
+	if !strings.HasPrefix(path, prefix) || !strings.HasSuffix(path, suffix) {
+		return "", false
+	}
+	rest := strings.TrimPrefix(path, prefix)
+	ns := strings.TrimSuffix(rest, suffix)
+	if ns == "" || strings.Contains(ns, "/policy") {
+		return "", false
+	}
+	return ns, true
 }
 
 // parseNamespacesPath parses paths like namespaces/gh/acme/widget/artifacts/widget/digests.

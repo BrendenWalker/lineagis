@@ -63,6 +63,10 @@ func (h *Handler) routeV1(w http.ResponseWriter, r *http.Request) {
 		h.putArtifact(w, r, ns, artifact)
 	case r.Method == http.MethodPost && suffix == "digests":
 		h.postRegisterDigest(w, r, ns, artifact)
+	case r.Method == http.MethodPost && suffix == "signatures":
+		h.postAttachSignature(w, r, ns, artifact)
+	case r.Method == http.MethodGet && suffix == "signatures":
+		h.getListSignatures(w, r, ns, artifact)
 	case r.Method == http.MethodPut && strings.HasPrefix(suffix, "tags/"):
 		tag := strings.TrimPrefix(suffix, "tags/")
 		if tag == "" || strings.Contains(tag, "/") {

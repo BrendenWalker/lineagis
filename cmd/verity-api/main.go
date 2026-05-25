@@ -130,7 +130,7 @@ func (s *server) routes() *http.ServeMux {
 	store := metadata.NewStore(s.pool)
 	apiHandler := &api.Handler{
 		Store:  store,
-		Policy: api.AllowAllPolicy{},
+		Policy: api.NewStorePushPolicy(store),
 		Auth:   api.AuthMiddleware(s.authn),
 	}
 	apiHandler.RegisterRoutes(mux)

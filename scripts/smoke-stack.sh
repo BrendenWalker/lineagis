@@ -9,7 +9,7 @@ POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 POSTGRES_USER="${POSTGRES_USER:-verity}"
 POSTGRES_DB="${POSTGRES_DB:-verity}"
 
-pass() { echo "PASS: $*"; }
+pass() { echo "PASS: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
 curl_ok() {

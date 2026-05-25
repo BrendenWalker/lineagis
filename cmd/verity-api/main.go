@@ -131,7 +131,7 @@ func (s *server) routes() *http.ServeMux {
 	apiHandler := &api.Handler{
 		Store:  store,
 		Policy: api.AllowAllPolicy{},
-		Auth: api.AuthMiddleware(s.authn),
+		Auth:   api.AuthMiddleware(s.authn),
 	}
 	apiHandler.RegisterRoutes(mux)
 	return mux

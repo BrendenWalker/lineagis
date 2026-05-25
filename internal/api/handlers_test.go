@@ -303,6 +303,152 @@ func TestSetTag_requireSignatures_passesWithSignature(t *testing.T) {
 	}
 }
 
+func TestAttachSignature_authRequired(t *testing.T) {
+	t.Parallel()
+	h := &api.Handler{
+		Store:  nil,
+		Policy: api.AllowAllPolicy{},
+		Auth: func(next http.Handler) http.Handler {
+			return api.RequireBearer("secret", next)
+		},
+	}
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	body := []byte(`{"digest":"sha256:abc","bundle":{"stub":true}}`)
+	req := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/signatures", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
+	}
+}
+
+// AC-META-003 / FR-SIGN-009: attach via API and list signatures indexed by digest.
+func TestAttachSignature_storeAndList(t *testing.T) {
+	h, store, _ := testHandler(t, "test-token")
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	ctx := context.Background()
+	ns, err := store.CreateNamespace(ctx, "gh/acme/widget", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	art, err := store.RegisterArtifact(ctx, ns.ID, "widget")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := store.RegisterDigest(ctx, art.ID, "sha256:signeddigest", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	attachBody, _ := json.Marshal(map[string]any{
+		"digest":  d.Digest,
+		"bundle":  map[string]string{"mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json"},
+		"issuer":  "https://token.actions.githubusercontent.com",
+		"subject": "repo:acme/widget:ref:refs/heads/main",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/signatures", bytes.NewReader(attachBody))
+	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("AttachSignature status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	var created struct {
+		ID     int64  `json:"id"`
+		Digest string `json:"digest"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode attach response: %v", err)
+	}
+	if created.ID == 0 || created.Digest != d.Digest {
+		t.Fatalf("attach response = %+v", created)
+	}
+
+	listReq := httptest.NewRequest(http.MethodGet, "/v1/namespaces/gh/acme/widget/artifacts/widget/signatures?digest="+d.Digest, nil)
+	listReq.Header.Set("Authorization", "Bearer test-token")
+	listRec := httptest.NewRecorder()
+	mux.ServeHTTP(listRec, listReq)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("ListSignatures status = %d body = %s", listRec.Code, listRec.Body.String())
+	}
+	var listed struct {
+		Digest     string `json:"digest"`
+		Signatures []struct {
+			ID int64 `json:"id"`
+		} `json:"signatures"`
+	}
+	if err := json.Unmarshal(listRec.Body.Bytes(), &listed); err != nil {
+		t.Fatalf("decode list response: %v", err)
+	}
+	if listed.Digest != d.Digest {
+		t.Fatalf("listed digest = %q, want %q", listed.Digest, d.Digest)
+	}
+	if len(listed.Signatures) != 1 || listed.Signatures[0].ID != created.ID {
+		t.Fatalf("listed signatures = %+v, want id %d", listed.Signatures, created.ID)
+	}
+}
+
+func TestListSignatures_scopedToDigest(t *testing.T) {
+	h, store, _ := testHandler(t, "test-token")
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	ctx := context.Background()
+	ns, err := store.CreateNamespace(ctx, "gh/acme/widget", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	art, err := store.RegisterArtifact(ctx, ns.ID, "widget")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d1, err := store.RegisterDigest(ctx, art.ID, "sha256:sigscope1", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d2, err := store.RegisterDigest(ctx, art.ID, "sha256:sigscope2", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	attachBody, _ := json.Marshal(map[string]any{
+		"digest":     d1.Digest,
+		"bundle_ref": "oci://example/sig.bundle",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/signatures", bytes.NewReader(attachBody))
+	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("AttachSignature status = %d body = %s", rec.Code, rec.Body.String())
+	}
+
+	listD2 := httptest.NewRequest(http.MethodGet, "/v1/namespaces/gh/acme/widget/artifacts/widget/signatures?digest="+d2.Digest, nil)
+	listD2.Header.Set("Authorization", "Bearer test-token")
+	recD2 := httptest.NewRecorder()
+	mux.ServeHTTP(recD2, listD2)
+	if recD2.Code != http.StatusOK {
+		t.Fatalf("ListSignatures d2 status = %d body = %s", recD2.Code, recD2.Body.String())
+	}
+	var listed struct {
+		Signatures []any `json:"signatures"`
+	}
+	if err := json.Unmarshal(recD2.Body.Bytes(), &listed); err != nil {
+		t.Fatal(err)
+	}
+	if len(listed.Signatures) != 0 {
+		t.Fatalf("expected 0 signatures on d2, got %d", len(listed.Signatures))
+	}
+}
+
 func TestSetTag_invalidSemver(t *testing.T) {
 	h, store, _ := testHandler(t, "test-token")
 	mux := http.NewServeMux()

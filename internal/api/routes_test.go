@@ -19,6 +19,11 @@ func TestParseNamespacesPath(t *testing.T) {
 		t.Fatalf("artifact only: got %q %q %q ok=%v", ns, art, suffix, ok)
 	}
 
+	ns, art, suffix, ok = parseNamespacesPath("namespaces/gh/acme/widget/artifacts/widget/signatures")
+	if !ok || suffix != "signatures" || art != "widget" {
+		t.Fatalf("signatures: got %q %q %q ok=%v", ns, art, suffix, ok)
+	}
+
 	if _, _, _, ok = parseNamespacesPath("bad"); ok {
 		t.Fatal("expected false for bad path")
 	}

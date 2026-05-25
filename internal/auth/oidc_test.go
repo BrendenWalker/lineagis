@@ -32,7 +32,7 @@ func TestAuthenticate_oidcGitHubClaims(t *testing.T) {
 	mux.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"issuer":                                issuer,
-			"jwks_uri":                            issuer + "/jwks",
+			"jwks_uri":                              issuer + "/jwks",
 			"authorization_endpoint":                issuer + "/auth",
 			"token_endpoint":                        issuer + "/token",
 			"response_types_supported":              []string{"id_token"},

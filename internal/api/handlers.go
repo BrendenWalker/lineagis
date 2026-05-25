@@ -59,7 +59,7 @@ func (h *Handler) putArtifact(w http.ResponseWriter, r *http.Request, ns, artifa
 		}
 	}
 	if err := authorizeNamespace(ctx, ns, namespace.Config); err != nil {
-		WriteError(w, http.StatusForbidden, "FORBIDDEN", err.Error(), nil)
+		writeAuthError(w, err)
 		return
 	}
 	art, err := h.Store.RegisterArtifact(ctx, namespace.ID, artifact)
@@ -99,7 +99,7 @@ func (h *Handler) postRegisterDigest(w http.ResponseWriter, r *http.Request, ns,
 		}
 	}
 	if err := authorizeNamespace(ctx, ns, namespace.Config); err != nil {
-		WriteError(w, http.StatusForbidden, "FORBIDDEN", err.Error(), nil)
+		writeAuthError(w, err)
 		return
 	}
 	art, err := h.Store.GetArtifact(ctx, namespace.ID, artifact)
@@ -154,7 +154,7 @@ func (h *Handler) putSetTag(w http.ResponseWriter, r *http.Request, ns, artifact
 		}
 	}
 	if err := authorizeNamespace(ctx, ns, namespace.Config); err != nil {
-		WriteError(w, http.StatusForbidden, "FORBIDDEN", err.Error(), nil)
+		writeAuthError(w, err)
 		return
 	}
 	art, err := h.Store.GetArtifact(ctx, namespace.ID, artifact)

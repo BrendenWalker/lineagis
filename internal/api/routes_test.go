@@ -22,4 +22,14 @@ func TestParseNamespacesPath(t *testing.T) {
 	if _, _, _, ok = parseNamespacesPath("bad"); ok {
 		t.Fatal("expected false for bad path")
 	}
+
+	ns, ok = parseNamespaceArtifactsListPath("namespaces/gh/acme/widget/artifacts")
+	if !ok || ns != "gh/acme/widget" {
+		t.Fatalf("list: got %q ok=%v", ns, ok)
+	}
+
+	ns, ok = parseNamespacePolicyPath("namespaces/gh/acme/widget/policy")
+	if !ok || ns != "gh/acme/widget" {
+		t.Fatalf("policy: got %q ok=%v", ns, ok)
+	}
 }

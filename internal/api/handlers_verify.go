@@ -20,11 +20,11 @@ type verifyPolicyResult struct {
 }
 
 type verifyResponse struct {
-	Namespace  string           `json:"namespace"`
-	Artifact   string           `json:"artifact"`
-	Digest     string           `json:"digest"`
-	Outcome    string           `json:"outcome"`
-	Signatures trustSignatures  `json:"signatures"`
+	Namespace  string             `json:"namespace"`
+	Artifact   string             `json:"artifact"`
+	Digest     string             `json:"digest"`
+	Outcome    string             `json:"outcome"`
+	Signatures trustSignatures    `json:"signatures"`
 	Policy     verifyPolicyResult `json:"policy"`
 }
 

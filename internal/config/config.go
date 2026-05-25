@@ -13,6 +13,7 @@ type Config struct {
 	APIAddr          string
 	DatabaseURL      string
 	RegistryURL      string
+	DevToken         string // VERITY_DEV_TOKEN — bearer stub for local dev (OQ-API-002)
 	TLSCertFile      string
 	TLSKeyFile       string
 	LogLevel         slog.Level
@@ -26,6 +27,7 @@ func Load() (Config, error) {
 		APIAddr:          envOr("VERITY_API_ADDR", ":8080"),
 		DatabaseURL:      os.Getenv("VERITY_DATABASE_URL"),
 		RegistryURL:      envOr("VERITY_REGISTRY_URL", "http://registry:5000"),
+		DevToken:         os.Getenv("VERITY_DEV_TOKEN"),
 		TLSCertFile:      os.Getenv("VERITY_API_TLS_CERT"),
 		TLSKeyFile:       os.Getenv("VERITY_API_TLS_KEY"),
 		LogFormat:        envOr("VERITY_LOG_FORMAT", "json"),

@@ -270,11 +270,22 @@ make test     # race detector + coverage.out
 make lint     # golangci-lint
 ```
 
-Run the placeholder CLI:
+Run the CLI:
 
 ```bash
 ./bin/verity --version
 ```
+
+Publish a release directory (requires stack up and tokens from `.env.example`):
+
+```bash
+export VERITY_API_URL=http://localhost:8080
+export VERITY_REGISTRY_URL=http://localhost:5000
+export VERITY_TOKEN=dev-local-token
+./bin/verity publish dist/ --namespace gh/acme/widget --artifact widget --tag v1.0.0
+```
+
+On success the command prints the manifest digest (`sha256:…`, AC-PUB-001). Registry repository is `{namespace}/{artifact}` (e.g. `gh/acme/widget/widget`).
 
 CI runs on every pull request and on pushes to `main` as three status checks: `lint`, `test`, and `build`. Coverage is uploaded as a workflow artifact when tests run. To block merges until CI passes, require those checks on `main` — see [.github/BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md).
 
@@ -289,7 +300,7 @@ make compose-up
 
 | Service | URL | Purpose |
 |---------|-----|---------|
-| Verity API | http://localhost:8080 (or `$VERITY_API_PORT`) | API (`GET /healthz`, `GET /readyz`) |
+| Verity API | http://localhost:8080 (or `$VERITY_API_PORT`) | API (`GET /healthz`, `GET /readyz`, `/v1/...` control plane) |
 | OCI Registry | http://localhost:5000 | Zot registry (S3 backend via MinIO; OCI Artifact manifests) |
 | PostgreSQL | localhost:5432 | Metadata database |
 | MinIO API | http://localhost:9000 | S3-compatible object storage |
@@ -312,6 +323,9 @@ Environment variables (see [`.env.example`](.env.example)):
 | `VERITY_LOG_LEVEL` | `info` | Verity API structured logging |
 | `VERITY_LOG_FORMAT` | `text` (local), `json` (compose) | Verity API log format |
 | `VERITY_MIGRATE_ON_STARTUP` | `true` | Run goose migrations on API startup |
+| `VERITY_DEV_TOKEN` | `dev-local-token` (compose) | Bearer token for API write routes (local dev stub until OIDC, M05) |
+| `VERITY_API_URL` | `http://localhost:8080` | Verity CLI API base URL |
+| `VERITY_TOKEN` | (none) | Verity CLI bearer token (`VERITY_DEV_TOKEN` fallback) |
 
 If port 8080 is already in use, set `VERITY_API_PORT=18080` in `.env` before `make compose-up`.
 

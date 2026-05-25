@@ -9,10 +9,10 @@ func TestRunVersion(t *testing.T) {
 	}
 }
 
-func TestRunUnknownCommand(t *testing.T) {
-	t.Parallel()
-	if got := run([]string{"publish"}); got != 1 {
-		t.Fatalf("run(publish) = %d, want 1", got)
+func TestRunPublishMissingFlags(t *testing.T) {
+	t.Setenv("VERITY_TOKEN", "tok")
+	if got := run([]string{"publish", ".", "--namespace", "ns", "--artifact", "a"}); got != 1 {
+		t.Fatalf("run(publish) = %d, want 1 (empty dir)", got)
 	}
 }
 

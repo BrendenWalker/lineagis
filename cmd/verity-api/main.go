@@ -15,6 +15,7 @@ import (
 	"github.com/BrendenWalker/verity/internal/config"
 	"github.com/BrendenWalker/verity/internal/db"
 	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/verity/internal/registry"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -128,10 +129,15 @@ func (s *server) routes() *http.ServeMux {
 	mux.HandleFunc("/readyz", s.readyHandler)
 
 	store := metadata.NewStore(s.pool)
+	var manifests api.ManifestSource
+	if reg, err := registry.New(s.cfg.RegistryURL); err == nil {
+		manifests = &api.RegistryManifests{Client: reg}
+	}
 	apiHandler := &api.Handler{
-		Store:  store,
-		Policy: api.NewStorePushPolicy(store),
-		Auth:   api.AuthMiddleware(s.authn),
+		Store:     store,
+		Manifests: manifests,
+		Policy:    api.NewStorePushPolicy(store),
+		Auth:      api.AuthMiddleware(s.authn),
 	}
 	apiHandler.RegisterRoutes(mux)
 	return mux

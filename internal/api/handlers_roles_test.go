@@ -11,6 +11,8 @@ import (
 	"github.com/BrendenWalker/verity/internal/api"
 	"github.com/BrendenWalker/verity/internal/auth"
 	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/verity/internal/signing"
 )
 
 func testHandlerWithActor(t *testing.T, actor auth.Actor) (*api.Handler, *metadata.Store) {
@@ -91,16 +93,29 @@ func TestGetArtifact_authRequired(t *testing.T) {
 
 func TestGetTrustStatus_signedPass(t *testing.T) {
 	h, store, _ := testHandler(t, "test-token")
+	manifestJSON, digest, err := registry.BuildArtifactManifest(
+		[]registry.FileLayer{{Path: "bin/app", Data: []byte("x")}},
+		registry.ManifestOptions{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bundle, _, err := signing.SignManifestForTest(manifestJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.Manifests = api.NewStaticManifestSource(map[string][]byte{digest.String(): manifestJSON})
+
 	mux := http.NewServeMux()
 	h.RegisterRoutes(mux)
 
 	ctx := context.Background()
 	ns, _ := store.CreateNamespace(ctx, "gh/acme/widget", nil)
 	art, _ := store.RegisterArtifact(ctx, ns.ID, "widget")
-	d, _ := store.RegisterDigest(ctx, art.ID, "sha256:abc", nil, nil)
-	_, _ = store.AttachSignature(ctx, d.ID, nil, json.RawMessage(`{"bundle":"stub"}`), nil, nil)
+	d, _ := store.RegisterDigest(ctx, art.ID, digest.String(), nil, nil)
+	_, _ = store.AttachSignature(ctx, d.ID, nil, bundle, nil, nil)
 
-	req := httptest.NewRequest(http.MethodGet, "/v1/namespaces/gh/acme/widget/artifacts/widget/trust?digest=sha256:abc", nil)
+	req := httptest.NewRequest(http.MethodGet, "/v1/namespaces/gh/acme/widget/artifacts/widget/trust?digest="+digest.String(), nil)
 	req.Header.Set("Authorization", "Bearer test-token")
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)

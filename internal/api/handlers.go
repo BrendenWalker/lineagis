@@ -12,9 +12,10 @@ import (
 
 // Handler serves Verity control-plane HTTP routes (OQ-API-001 layout).
 type Handler struct {
-	Store  *metadata.Store
-	Policy PushPolicy
-	Auth   func(http.Handler) http.Handler
+	Store        *metadata.Store
+	Policy       PushPolicy
+	VerifyPolicy VerifyPolicy
+	Auth         func(http.Handler) http.Handler
 }
 
 type registerDigestRequest struct {

@@ -52,6 +52,8 @@ func (h *Handler) routeV1(w http.ResponseWriter, r *http.Request) {
 		h.getArtifact(w, r, ns, artifact)
 	case r.Method == http.MethodGet && suffix == "trust":
 		h.getTrustStatus(w, r, ns, artifact)
+	case r.Method == http.MethodPost && suffix == "verify":
+		h.postVerify(w, r, ns, artifact)
 	case r.Method == http.MethodGet && strings.HasPrefix(suffix, "tags/"):
 		tag := strings.TrimPrefix(suffix, "tags/")
 		if tag == "" || strings.Contains(tag, "/") {

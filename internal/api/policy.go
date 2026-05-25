@@ -43,14 +43,79 @@ func (p StorePushPolicy) AllowSetTag(ctx context.Context, namespaceID, _, digest
 	if !policyRequiresSignatures(policy.Document) {
 		return nil
 	}
-	sigs, err := p.Store.ListSignatures(ctx, digestID)
+	return checkRequireSignatures(ctx, p.Store, digestID, "tagging")
+}
+
+// VerifyPolicy evaluates verify-time rules for a digest (FR-POL-004).
+type VerifyPolicy interface {
+	Evaluate(ctx context.Context, namespaceID, digestID int64) (*VerifyResult, error)
+}
+
+// VerifyResult is the outcome of verify-time policy evaluation.
+type VerifyResult struct {
+	Outcome  string
+	Reasons  []PolicyReason
+	PolicyID *int64
+}
+
+// PolicyReason describes a single rule outcome for clients and audit.
+type PolicyReason struct {
+	Rule    string `json:"rule"`
+	Message string `json:"message"`
+}
+
+// StoreVerifyPolicy evaluates the namespace active policy at verify time.
+type StoreVerifyPolicy struct {
+	Store *metadata.Store
+}
+
+// NewStoreVerifyPolicy returns verify-time policy evaluation backed by the metadata store.
+func NewStoreVerifyPolicy(store *metadata.Store) StoreVerifyPolicy {
+	return StoreVerifyPolicy{Store: store}
+}
+
+func (p StoreVerifyPolicy) Evaluate(ctx context.Context, namespaceID, digestID int64) (*VerifyResult, error) {
+	policy, err := p.Store.GetActivePolicy(ctx, namespaceID)
+	if errors.Is(err, metadata.ErrNotFound) {
+		return &VerifyResult{Outcome: "none"}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("load active policy: %w", err)
+	}
+
+	var reasons []PolicyReason
+	if policyRequiresSignatures(policy.Document) {
+		if err := checkRequireSignatures(ctx, p.Store, digestID, "verify"); err != nil {
+			var pf PolicyFailure
+			if errors.As(err, &pf) {
+				reasons = append(reasons, PolicyReason{Rule: pf.Rule, Message: pf.Hint})
+			} else {
+				return nil, err
+			}
+		}
+	}
+
+	outcome := "pass"
+	if len(reasons) > 0 {
+		outcome = "fail"
+	}
+	policyID := policy.ID
+	return &VerifyResult{
+		Outcome:  outcome,
+		Reasons:  reasons,
+		PolicyID: &policyID,
+	}, nil
+}
+
+func checkRequireSignatures(ctx context.Context, store *metadata.Store, digestID int64, action string) error {
+	sigs, err := store.ListSignatures(ctx, digestID)
 	if err != nil {
 		return fmt.Errorf("list signatures: %w", err)
 	}
 	if len(sigs) == 0 {
 		return PolicyFailure{
 			Rule: "require-signatures",
-			Hint: "digest has no signature; attach a Sigstore bundle before tagging",
+			Hint: fmt.Sprintf("digest has no signature; attach a Sigstore bundle before %s", action),
 		}
 	}
 	return nil

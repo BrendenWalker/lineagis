@@ -2,3 +2,6 @@
 /coverage.out
 /coverage
 .env
+dist/
+testdata/
+coverage*

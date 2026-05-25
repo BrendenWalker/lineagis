@@ -7,6 +7,7 @@ import (
 
 func TestLoadRequiresDatabaseURL(t *testing.T) {
 	t.Setenv("VERITY_DATABASE_URL", "")
+	t.Setenv("VERITY_DEV_TOKEN", "x")
 
 	_, err := Load()
 	if err == nil {
@@ -23,6 +24,9 @@ func TestLoadDefaults(t *testing.T) {
 	t.Setenv("VERITY_MIGRATE_ON_STARTUP", "")
 	t.Setenv("VERITY_API_TLS_CERT", "")
 	t.Setenv("VERITY_API_TLS_KEY", "")
+	t.Setenv("VERITY_DEV_TOKEN", "test-dev-token")
+	t.Setenv("VERITY_OIDC_ISSUER", "")
+	t.Setenv("VERITY_OIDC_AUDIENCE", "")
 
 	cfg, err := Load()
 	if err != nil {
@@ -48,6 +52,7 @@ func TestLoadDefaults(t *testing.T) {
 
 func TestLoadTLSRequiresBothCertAndKey(t *testing.T) {
 	t.Setenv("VERITY_DATABASE_URL", "postgres://localhost/verity")
+	t.Setenv("VERITY_DEV_TOKEN", "x")
 	t.Setenv("VERITY_API_TLS_CERT", "/tmp/cert.pem")
 	t.Setenv("VERITY_API_TLS_KEY", "")
 

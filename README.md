@@ -323,7 +323,9 @@ Environment variables (see [`.env.example`](.env.example)):
 | `VERITY_LOG_LEVEL` | `info` | Verity API structured logging |
 | `VERITY_LOG_FORMAT` | `text` (local), `json` (compose) | Verity API log format |
 | `VERITY_MIGRATE_ON_STARTUP` | `true` | Run goose migrations on API startup |
-| `VERITY_DEV_TOKEN` | `dev-local-token` (compose) | Bearer token for API write routes (local dev stub until OIDC, M05) |
+| `VERITY_DEV_TOKEN` | `dev-local-token` (compose) | Local dev bearer for API writes (OQ-API-002) |
+| `VERITY_OIDC_ISSUER` | (none) | GitHub Actions OIDC issuer (e.g. `https://token.actions.githubusercontent.com`) |
+| `VERITY_OIDC_AUDIENCE` | (none) | Expected JWT `aud` when OIDC is enabled |
 | `VERITY_API_URL` | `http://localhost:8080` | Verity CLI API base URL |
 | `VERITY_TOKEN` | (none) | Verity CLI bearer token (`VERITY_DEV_TOKEN` fallback) |
 

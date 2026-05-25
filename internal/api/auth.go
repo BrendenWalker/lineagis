@@ -2,50 +2,85 @@ package api
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
+
+	"github.com/BrendenWalker/verity/internal/auth"
 )
-
-type contextKey string
-
-const actorContextKey contextKey = "actor"
 
 // ActorFromContext returns the authenticated actor subject when present.
 func ActorFromContext(ctx context.Context) string {
-	v, _ := ctx.Value(actorContextKey).(string)
-	return v
+	a, ok := auth.ActorFromContext(ctx)
+	if !ok {
+		return ""
+	}
+	return a.Subject
 }
 
-// RequireBearer validates Authorization: Bearer and attaches actor to context.
-// When devToken is non-empty, it must match exactly (OQ-API-002 local dev stub).
+// AuthMiddleware validates Authorization: Bearer using dev token and/or OIDC (FR-API-001).
+func AuthMiddleware(a *auth.Authenticator) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			raw, err := bearerToken(r.Header.Get("Authorization"))
+			if err != nil {
+				if errors.Is(err, errMissingBearer) {
+					WriteError(w, http.StatusUnauthorized, "AUTH_REQUIRED", "missing bearer token", nil)
+					return
+				}
+				WriteError(w, http.StatusUnauthorized, "AUTH_INVALID", err.Error(), nil)
+				return
+			}
+
+			actor, err := a.Authenticate(r.Context(), raw)
+			if err != nil {
+				if errors.Is(err, auth.ErrAuthRequired) {
+					WriteError(w, http.StatusUnauthorized, "AUTH_REQUIRED", err.Error(), nil)
+					return
+				}
+				WriteError(w, http.StatusUnauthorized, "AUTH_INVALID", "invalid bearer token", nil)
+				return
+			}
+
+			next.ServeHTTP(w, r.WithContext(auth.ContextWithActor(r.Context(), actor)))
+		})
+	}
+}
+
+// RequireBearer validates a fixed dev token (tests and legacy callers).
 func RequireBearer(devToken string, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		auth := r.Header.Get("Authorization")
-		if auth == "" {
-			WriteError(w, http.StatusUnauthorized, "AUTH_REQUIRED", "missing bearer token", nil)
-			return
-		}
-		const prefix = "Bearer "
-		if !strings.HasPrefix(auth, prefix) {
-			WriteError(w, http.StatusUnauthorized, "AUTH_INVALID", "invalid authorization header", nil)
-			return
-		}
-		token := strings.TrimSpace(strings.TrimPrefix(auth, prefix))
-		if token == "" {
-			WriteError(w, http.StatusUnauthorized, "AUTH_INVALID", "empty bearer token", nil)
-			return
-		}
+	a, err := auth.New(context.Background(), auth.Config{DevToken: devToken})
+	if err != nil {
+		panic(err)
+	}
+	return AuthMiddleware(a)(next)
+}
 
-		if devToken == "" {
-			WriteError(w, http.StatusUnauthorized, "AUTH_REQUIRED", "api authentication not configured", nil)
-			return
-		}
-		if token != devToken {
-			WriteError(w, http.StatusUnauthorized, "AUTH_INVALID", "invalid bearer token", nil)
-			return
-		}
+var errMissingBearer = errors.New("missing bearer token")
 
-		ctx := context.WithValue(r.Context(), actorContextKey, "dev:"+token[:min(8, len(token))])
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+func bearerToken(header string) (string, error) {
+	if header == "" {
+		return "", errMissingBearer
+	}
+	const prefix = "Bearer "
+	if !strings.HasPrefix(header, prefix) {
+		return "", errors.New("invalid authorization header")
+	}
+	token := strings.TrimSpace(strings.TrimPrefix(header, prefix))
+	if token == "" {
+		return "", errors.New("empty bearer token")
+	}
+	return token, nil
+}
+
+func authorizeNamespace(ctx context.Context, ns string, config json.RawMessage) error {
+	actor, ok := auth.ActorFromContext(ctx)
+	if !ok {
+		return auth.ErrAuthRequired
+	}
+	if err := auth.AuthorizeNamespace(actor, ns, config); err != nil {
+		return err
+	}
+	return nil
 }

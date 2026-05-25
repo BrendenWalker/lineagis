@@ -14,6 +14,8 @@ type Config struct {
 	DatabaseURL      string
 	RegistryURL      string
 	DevToken         string // VERITY_DEV_TOKEN — bearer stub for local dev (OQ-API-002)
+	OIDCIssuer       string // VERITY_OIDC_ISSUER — e.g. https://token.actions.githubusercontent.com
+	OIDCAudience     string // VERITY_OIDC_AUDIENCE — expected JWT aud claim
 	TLSCertFile      string
 	TLSKeyFile       string
 	LogLevel         slog.Level
@@ -28,6 +30,8 @@ func Load() (Config, error) {
 		DatabaseURL:      os.Getenv("VERITY_DATABASE_URL"),
 		RegistryURL:      envOr("VERITY_REGISTRY_URL", "http://registry:5000"),
 		DevToken:         os.Getenv("VERITY_DEV_TOKEN"),
+		OIDCIssuer:       strings.TrimSpace(os.Getenv("VERITY_OIDC_ISSUER")),
+		OIDCAudience:     strings.TrimSpace(os.Getenv("VERITY_OIDC_AUDIENCE")),
 		TLSCertFile:      os.Getenv("VERITY_API_TLS_CERT"),
 		TLSKeyFile:       os.Getenv("VERITY_API_TLS_KEY"),
 		LogFormat:        envOr("VERITY_LOG_FORMAT", "json"),
@@ -42,6 +46,13 @@ func Load() (Config, error) {
 
 	if cfg.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("VERITY_DATABASE_URL is required")
+	}
+
+	if cfg.OIDCIssuer != "" && cfg.OIDCAudience == "" {
+		return Config{}, fmt.Errorf("VERITY_OIDC_AUDIENCE is required when VERITY_OIDC_ISSUER is set")
+	}
+	if cfg.DevToken == "" && cfg.OIDCIssuer == "" {
+		return Config{}, fmt.Errorf("VERITY_DEV_TOKEN or VERITY_OIDC_ISSUER is required for API authentication")
 	}
 
 	if (cfg.TLSCertFile == "") != (cfg.TLSKeyFile == "") {

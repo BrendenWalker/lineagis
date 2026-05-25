@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/BrendenWalker/verity/internal/api"
+	"github.com/BrendenWalker/verity/internal/auth"
 	"github.com/BrendenWalker/verity/internal/config"
 	"github.com/BrendenWalker/verity/internal/db"
 	"github.com/BrendenWalker/verity/internal/metadata"
@@ -25,6 +26,7 @@ type readinessChecker interface {
 type server struct {
 	cfg    config.Config
 	pool   *pgxpool.Pool
+	authn  *auth.Authenticator
 	client *http.Client
 	log    *slog.Logger
 }
@@ -58,13 +60,22 @@ func run() int {
 		log.Info("database migrations applied")
 	}
 
+	authn, err := auth.New(ctx, auth.Config{
+		DevToken: cfg.DevToken,
+		Issuer:   cfg.OIDCIssuer,
+		Audience: cfg.OIDCAudience,
+	})
+	if err != nil {
+		log.Error("configure authentication", "error", err)
+		return 1
+	}
+
 	srv := &server{
-		cfg:  cfg,
-		pool: pool,
-		client: &http.Client{
-			Timeout: 5 * time.Second,
-		},
-		log: log,
+		cfg:    cfg,
+		pool:   pool,
+		authn:  authn,
+		client: &http.Client{Timeout: 5 * time.Second},
+		log:    log,
 	}
 
 	httpSrv := &http.Server{
@@ -120,9 +131,7 @@ func (s *server) routes() *http.ServeMux {
 	apiHandler := &api.Handler{
 		Store:  store,
 		Policy: api.AllowAllPolicy{},
-		Auth: func(next http.Handler) http.Handler {
-			return api.RequireBearer(s.cfg.DevToken, next)
-		},
+		Auth:   api.AuthMiddleware(s.authn),
 	}
 	apiHandler.RegisterRoutes(mux)
 	return mux

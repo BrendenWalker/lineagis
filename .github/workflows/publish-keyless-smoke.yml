@@ -1,0 +1,100 @@
+name: publish-keyless-smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  keyless-publish:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: verity
+          POSTGRES_PASSWORD: verity
+          POSTGRES_DB: verity
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U verity -d verity"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      registry:
+        image: ghcr.io/project-zot/zot:v2.1.11
+        ports:
+          - 5000:5000
+
+    env:
+      VERITY_DATABASE_URL: postgres://verity:verity@localhost:5432/verity?sslmode=disable
+      VERITY_REGISTRY_URL: http://localhost:5000
+      VERITY_DEV_TOKEN: dev-local-token
+      VERITY_API_URL: http://localhost:8080
+      VERITY_TOKEN: dev-local-token
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Wait for registry
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:5000/v2/ >/dev/null && exit 0
+            sleep 2
+          done
+          exit 1
+
+      - name: Build CLI and API
+        run: |
+          go build -o bin/verity ./cmd/verity
+          go build -o bin/verity-api ./cmd/verity-api
+
+      - name: Start Verity API
+        env:
+          VERITY_API_ADDR: :8080
+          VERITY_MIGRATE_ON_STARTUP: "true"
+        run: |
+          ./bin/verity-api &
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8080/readyz | grep -qx ok && exit 0
+            sleep 2
+          done
+          echo "API not ready" >&2
+          exit 1
+
+      - name: Prepare publish payload
+        run: |
+          mkdir -p dist
+          echo "gha keyless smoke $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/release.txt
+
+      - name: Keyless publish (no --skip-sign)
+        run: |
+          DIGEST="$(./bin/verity publish dist/ \
+            --namespace "gh/${{ github.repository_owner }}/verity-smoke" \
+            --artifact smoke \
+            --tag "gha-${{ github.run_id }}")"
+          echo "digest=${DIGEST}" >> "$GITHUB_ENV"
+          echo "Published ${DIGEST}"
+
+      - name: Verify signature attached
+        run: |
+          curl -sf -H "Authorization: Bearer ${VERITY_TOKEN}" \
+            "${VERITY_API_URL}/v1/namespaces/gh/${{ github.repository_owner }}/verity-smoke/artifacts/smoke/signatures?digest=${digest}" \
+            | tee signatures.json
+          test "$(jq '.signatures | length' signatures.json)" -gt 0
+
+      - name: Verify trust status
+        run: |
+          curl -sf -H "Authorization: Bearer ${VERITY_TOKEN}" \
+            "${VERITY_API_URL}/v1/namespaces/gh/${{ github.repository_owner }}/verity-smoke/artifacts/smoke/trust?digest=${digest}" \
+            | tee trust.json
+          jq -e '.signatures.status == "valid"' trust.json
+          jq -e '.overall == "pass"' trust.json

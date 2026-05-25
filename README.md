@@ -280,7 +280,7 @@ CI runs on every pull request and on pushes to `main` as three status checks: `l
 
 ## Local development stack
 
-Start Postgres, MinIO (S3-compatible storage), an OCI Distribution registry, and the Verity API:
+Start Postgres, MinIO (S3-compatible storage), a [Zot](https://zotregistry.dev/) OCI registry (artifact manifest support per ADR-0001), and the Verity API:
 
 ```bash
 cp .env.example .env   # optional; defaults match .env.example
@@ -290,7 +290,7 @@ make compose-up
 | Service | URL | Purpose |
 |---------|-----|---------|
 | Verity API | http://localhost:8080 (or `$VERITY_API_PORT`) | API (`GET /healthz`, `GET /readyz`) |
-| OCI Registry | http://localhost:5000 | Distribution-compatible registry (S3 backend) |
+| OCI Registry | http://localhost:5000 | Zot registry (S3 backend via MinIO; OCI Artifact manifests) |
 | PostgreSQL | localhost:5432 | Metadata database |
 | MinIO API | http://localhost:9000 | S3-compatible object storage |
 | MinIO Console | http://localhost:9001 | MinIO web UI |
@@ -342,6 +342,10 @@ Stop the stack:
 ```bash
 make compose-down
 ```
+
+### Registry migration (Distribution → Zot)
+
+If you previously ran the stack with Docker Distribution (`registry:2`), reset registry storage before using Zot: `docker compose down -v` (clears MinIO/Postgres volumes) or delete objects under the MinIO `registry` bucket. Distribution and Zot use incompatible S3 key layouts. After reset, `make compose-up` and re-run integration tests with `VERITY_TEST_REGISTRY_URL=http://localhost:5000`.
 
 ---
 

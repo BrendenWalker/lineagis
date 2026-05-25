@@ -108,7 +108,7 @@ func TestBuildArtifactManifestLayerMediaTypes(t *testing.T) {
 	}
 }
 
-func TestBuildArtifactManifestNoConfigDescriptor(t *testing.T) {
+func TestBuildArtifactManifestEmptyConfigDescriptor(t *testing.T) {
 	t.Parallel()
 
 	data, _, err := registry.BuildArtifactManifest([]registry.FileLayer{
@@ -118,12 +118,28 @@ func TestBuildArtifactManifestNoConfigDescriptor(t *testing.T) {
 		t.Fatalf("BuildArtifactManifest: %v", err)
 	}
 
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
+	var parsed struct {
+		ArtifactType string `json:"artifactType"`
+		Config       struct {
+			MediaType string `json:"mediaType"`
+			Digest    string `json:"digest"`
+			Size      int64  `json:"size"`
+		} `json:"config"`
+	}
+	if err := json.Unmarshal(data, &parsed); err != nil {
 		t.Fatalf("Unmarshal: %v", err)
 	}
-	if _, ok := raw["config"]; ok {
-		t.Fatal("manifest must not include config descriptor")
+	if parsed.ArtifactType != registry.VerityReleaseArtifactType {
+		t.Fatalf("artifactType = %q, want %q", parsed.ArtifactType, registry.VerityReleaseArtifactType)
+	}
+	if parsed.Config.MediaType != "application/vnd.oci.empty.v1+json" {
+		t.Fatalf("config mediaType = %q, want empty config", parsed.Config.MediaType)
+	}
+	if parsed.Config.Digest != "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a" {
+		t.Fatalf("config digest = %q, want OCI empty JSON digest", parsed.Config.Digest)
+	}
+	if parsed.Config.Size != 2 {
+		t.Fatalf("config size = %d, want 2", parsed.Config.Size)
 	}
 }
 

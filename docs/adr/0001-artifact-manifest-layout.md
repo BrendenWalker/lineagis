@@ -42,10 +42,11 @@ Verity **SHALL** publish generic and multi-file releases using the **OCI Artifac
 | Field | Value |
 |-------|-------|
 | Manifest `schemaVersion` | `2` |
-| Manifest `mediaType` | `application/vnd.oci.artifact.manifest.v1+json` |
+| Manifest `mediaType` | `application/vnd.oci.image.manifest.v1+json` (OCI Image Spec v1.1 wire format) |
+| Manifest `artifactType` | `application/vnd.verity.release.v1+json` |
 | Layers | One OCI layer descriptor per file in the publish set |
 | Layer blob digest | SHA-256 of raw file bytes ([NFR-PUB-002](../specs/01-artifact-publishing.md#non-functional-requirements)) |
-| Config blob | **None** (artifact manifests do not require a config descriptor) |
+| Config blob | OCI empty JSON descriptor (`application/vnd.oci.empty.v1+json`, `{}`) — placeholder required by registries such as Zot that follow OCI 1.1; not used for release content |
 | Registry repository | `{namespace}/{artifact}` — namespace path segments preserved (e.g. `gh/acme/widget`) |
 | Tag | Applied to the **manifest** digest via OCI Distribution tag API |
 
@@ -157,7 +158,13 @@ Layers are shown in sorted `dev.verity.path` order: `SHA256SUMS`, then tarball, 
 ```json
 {
   "schemaVersion": 2,
-  "mediaType": "application/vnd.oci.artifact.manifest.v1+json",
+  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+  "artifactType": "application/vnd.verity.release.v1+json",
+  "config": {
+    "mediaType": "application/vnd.oci.empty.v1+json",
+    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "size": 2
+  },
   "annotations": {
     "dev.verity.file.count": "3",
     "dev.verity.publish.root": "dist/"
@@ -253,15 +260,15 @@ Consumers resolving `gh/acme/widget/widget:v1.2.0`:
 | Milestone | Work item | Delivers |
 |-----------|-----------|----------|
 | **M04 — OCI registry** | [#31](https://github.com/BrendenWalker/verity/issues/31) spike | This ADR (approval) |
-| **M04** | [#29](https://github.com/BrendenWalker/verity/issues/29), [#30](https://github.com/BrendenWalker/verity/issues/30) | `internal/registry` blob + manifest push/pull; multi-layer manifest tests per this ADR |
+| **M04** | [#29](https://github.com/BrendenWalker/verity/issues/29), [#30](https://github.com/BrendenWalker/verity/issues/30), [#79](https://github.com/BrendenWalker/verity/issues/79) | `internal/registry` blob + manifest push/pull; dev stack uses Zot for artifact manifest acceptance |
 | **M06 — Publishing** | [#37](https://github.com/BrendenWalker/verity/issues/37) (+ recommended FR-PUB-009 story) | CLI walks `dist/*`, builds manifest per this ADR, registers with API |
 
 ## Compliance checklist
 
 Use when reviewing PRs that touch publishing or registry code:
 
-- [ ] Manifest `mediaType` is `application/vnd.oci.artifact.manifest.v1+json`
-- [ ] No config descriptor in artifact manifests
+- [ ] Manifest `mediaType` is `application/vnd.oci.image.manifest.v1+json` with `artifactType` `application/vnd.verity.release.v1+json`
+- [ ] Config descriptor is the OCI empty JSON blob only (no release content in config)
 - [ ] Each file is exactly one layer; layer blob digest is SHA-256 of raw bytes
 - [ ] Layers sorted by `dev.verity.path` before manifest serialization
 - [ ] Required annotations present on every layer

@@ -347,9 +347,9 @@ func TestAttachSignature_storeAndList(t *testing.T) {
 	}
 
 	attachBody, _ := json.Marshal(map[string]any{
-		"digest": d.Digest,
-		"bundle": map[string]string{"mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json"},
-		"issuer": "https://token.actions.githubusercontent.com",
+		"digest":  d.Digest,
+		"bundle":  map[string]string{"mediaType": "application/vnd.dev.sigstore.bundle.v0.3+json"},
+		"issuer":  "https://token.actions.githubusercontent.com",
 		"subject": "repo:acme/widget:ref:refs/heads/main",
 	})
 	req := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/signatures", bytes.NewReader(attachBody))

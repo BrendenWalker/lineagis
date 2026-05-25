@@ -11,7 +11,7 @@ on:
       - "internal/publish/**"
       - "internal/signing/**"
       - "internal/apiclient/**"
-      
+
 permissions:
   contents: read
   id-token: write
@@ -89,10 +89,16 @@ jobs:
           OWNER_LC="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
           NS="gh/${OWNER_LC}/verity-smoke"
           echo "namespace=${NS}" >> "$GITHUB_ENV"
-          DIGEST="$(./bin/verity publish dist/ \
+          OUTPUT="$(./bin/verity publish dist/ \
             --namespace "${NS}" \
             --artifact smoke \
-            --tag "gha-${{ github.run_id }}")"
+            --tag "0.0.0+gha.${{ github.run_id }}" 2>&1)" || {
+            echo "$OUTPUT"
+            exit 1
+          }
+          echo "$OUTPUT"
+          DIGEST="$(echo "$OUTPUT" | grep -E '^sha256:[a-f0-9]{64}$' | tail -1)"
+          test -n "$DIGEST"
           echo "digest=${DIGEST}" >> "$GITHUB_ENV"
           echo "Published ${DIGEST}"
 

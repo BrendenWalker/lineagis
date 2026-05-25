@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/BrendenWalker/verity/internal/metadata"
@@ -31,7 +30,7 @@ type trustStatusResponse struct {
 	Attestations trustAttestations `json:"attestations"`
 }
 
-func buildTrustStatus(ctx context.Context, store *metadata.Store, ns, artifact string, d *metadata.Digest) (*trustStatusResponse, error) {
+func buildTrustStatus(ctx context.Context, store *metadata.Store, namespaceID int64, ns, artifact string, d *metadata.Digest) (*trustStatusResponse, error) {
 	sigs, err := store.ListSignatures(ctx, d.ID)
 	if err != nil {
 		return nil, err
@@ -41,14 +40,12 @@ func buildTrustStatus(ctx context.Context, store *metadata.Store, ns, artifact s
 		sigStatus = "valid"
 	}
 
-	policyStatus := "none"
-	decision, err := store.LatestPolicyDecision(ctx, d.ID)
-	if err != nil && !errors.Is(err, metadata.ErrNotFound) {
+	evaluator := NewStoreVerifyPolicy(store)
+	result, err := evaluator.Evaluate(ctx, namespaceID, d.ID)
+	if err != nil {
 		return nil, err
 	}
-	if decision != nil {
-		policyStatus = decision.Outcome
-	}
+	policyStatus := result.Outcome
 
 	atts, err := store.ListAttestations(ctx, d.ID)
 	if err != nil {

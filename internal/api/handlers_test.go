@@ -470,3 +470,150 @@ func TestSetTag_invalidSemver(t *testing.T) {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
 	}
 }
+
+func TestVerify_authRequired(t *testing.T) {
+	t.Parallel()
+	h := &api.Handler{
+		Store:  nil,
+		Policy: api.AllowAllPolicy{},
+		Auth: func(next http.Handler) http.Handler {
+			return api.RequireBearer("secret", next)
+		},
+	}
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	body := []byte(`{"digest":"sha256:abc"}`)
+	req := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/verify", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d body = %s", rec.Code, http.StatusUnauthorized, rec.Body.String())
+	}
+	var errBody struct {
+		Code string `json:"code"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if errBody.Code != "AUTH_REQUIRED" {
+		t.Fatalf("code = %q, want AUTH_REQUIRED", errBody.Code)
+	}
+}
+
+func TestVerify_requireSignatures_fail(t *testing.T) {
+	h, store, _ := testHandler(t, "test-token")
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	ctx := context.Background()
+	ns, err := store.CreateNamespace(ctx, "gh/acme/widget", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	art, err := store.RegisterArtifact(ctx, ns.ID, "widget")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := store.RegisterDigest(ctx, art.ID, "sha256:unsigned", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc := []byte(`{"rules":[{"id":"require-signatures"}]}`)
+	if _, err := store.PutPolicy(ctx, ns.ID, doc, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	payload, _ := json.Marshal(map[string]string{"digest": d.Digest})
+	req := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/verify", bytes.NewReader(payload))
+	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	var resp struct {
+		Outcome string `json:"outcome"`
+		Policy  struct {
+			Status  string `json:"status"`
+			Reasons []struct {
+				Rule string `json:"rule"`
+			} `json:"reasons"`
+		} `json:"policy"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Outcome != "fail" || resp.Policy.Status != "fail" {
+		t.Fatalf("got %+v", resp)
+	}
+	if len(resp.Policy.Reasons) == 0 || resp.Policy.Reasons[0].Rule != "require-signatures" {
+		t.Fatalf("reasons = %+v", resp.Policy.Reasons)
+	}
+
+	decision, err := store.LatestPolicyDecision(ctx, d.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if decision.Outcome != "fail" {
+		t.Fatalf("decision outcome = %q, want fail", decision.Outcome)
+	}
+}
+
+func TestVerify_signedPass(t *testing.T) {
+	h, store, _ := testHandler(t, "test-token")
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	ctx := context.Background()
+	ns, err := store.CreateNamespace(ctx, "gh/acme/widget", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	art, err := store.RegisterArtifact(ctx, ns.ID, "widget")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := store.RegisterDigest(ctx, art.ID, "sha256:signed", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc := []byte(`{"rules":[{"id":"require-signatures"}]}`)
+	if _, err := store.PutPolicy(ctx, ns.ID, doc, nil); err != nil {
+		t.Fatal(err)
+	}
+	bundle := json.RawMessage(`{"mediaType":"application/vnd.dev.sigstore.bundle.v0.3+json"}`)
+	if _, err := store.AttachSignature(ctx, d.ID, nil, bundle, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	payload, _ := json.Marshal(map[string]string{"digest": d.Digest})
+	req := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/verify", bytes.NewReader(payload))
+	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	var resp struct {
+		Outcome    string `json:"outcome"`
+		Signatures struct {
+			Status string `json:"status"`
+		} `json:"signatures"`
+		Policy struct {
+			Status string `json:"status"`
+		} `json:"policy"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Outcome != "pass" || resp.Signatures.Status != "valid" || resp.Policy.Status != "pass" {
+		t.Fatalf("got %+v", resp)
+	}
+}

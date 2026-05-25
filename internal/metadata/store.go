@@ -461,6 +461,25 @@ func (s *Store) LatestPolicyDecision(ctx context.Context, digestID int64) (*Poli
 	return &d, nil
 }
 
+// RecordPolicyDecision persists a verify-time policy evaluation outcome.
+func (s *Store) RecordPolicyDecision(ctx context.Context, digestID, policyID int64, outcome string, reasons json.RawMessage) (*PolicyDecision, error) {
+	if reasons == nil {
+		reasons = json.RawMessage(`[]`)
+	}
+	var d PolicyDecision
+	err := s.pool.QueryRow(ctx, `
+		INSERT INTO policy_decisions (digest_id, policy_id, outcome, reasons)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, digest_id, policy_id, outcome, reasons, evaluated_at
+	`, digestID, policyID, outcome, reasons).Scan(
+		&d.ID, &d.DigestID, &d.PolicyID, &d.Outcome, &d.Reasons, &d.EvaluatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("record policy decision: %w", err)
+	}
+	return &d, nil
+}
+
 // GetActivePolicy returns the active policy for a namespace.
 func (s *Store) GetActivePolicy(ctx context.Context, namespaceID int64) (*Policy, error) {
 	var p Policy

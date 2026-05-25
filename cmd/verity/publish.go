@@ -15,8 +15,11 @@ import (
 
 func runPublish(args []string) int {
 	var path, namespace, artifact, tag string
+	skipSign := publish.SkipSignFromEnv()
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
+		case "--skip-sign":
+			skipSign = true
 		case "--namespace":
 			if i+1 >= len(args) {
 				fmt.Fprintf(os.Stderr, "publish: --namespace requires a value\n")
@@ -84,6 +87,7 @@ func runPublish(args []string) int {
 		Artifact:  artifact,
 		Tag:       tag,
 		Path:      path,
+		SkipSign:  skipSign,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "publish: %v\n", err)
@@ -95,5 +99,7 @@ func runPublish(args []string) int {
 }
 
 func printPublishUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: verity publish <path> --namespace <ns> --artifact <name> [--tag <tag>]\n")
+	fmt.Fprintf(os.Stderr, "Usage: verity publish <path> --namespace <ns> --artifact <name> [--tag <tag>] [--skip-sign]\n")
+	fmt.Fprintf(os.Stderr, "\nSigning uses Sigstore keyless (Fulcio/Rekor) by default. Local dev without Fulcio: --skip-sign or VERITY_SKIP_SIGN=1.\n")
+	fmt.Fprintf(os.Stderr, "CI keyless: SIGSTORE_ID_TOKEN, or GitHub Actions ambient OIDC (id-token: write).\n")
 }

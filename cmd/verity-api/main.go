@@ -10,8 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/BrendenWalker/verity/internal/api"
 	"github.com/BrendenWalker/verity/internal/config"
 	"github.com/BrendenWalker/verity/internal/db"
+	"github.com/BrendenWalker/verity/internal/metadata"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -113,6 +115,16 @@ func (s *server) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", s.healthHandler)
 	mux.HandleFunc("/readyz", s.readyHandler)
+
+	store := metadata.NewStore(s.pool)
+	apiHandler := &api.Handler{
+		Store:  store,
+		Policy: api.AllowAllPolicy{},
+		Auth: func(next http.Handler) http.Handler {
+			return api.RequireBearer(s.cfg.DevToken, next)
+		},
+	}
+	apiHandler.RegisterRoutes(mux)
 	return mux
 }
 

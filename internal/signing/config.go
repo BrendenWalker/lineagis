@@ -13,16 +13,16 @@ import (
 // (cosignoptions.DefaultFulcioURL / DefaultRekorURL). Unset trust file fields use
 // cosign TUF / SIGSTORE_* when those are set in the environment.
 type Config struct {
-	FulcioURL        string
-	RekorURL         string
-	IDToken          string
-	TrustedRootPath  string
-	CARoots          string
-	CAIntermediates  string
-	RootCAFile       string
-	RekorPublicKey   string
-	CTLogPublicKey   string
-	Timeout          time.Duration
+	FulcioURL       string
+	RekorURL        string
+	IDToken         string
+	TrustedRootPath string
+	CARoots         string
+	CAIntermediates string
+	RootCAFile      string
+	RekorPublicKey  string
+	CTLogPublicKey  string
+	Timeout         time.Duration
 }
 
 // LoadConfig reads signing configuration from the environment.
@@ -32,13 +32,15 @@ type Config struct {
 // CI / keyless: VERITY_SIGSTORE_ID_TOKEN or SIGSTORE_ID_TOKEN, or GitHub Actions ambient OIDC.
 //
 // Endpoints (default public-good when unset):
-//   VERITY_SIGSTORE_FULCIO_URL, VERITY_SIGSTORE_REKOR_URL
+//
+//	VERITY_SIGSTORE_FULCIO_URL, VERITY_SIGSTORE_REKOR_URL
 //
 // Trust material for verification (optional; see docs/signing-local.md):
-//   VERITY_SIGSTORE_TRUSTED_ROOT — Sigstore trusted root JSON (v0.3 bundles)
-//   VERITY_SIGSTORE_CA_ROOTS, VERITY_SIGSTORE_CA_INTERMEDIATES — PEM paths (legacy bundles)
-//   VERITY_SIGSTORE_ROOT_FILE, VERITY_SIGSTORE_REKOR_PUBLIC_KEY, VERITY_SIGSTORE_CT_LOG_PUBLIC_KEY_FILE
-//   (each falls back to the matching SIGSTORE_* variable)
+//
+//	VERITY_SIGSTORE_TRUSTED_ROOT — Sigstore trusted root JSON (v0.3 bundles)
+//	VERITY_SIGSTORE_CA_ROOTS, VERITY_SIGSTORE_CA_INTERMEDIATES — PEM paths (legacy bundles)
+//	VERITY_SIGSTORE_ROOT_FILE, VERITY_SIGSTORE_REKOR_PUBLIC_KEY, VERITY_SIGSTORE_CT_LOG_PUBLIC_KEY_FILE
+//	(each falls back to the matching SIGSTORE_* variable)
 func LoadConfig() Config {
 	cfg := Config{
 		FulcioURL:       envFirst("VERITY_SIGSTORE_FULCIO_URL", "SIGSTORE_FULCIO_URL"),

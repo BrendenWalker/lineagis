@@ -49,10 +49,17 @@ func New(registryURL string, opts ...Option) (*Client, error) {
 	u.RawQuery = ""
 	u.Fragment = ""
 
+	transport := http.DefaultTransport
+	if t, ok := http.DefaultTransport.(*http.Transport); ok {
+		// Avoid cross-test interference via shared default transport state.
+		transport = t.Clone()
+	}
+
 	cl := &Client{
 		baseURL: u.String(),
 		httpClient: &http.Client{
-			Timeout: 5 * time.Minute,
+			Timeout:   5 * time.Minute,
+			Transport: transport,
 		},
 	}
 	for _, opt := range opts {

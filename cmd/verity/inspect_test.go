@@ -24,14 +24,24 @@ func TestRunInspect_printsMustLines(t *testing.T) {
 	t.Setenv("VERITY_API_URL", srv.URL)
 
 	old := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
 	os.Stdout = w
 	code := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app"})
-	w.Close()
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
 	os.Stdout = old
 
 	var out bytes.Buffer
-	_, _ = io.Copy(&out, r)
+	if _, err := io.Copy(&out, r); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Close(); err != nil {
+		t.Fatal(err)
+	}
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0", code)
 	}

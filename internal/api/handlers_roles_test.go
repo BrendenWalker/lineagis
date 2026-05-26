@@ -111,7 +111,8 @@ func TestGetPolicy_returnsActiveVersion(t *testing.T) {
 	h.RegisterRoutes(mux)
 
 	ctx := context.Background()
-	_, err := store.CreateNamespace(ctx, "gh/acme/widget", nil)
+	cfg := json.RawMessage(`{"operators":["alice"]}`)
+	_, err := store.CreateNamespace(ctx, "gh/acme/widget", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}

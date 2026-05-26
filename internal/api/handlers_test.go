@@ -241,12 +241,22 @@ func TestSetTag_requireSignatures_policyFailed(t *testing.T) {
 	var body struct {
 		Code    string `json:"code"`
 		Message string `json:"message"`
+		Details struct {
+			Rule string `json:"rule"`
+			Hint string `json:"hint"`
+		} `json:"details"`
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatalf("decode error: %v", err)
 	}
 	if body.Code != "POLICY_FAILED" {
 		t.Fatalf("code = %q, want POLICY_FAILED", body.Code)
+	}
+	if body.Details.Rule != "require-signatures" {
+		t.Fatalf("details.rule = %q, want require-signatures", body.Details.Rule)
+	}
+	if body.Details.Hint == "" || !strings.Contains(body.Details.Hint, "signature") {
+		t.Fatalf("details.hint = %q, want remediation hint", body.Details.Hint)
 	}
 	if !strings.Contains(body.Message, "require-signatures") {
 		t.Fatalf("message = %q, want require-signatures hint", body.Message)

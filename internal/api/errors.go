@@ -15,6 +15,19 @@ type ErrorBody struct {
 	Details map[string]any `json:"details,omitempty"`
 }
 
+// writePolicyFailed writes POLICY_FAILED with rule id and remediation hint (FR-POL-009).
+func writePolicyFailed(w http.ResponseWriter, err error) {
+	var pf PolicyFailure
+	if errors.As(err, &pf) {
+		WriteError(w, http.StatusForbidden, "POLICY_FAILED", pf.Error(), map[string]any{
+			"rule": pf.Rule,
+			"hint": pf.Hint,
+		})
+		return
+	}
+	WriteError(w, http.StatusForbidden, "POLICY_FAILED", err.Error(), nil)
+}
+
 // WriteError writes a JSON error response.
 func WriteError(w http.ResponseWriter, status int, code, message string, details map[string]any) {
 	w.Header().Set("Content-Type", "application/json")

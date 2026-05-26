@@ -35,17 +35,15 @@ func NewStorePushPolicy(store *metadata.Store) StorePushPolicy {
 }
 
 func (p StorePushPolicy) AllowSetTag(ctx context.Context, namespaceID, _, digestID int64) error {
-	policy, err := p.Store.GetActivePolicy(ctx, namespaceID)
-	if errors.Is(err, metadata.ErrNotFound) {
-		return nil
-	}
+	result, err := evaluateActivePolicy(ctx, p.Store, namespaceID, digestID, EvalPhasePush)
 	if err != nil {
-		return fmt.Errorf("load active policy: %w", err)
+		return err
 	}
-	if !policyRequiresSignatures(policy.Document) {
+	if result.Outcome != "fail" || len(result.Reasons) == 0 {
 		return nil
 	}
-	return checkRequireSignatures(ctx, p.Store, digestID, "tagging")
+	r := result.Reasons[0]
+	return PolicyFailure{Rule: r.Rule, Hint: r.Message}
 }
 
 // VerifyPolicy evaluates verify-time rules for a digest (FR-POL-004).
@@ -77,35 +75,14 @@ func NewStoreVerifyPolicy(store *metadata.Store) StoreVerifyPolicy {
 }
 
 func (p StoreVerifyPolicy) Evaluate(ctx context.Context, namespaceID, digestID int64) (*VerifyResult, error) {
-	policy, err := p.Store.GetActivePolicy(ctx, namespaceID)
-	if errors.Is(err, metadata.ErrNotFound) {
-		return &VerifyResult{Outcome: "none"}, nil
-	}
+	result, err := evaluateActivePolicy(ctx, p.Store, namespaceID, digestID, EvalPhaseVerify)
 	if err != nil {
-		return nil, fmt.Errorf("load active policy: %w", err)
+		return nil, err
 	}
-
-	var reasons []PolicyReason
-	if policyRequiresSignatures(policy.Document) {
-		if err := checkRequireSignatures(ctx, p.Store, digestID, "verify"); err != nil {
-			var pf PolicyFailure
-			if errors.As(err, &pf) {
-				reasons = append(reasons, PolicyReason{Rule: pf.Rule, Message: pf.Hint})
-			} else {
-				return nil, err
-			}
-		}
-	}
-
-	outcome := "pass"
-	if len(reasons) > 0 {
-		outcome = "fail"
-	}
-	policyID := policy.ID
 	return &VerifyResult{
-		Outcome:  outcome,
-		Reasons:  reasons,
-		PolicyID: &policyID,
+		Outcome:  result.Outcome,
+		Reasons:  result.Reasons,
+		PolicyID: result.PolicyID,
 	}, nil
 }
 

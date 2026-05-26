@@ -689,3 +689,152 @@ func TestGetTrustStatus_requireSignatures_fail(t *testing.T) {
 		t.Fatalf("got %+v", resp)
 	}
 }
+
+func TestEvaluatePolicy_deterministic(t *testing.T) {
+	h, store, _ := testHandler(t, "test-token")
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	ctx := context.Background()
+	ns, err := store.CreateNamespace(ctx, "gh/acme/widget", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	art, err := store.RegisterArtifact(ctx, ns.ID, "widget")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := store.RegisterDigest(ctx, art.ID, "sha256:unsigned", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc := []byte(`{"rules":[{"id":"require-signatures"}]}`)
+	if _, err := store.PutPolicy(ctx, ns.ID, doc, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	evaluate := func(phase string) []byte {
+		t.Helper()
+		payload, _ := json.Marshal(map[string]string{"digest": d.Digest, "phase": phase})
+		req := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/policy/evaluate", bytes.NewReader(payload))
+		req.Header.Set("Authorization", "Bearer test-token")
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("phase %s: status = %d body = %s", phase, rec.Code, rec.Body.String())
+		}
+		return rec.Body.Bytes()
+	}
+
+	first := evaluate("verify")
+	second := evaluate("verify")
+	if string(first) != string(second) {
+		t.Fatalf("verify evaluations differ:\nfirst=%s\nsecond=%s", first, second)
+	}
+
+	var resp struct {
+		Outcome       string `json:"outcome"`
+		PolicyVersion int    `json:"policy_version"`
+		Reasons       []struct {
+			Rule    string `json:"rule"`
+			Message string `json:"message"`
+		} `json:"reasons"`
+	}
+	if err := json.Unmarshal(first, &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Outcome != "fail" || resp.PolicyVersion != 1 {
+		t.Fatalf("got %+v", resp)
+	}
+	if len(resp.Reasons) != 1 || resp.Reasons[0].Rule != "require-signatures" {
+		t.Fatalf("reasons = %+v", resp.Reasons)
+	}
+
+	pushBody := evaluate("push")
+	if err := json.Unmarshal(pushBody, &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Outcome != "fail" {
+		t.Fatalf("push phase: got %+v", resp)
+	}
+}
+
+func TestEvaluatePolicy_pushMatchesSetTag(t *testing.T) {
+	h, store, _ := testHandler(t, "test-token")
+	h.Policy = api.NewStorePushPolicy(store)
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	ctx := context.Background()
+	ns, err := store.CreateNamespace(ctx, "gh/acme/widget", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	art, err := store.RegisterArtifact(ctx, ns.ID, "widget")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := store.RegisterDigest(ctx, art.ID, "sha256:unsigned", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc := []byte(`{"rules":[{"id":"require-signatures"}]}`)
+	if _, err := store.PutPolicy(ctx, ns.ID, doc, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	evalPayload, _ := json.Marshal(map[string]string{"digest": d.Digest, "phase": "push"})
+	evalReq := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/policy/evaluate", bytes.NewReader(evalPayload))
+	evalReq.Header.Set("Authorization", "Bearer test-token")
+	evalReq.Header.Set("Content-Type", "application/json")
+	evalRec := httptest.NewRecorder()
+	mux.ServeHTTP(evalRec, evalReq)
+	if evalRec.Code != http.StatusOK {
+		t.Fatalf("evaluate: status = %d body = %s", evalRec.Code, evalRec.Body.String())
+	}
+	var evalResp struct {
+		Outcome string `json:"outcome"`
+	}
+	if err := json.Unmarshal(evalRec.Body.Bytes(), &evalResp); err != nil {
+		t.Fatal(err)
+	}
+	if evalResp.Outcome != "fail" {
+		t.Fatalf("evaluate outcome = %q, want fail", evalResp.Outcome)
+	}
+
+	tagPayload, _ := json.Marshal(map[string]string{"digest": d.Digest})
+	tagReq := httptest.NewRequest(http.MethodPut, "/v1/namespaces/gh/acme/widget/artifacts/widget/tags/v1.0.0", bytes.NewReader(tagPayload))
+	tagReq.Header.Set("Authorization", "Bearer test-token")
+	tagReq.Header.Set("Content-Type", "application/json")
+	tagRec := httptest.NewRecorder()
+	mux.ServeHTTP(tagRec, tagReq)
+	if tagRec.Code != http.StatusForbidden {
+		t.Fatalf("set tag: status = %d body = %s", tagRec.Code, tagRec.Body.String())
+	}
+	var errBody struct {
+		Code string `json:"code"`
+	}
+	if err := json.Unmarshal(tagRec.Body.Bytes(), &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if errBody.Code != "POLICY_FAILED" {
+		t.Fatalf("code = %q, want POLICY_FAILED", errBody.Code)
+	}
+}
+
+func TestEvaluatePolicy_validation(t *testing.T) {
+	h, _, _ := testHandler(t, "test-token")
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	payload, _ := json.Marshal(map[string]string{"digest": "sha256:abc", "phase": "push"})
+	req := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/policy/evaluate", bytes.NewReader(payload))
+	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
+	}
+}

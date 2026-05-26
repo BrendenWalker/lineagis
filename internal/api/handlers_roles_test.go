@@ -71,6 +71,30 @@ func TestPutPolicy_operatorAllowed(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
 	}
+
+	// AC-POL-005: policy update is audit-logged with operator and version.
+	events, err := store.ListAuditEvents(ctx, ns.ID, 10)
+	if err != nil {
+		t.Fatalf("list audit events: %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("expected 1 audit event, got %d", len(events))
+	}
+	if events[0].EventType != "policy.updated" {
+		t.Fatalf("event type = %q", events[0].EventType)
+	}
+	if events[0].Actor == nil || *events[0].Actor != "alice" {
+		t.Fatalf("actor = %v, want alice", events[0].Actor)
+	}
+	var auditPayload struct {
+		Version int `json:"version"`
+	}
+	if err := json.Unmarshal(events[0].Payload, &auditPayload); err != nil {
+		t.Fatal(err)
+	}
+	if auditPayload.Version != 1 {
+		t.Fatalf("audit version = %d, want 1", auditPayload.Version)
+	}
 }
 
 func TestPutPolicy_invalidDocumentSchema(t *testing.T) {

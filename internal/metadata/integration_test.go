@@ -257,4 +257,17 @@ func TestPutPolicy_auditLogged(t *testing.T) {
 	if events[0].Actor == nil || *events[0].Actor != actor {
 		t.Fatalf("unexpected actor: %v", events[0].Actor)
 	}
+	if events[0].CreatedAt.IsZero() {
+		t.Fatal("expected audit event timestamp")
+	}
+	var payload struct {
+		PolicyID int64 `json:"policy_id"`
+		Version  int   `json:"version"`
+	}
+	if err := json.Unmarshal(events[0].Payload, &payload); err != nil {
+		t.Fatalf("decode payload: %v", err)
+	}
+	if payload.PolicyID != p.ID || payload.Version != p.Version {
+		t.Fatalf("payload = %+v, want policy_id=%d version=%d", payload, p.ID, p.Version)
+	}
 }

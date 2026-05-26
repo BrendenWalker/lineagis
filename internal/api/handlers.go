@@ -177,7 +177,7 @@ func (h *Handler) putSetTag(w http.ResponseWriter, r *http.Request, ns, artifact
 		h.Policy = AllowAllPolicy{}
 	}
 	if err := h.Policy.AllowSetTag(ctx, namespace.ID, art.ID, d.ID); err != nil {
-		WriteError(w, http.StatusForbidden, "POLICY_FAILED", err.Error(), nil)
+		writePolicyFailed(w, err)
 		return
 	}
 

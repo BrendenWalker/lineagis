@@ -8,9 +8,11 @@ on:
     paths:
       - ".github/workflows/publish-keyless-smoke.yml"
       - "cmd/verity/**"
+      - "internal/inspect/**"
       - "internal/publish/**"
       - "internal/signing/**"
       - "internal/apiclient/**"
+      - "docs/schemas/inspect-report.v1.json"
 
 permissions:
   contents: read
@@ -116,3 +118,23 @@ jobs:
             | tee trust.json
           jq -e '.signatures.status == "valid"' trust.json
           jq -e '.overall == "pass"' trust.json
+
+      - name: Inspect signed artifact (JSON, AC-DX-005)
+        run: |
+          ./bin/verity inspect dist/ \
+            --namespace "${namespace}" \
+            --artifact smoke \
+            --output json > inspect-dist.json
+          jq -e '.version == 1 and .overall == "pass"' inspect-dist.json
+          jq -e '.checks[0].status == "pass"' inspect-dist.json
+          jq -e '.checks[0].requirement_id == "FR-SIGN-005"' inspect-dist.json
+          jq -e '.checks[0].message | contains("Signed by GitHub Actions")' inspect-dist.json
+
+      - name: Inspect signed artifact by digest (exit 0, AC-DX-003)
+        run: |
+          ./bin/verity inspect "${digest}" \
+            --namespace "${namespace}" \
+            --artifact smoke \
+            --output json > inspect-digest.json
+          jq -e --arg digest "${digest}" \
+            '.version == 1 and .overall == "pass" and .digest == $digest' inspect-digest.json

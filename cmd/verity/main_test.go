@@ -22,3 +22,10 @@ func TestRunNoArgs(t *testing.T) {
 		t.Fatalf("run() = %d, want 1", got)
 	}
 }
+
+func TestRunInspectMissingFlags(t *testing.T) {
+	t.Parallel()
+	if got := run([]string{"inspect", "sha256:abc"}); got != 1 {
+		t.Fatalf("run(inspect) = %d, want 1", got)
+	}
+}

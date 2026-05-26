@@ -18,11 +18,17 @@ type Options struct {
 	Ref       string
 }
 
+// ChecklistLine is one human-readable inspect row (AC-DX-002).
+type ChecklistLine struct {
+	Text string
+	Must bool
+	Pass bool
+}
+
 // Result is the trust checklist outcome for printing and exit codes.
 type Result struct {
-	Trust         *apiclient.TrustStatus
-	SignatureLine string
-	SignatureOK   bool
+	Trust     *apiclient.TrustStatus
+	MustLines []ChecklistLine
 }
 
 // Run resolves ref, fetches API trust status (server-side signature verify), and formats output.
@@ -47,12 +53,26 @@ func Run(ctx context.Context, api *apiclient.Client, opts Options) (*Result, err
 		return nil, err
 	}
 
-	line, ok := signatureLine(trust.Signatures.Status)
 	return &Result{
-		Trust:         trust,
-		SignatureLine: line,
-		SignatureOK:   ok,
+		Trust:     trust,
+		MustLines: MustChecklist(trust),
 	}, nil
+}
+
+// MustFailed reports whether any Must checklist line failed (FR-DX-005).
+func MustFailed(lines []ChecklistLine) bool {
+	for _, l := range lines {
+		if l.Must && !l.Pass {
+			return true
+		}
+	}
+	return false
+}
+
+// MustChecklist builds MVP Must output lines from API trust status (AC-DX-002).
+func MustChecklist(trust *apiclient.TrustStatus) []ChecklistLine {
+	text, pass := signatureLine(trust.Signatures.Status)
+	return []ChecklistLine{{Text: text, Must: true, Pass: pass}}
 }
 
 func resolveRef(ref string) (digest, tag string, err error) {

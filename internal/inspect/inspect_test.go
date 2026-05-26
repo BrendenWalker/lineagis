@@ -39,8 +39,11 @@ func TestRun_digestValid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.SignatureOK || result.SignatureLine != "✓ Signed by GitHub Actions" {
-		t.Fatalf("got line=%q ok=%v", result.SignatureLine, result.SignatureOK)
+	if len(result.MustLines) != 1 || result.MustLines[0].Text != "✓ Signed by GitHub Actions" || !result.MustLines[0].Pass {
+		t.Fatalf("got %+v", result.MustLines)
+	}
+	if inspect.MustFailed(result.MustLines) {
+		t.Fatal("expected pass")
 	}
 }
 
@@ -61,8 +64,11 @@ func TestRun_digestInvalid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.SignatureOK || result.SignatureLine != "✗ Signature invalid" {
-		t.Fatalf("got line=%q ok=%v", result.SignatureLine, result.SignatureOK)
+	if len(result.MustLines) != 1 || result.MustLines[0].Pass || result.MustLines[0].Text != "✗ Signature invalid" {
+		t.Fatalf("got %+v", result.MustLines)
+	}
+	if !inspect.MustFailed(result.MustLines) {
+		t.Fatal("expected Must failure")
 	}
 }
 
@@ -87,8 +93,11 @@ func TestRun_tagMissing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.SignatureOK || result.SignatureLine != "✗ Signature missing" {
-		t.Fatalf("got line=%q ok=%v", result.SignatureLine, result.SignatureOK)
+	if len(result.MustLines) != 1 || result.MustLines[0].Pass || result.MustLines[0].Text != "✗ Signature missing" {
+		t.Fatalf("got %+v", result.MustLines)
+	}
+	if !inspect.MustFailed(result.MustLines) {
+		t.Fatal("expected Must failure")
 	}
 }
 
@@ -119,7 +128,33 @@ func TestRun_localPath(t *testing.T) {
 	if gotDigest == "" || !strings.HasPrefix(gotDigest, "sha256:") {
 		t.Fatalf("digest = %q", gotDigest)
 	}
-	if !result.SignatureOK {
-		t.Fatalf("line=%q", result.SignatureLine)
+	if inspect.MustFailed(result.MustLines) {
+		t.Fatalf("lines=%+v", result.MustLines)
+	}
+}
+
+func TestMustChecklist_signatureStates(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		status string
+		text   string
+		pass   bool
+	}{
+		{"valid", "✓ Signed by GitHub Actions", true},
+		{"missing", "✗ Signature missing", false},
+		{"invalid", "✗ Signature invalid", false},
+		{"weird", "✗ Signature status unknown (weird)", false},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.status, func(t *testing.T) {
+			t.Parallel()
+			trust := &apiclient.TrustStatus{}
+			trust.Signatures.Status = tc.status
+			lines := inspect.MustChecklist(trust)
+			if len(lines) != 1 || lines[0].Text != tc.text || lines[0].Pass != tc.pass || !lines[0].Must {
+				t.Fatalf("got %+v", lines)
+			}
+		})
 	}
 }

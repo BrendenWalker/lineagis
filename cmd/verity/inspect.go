@@ -75,8 +75,10 @@ func runInspect(args []string) int {
 		return 1
 	}
 
-	fmt.Println(result.SignatureLine)
-	if !result.SignatureOK {
+	for _, line := range result.MustLines {
+		fmt.Println(line.Text)
+	}
+	if inspect.MustFailed(result.MustLines) {
 		return 1
 	}
 	return 0

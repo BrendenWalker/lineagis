@@ -1,0 +1,89 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/BrendenWalker/verity/internal/apiclient"
+	"github.com/BrendenWalker/verity/internal/cliconfig"
+	"github.com/BrendenWalker/verity/internal/inspect"
+)
+
+func runInspect(args []string) int {
+	var namespace, artifact, ref string
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--namespace":
+			if i+1 >= len(args) {
+				fmt.Fprintf(os.Stderr, "inspect: --namespace requires a value\n")
+				return 1
+			}
+			i++
+			namespace = args[i]
+		case "--artifact":
+			if i+1 >= len(args) {
+				fmt.Fprintf(os.Stderr, "inspect: --artifact requires a value\n")
+				return 1
+			}
+			i++
+			artifact = args[i]
+		case "-h", "--help":
+			printInspectUsage()
+			return 0
+		default:
+			if strings.HasPrefix(args[i], "-") {
+				fmt.Fprintf(os.Stderr, "inspect: unknown flag %q\n", args[i])
+				return 1
+			}
+			if ref != "" {
+				fmt.Fprintf(os.Stderr, "inspect: unexpected argument %q\n", args[i])
+				return 1
+			}
+			ref = args[i]
+		}
+	}
+
+	if ref == "" {
+		printInspectUsage()
+		return 1
+	}
+	if namespace == "" || artifact == "" {
+		fmt.Fprintf(os.Stderr, "inspect: --namespace and --artifact are required\n")
+		return 1
+	}
+
+	cfg, err := cliconfig.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "inspect: %v\n", err)
+		return 1
+	}
+
+	api := apiclient.New(cfg.APIURL, cfg.Token)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	result, err := inspect.Run(ctx, api, inspect.Options{
+		Namespace: namespace,
+		Artifact:  artifact,
+		Ref:       ref,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "inspect: %v\n", err)
+		return 1
+	}
+
+	fmt.Println(result.SignatureLine)
+	if !result.SignatureOK {
+		return 1
+	}
+	return 0
+}
+
+func printInspectUsage() {
+	fmt.Fprintf(os.Stderr, "Usage: verity inspect <ref> --namespace <ns> --artifact <name>\n")
+	fmt.Fprintf(os.Stderr, "\n<ref> is a local file or directory, sha256:… digest, or semver tag.\n")
+	fmt.Fprintf(os.Stderr, "Trust checks use the Verity API (signature verification is server-side).\n")
+}

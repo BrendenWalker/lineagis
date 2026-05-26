@@ -18,6 +18,8 @@ import (
 	"github.com/BrendenWalker/verity/internal/api"
 	"github.com/BrendenWalker/verity/internal/db"
 	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/verity/internal/signing"
 )
 
 var (
@@ -566,6 +568,19 @@ func TestVerify_requireSignatures_fail(t *testing.T) {
 
 func TestVerify_signedPass(t *testing.T) {
 	h, store, _ := testHandler(t, "test-token")
+	manifestJSON, digest, err := registry.BuildArtifactManifest(
+		[]registry.FileLayer{{Path: "bin/app", Data: []byte("signed-payload")}},
+		registry.ManifestOptions{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bundle, _, err := signing.SignManifestForTest(manifestJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.Manifests = api.NewStaticManifestSource(map[string][]byte{digest.String(): manifestJSON})
+
 	mux := http.NewServeMux()
 	h.RegisterRoutes(mux)
 
@@ -578,7 +593,7 @@ func TestVerify_signedPass(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d, err := store.RegisterDigest(ctx, art.ID, "sha256:signed", nil, nil)
+	d, err := store.RegisterDigest(ctx, art.ID, digest.String(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -586,7 +601,6 @@ func TestVerify_signedPass(t *testing.T) {
 	if _, err := store.PutPolicy(ctx, ns.ID, doc, nil); err != nil {
 		t.Fatal(err)
 	}
-	bundle := json.RawMessage(`{"mediaType":"application/vnd.dev.sigstore.bundle.v0.3+json"}`)
 	if _, err := store.AttachSignature(ctx, d.ID, nil, bundle, nil, nil); err != nil {
 		t.Fatal(err)
 	}

@@ -107,9 +107,9 @@ func (h *Handler) runVerify(ctx context.Context, namespaceID int64, ns, artifact
 	if err != nil {
 		return nil, err
 	}
-	sigStatus := "missing"
-	if len(sigs) > 0 {
-		sigStatus = "valid"
+	sigStatus, err := h.evaluateSignatures(ctx, ns, artifact, d, sigs)
+	if err != nil {
+		return nil, err
 	}
 
 	result, err := h.verifyPolicy().Evaluate(ctx, namespaceID, d.ID)

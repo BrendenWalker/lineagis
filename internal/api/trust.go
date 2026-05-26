@@ -30,24 +30,24 @@ type trustStatusResponse struct {
 	Attestations trustAttestations `json:"attestations"`
 }
 
-func buildTrustStatus(ctx context.Context, store *metadata.Store, namespaceID int64, ns, artifact string, d *metadata.Digest) (*trustStatusResponse, error) {
-	sigs, err := store.ListSignatures(ctx, d.ID)
+func (h *Handler) buildTrustStatus(ctx context.Context, namespaceID int64, ns, artifact string, d *metadata.Digest) (*trustStatusResponse, error) {
+	sigs, err := h.Store.ListSignatures(ctx, d.ID)
 	if err != nil {
 		return nil, err
 	}
-	sigStatus := "missing"
-	if len(sigs) > 0 {
-		sigStatus = "valid"
+	sigStatus, err := h.evaluateSignatures(ctx, ns, artifact, d, sigs)
+	if err != nil {
+		return nil, err
 	}
 
-	evaluator := NewStoreVerifyPolicy(store)
+	evaluator := h.verifyPolicy()
 	result, err := evaluator.Evaluate(ctx, namespaceID, d.ID)
 	if err != nil {
 		return nil, err
 	}
 	policyStatus := result.Outcome
 
-	atts, err := store.ListAttestations(ctx, d.ID)
+	atts, err := h.Store.ListAttestations(ctx, d.ID)
 	if err != nil {
 		return nil, err
 	}

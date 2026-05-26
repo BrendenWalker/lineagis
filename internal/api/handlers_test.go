@@ -631,3 +631,51 @@ func TestVerify_signedPass(t *testing.T) {
 		t.Fatalf("got %+v", resp)
 	}
 }
+
+func TestGetTrustStatus_requireSignatures_fail(t *testing.T) {
+	h, store, _ := testHandler(t, "test-token")
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	ctx := context.Background()
+	ns, err := store.CreateNamespace(ctx, "gh/acme/widget", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	art, err := store.RegisterArtifact(ctx, ns.ID, "widget")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := store.RegisterDigest(ctx, art.ID, "sha256:unsigned", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc := []byte(`{"rules":[{"id":"require-signatures"}]}`)
+	if _, err := store.PutPolicy(ctx, ns.ID, doc, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/namespaces/gh/acme/widget/artifacts/widget/trust?digest="+d.Digest, nil)
+	req.Header.Set("Authorization", "Bearer test-token")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	var resp struct {
+		Overall    string `json:"overall"`
+		Signatures struct {
+			Status string `json:"status"`
+		} `json:"signatures"`
+		Policy struct {
+			Status string `json:"status"`
+		} `json:"policy"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Overall != "fail" || resp.Signatures.Status != "missing" || resp.Policy.Status != "fail" {
+		t.Fatalf("got %+v", resp)
+	}
+}

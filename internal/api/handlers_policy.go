@@ -33,6 +33,10 @@ func (h *Handler) putPolicy(w http.ResponseWriter, r *http.Request, ns string) {
 		WriteError(w, http.StatusBadRequest, "VALIDATION_FAILED", "policy document is required", nil)
 		return
 	}
+	if err := validatePolicyDocument(req.Document); err != nil {
+		WriteError(w, http.StatusBadRequest, "VALIDATION_FAILED", err.Error(), nil)
+		return
+	}
 
 	ctx := r.Context()
 	namespace, err := h.Store.GetNamespaceByName(ctx, ns)
@@ -49,6 +53,37 @@ func (h *Handler) putPolicy(w http.ResponseWriter, r *http.Request, ns string) {
 	actor, _ := auth.ActorFromContext(ctx)
 	actorStr := actor.Subject
 	p, err := h.Store.PutPolicy(ctx, namespace.ID, req.Document, &actorStr)
+	if err != nil {
+		if mapStoreError(w, err) {
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(policyResponse{
+		Namespace: namespace.Name,
+		Version:   p.Version,
+		Document:  p.Document,
+		IsActive:  p.IsActive,
+	})
+}
+
+func (h *Handler) getPolicy(w http.ResponseWriter, r *http.Request, ns string) {
+	if ns == "" {
+		WriteError(w, http.StatusBadRequest, "VALIDATION_FAILED", "namespace is required", nil)
+		return
+	}
+
+	ctx := r.Context()
+	namespace, err := h.Store.GetNamespaceByName(ctx, ns)
+	if err != nil {
+		if mapStoreError(w, err) {
+			return
+		}
+	}
+
+	p, err := h.Store.GetActivePolicy(ctx, namespace.ID)
 	if err != nil {
 		if mapStoreError(w, err) {
 			return

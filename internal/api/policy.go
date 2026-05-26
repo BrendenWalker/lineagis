@@ -1,10 +1,12 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/BrendenWalker/verity/internal/metadata"
@@ -138,6 +140,28 @@ type policyDocument struct {
 type policyRule struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
+}
+
+func validatePolicyDocument(document json.RawMessage) error {
+	decoder := json.NewDecoder(bytes.NewReader(document))
+	decoder.DisallowUnknownFields()
+
+	var doc policyDocument
+	if err := decoder.Decode(&doc); err != nil {
+		return fmt.Errorf("policy document must be an object with optional rules array: %w", err)
+	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		return errors.New("policy document must contain a single JSON value")
+	}
+
+	for i, rule := range doc.Rules {
+		id := strings.TrimSpace(rule.ID)
+		typ := strings.TrimSpace(rule.Type)
+		if id == "" && typ == "" {
+			return fmt.Errorf("rules[%d] must include id or type", i)
+		}
+	}
+	return nil
 }
 
 func policyRequiresSignatures(document json.RawMessage) bool {

@@ -24,6 +24,10 @@ func (h *Handler) routeV1(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ns, ok := parseNamespacePolicyPath(rest); ok {
+		if r.Method == http.MethodGet {
+			h.getPolicy(w, r, ns)
+			return
+		}
 		if r.Method == http.MethodPut {
 			h.putPolicy(w, r, ns)
 			return

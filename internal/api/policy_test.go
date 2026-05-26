@@ -38,3 +38,31 @@ func TestPolicyFailure_message(t *testing.T) {
 		t.Fatalf("Error() = %q", e.Error())
 	}
 }
+
+func TestValidatePolicyDocument(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		doc     string
+		wantErr bool
+	}{
+		{name: "empty object", doc: `{}`, wantErr: false},
+		{name: "empty rules", doc: `{"rules":[]}`, wantErr: false},
+		{name: "valid rule by id", doc: `{"rules":[{"id":"require-signatures"}]}`, wantErr: false},
+		{name: "valid rule by type", doc: `{"rules":[{"type":"trusted-publishers"}]}`, wantErr: false},
+		{name: "invalid root type", doc: `[]`, wantErr: true},
+		{name: "unknown root field", doc: `{"foo":"bar"}`, wantErr: true},
+		{name: "rule missing id and type", doc: `{"rules":[{}]}`, wantErr: true},
+		{name: "unknown rule field", doc: `{"rules":[{"id":"x","mode":"strict"}]}`, wantErr: true},
+		{name: "multiple json values", doc: `{} {}`, wantErr: true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			err := validatePolicyDocument(json.RawMessage(tc.doc))
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("err = %v, wantErr = %v", err, tc.wantErr)
+			}
+		})
+	}
+}

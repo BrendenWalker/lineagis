@@ -61,8 +61,17 @@ func VerifyManifestBundle(ctx context.Context, cfg Config, manifestJSON, bundleJ
 		ko.KeyRef = pubPath
 	}
 
+	certOpts := cosignoptions.CertVerifyOptions{}
+	// Keyless v0.3 bundles require identity/issuer matchers in sigstore-go; use permissive
+	// patterns for trust-status crypto checks (FR-SIGN-006). Pinning is policy/FR-SIGN-008.
+	if newBundle && len(opts.PublicKeyPEM) == 0 {
+		certOpts.CertIdentityRegexp = ".*"
+		certOpts.CertOidcIssuerRegexp = ".*"
+	}
+
 	cmd := verify.VerifyBlobCmd{
 		KeyOpts:             ko,
+		CertVerifyOptions:   certOpts,
 		IgnoreTlog:          opts.IgnoreTlog || !newBundle,
 		IgnoreSCT:           opts.IgnoreSCT || len(opts.PublicKeyPEM) > 0 || !newBundle,
 		UseSignedTimestamps: false,

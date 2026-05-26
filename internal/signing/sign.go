@@ -14,6 +14,8 @@ import (
 // SignManifest performs keyless Sigstore signing over the canonical manifest bytes (FR-SIGN-003).
 // The returned bundle uses application/vnd.dev.sigstore.bundle.v0.3+json (FR-SIGN-009).
 func SignManifest(ctx context.Context, cfg Config, manifestJSON []byte) (bundle json.RawMessage, identity Identity, err error) {
+	cfg.ApplyTrustEnv()
+
 	if len(manifestJSON) == 0 {
 		return nil, Identity{}, fmt.Errorf("signing: manifest is empty")
 	}

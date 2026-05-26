@@ -100,6 +100,7 @@ func runPublish(args []string) int {
 
 func printPublishUsage() {
 	fmt.Fprintf(os.Stderr, "Usage: verity publish <path> --namespace <ns> --artifact <name> [--tag <tag>] [--skip-sign]\n")
-	fmt.Fprintf(os.Stderr, "\nSigning uses Sigstore keyless (Fulcio/Rekor) by default. Local dev without Fulcio: --skip-sign or VERITY_SKIP_SIGN=1.\n")
-	fmt.Fprintf(os.Stderr, "CI keyless: SIGSTORE_ID_TOKEN, or GitHub Actions ambient OIDC (id-token: write).\n")
+	fmt.Fprintf(os.Stderr, "\nSigning uses Sigstore public-good (Fulcio/Rekor) by default. Local dev without Fulcio: --skip-sign or VERITY_SKIP_SIGN=1.\n")
+	fmt.Fprintf(os.Stderr, "CI keyless: VERITY_SIGSTORE_ID_TOKEN / SIGSTORE_ID_TOKEN, or GitHub Actions ambient OIDC (id-token: write).\n")
+	fmt.Fprintf(os.Stderr, "Operator trust roots: VERITY_SIGSTORE_* (see docs/signing-local.md).\n")
 }

@@ -14,7 +14,8 @@ import (
 // VerifyOptions tunes Sigstore verification (FR-SIGN-006, NFR-SIGN-001).
 type VerifyOptions struct {
 	// PublicKeyPEM verifies key-signed bundles offline (tests). When empty, keyless
-	// bundles use Sigstore trusted root (TUF) and Rekor/Fulcio from Config.
+	// bundles use Config trust material (TrustedRootPath, CA PEMs, SIGSTORE_* via ApplyTrustEnv)
+	// or cosign public-good TUF when unset.
 	PublicKeyPEM []byte
 	IgnoreTlog   bool
 	IgnoreSCT    bool
@@ -22,6 +23,8 @@ type VerifyOptions struct {
 
 // VerifyManifestBundle checks that bundle cryptographically covers manifestJSON (FR-SIGN-003, FR-SIGN-006).
 func VerifyManifestBundle(ctx context.Context, cfg Config, manifestJSON, bundleJSON []byte, opts VerifyOptions) error {
+	cfg.ApplyTrustEnv()
+
 	if len(manifestJSON) == 0 {
 		return fmt.Errorf("signing: manifest is empty")
 	}
@@ -61,7 +64,10 @@ func VerifyManifestBundle(ctx context.Context, cfg Config, manifestJSON, bundleJ
 		ko.KeyRef = pubPath
 	}
 
-	certOpts := cosignoptions.CertVerifyOptions{}
+	certOpts := cosignoptions.CertVerifyOptions{
+		CARoots:         cfg.CARoots,
+		CAIntermediates: cfg.CAIntermediates,
+	}
 	// Keyless v0.3 bundles require identity/issuer matchers in sigstore-go; use permissive
 	// patterns for trust-status crypto checks (FR-SIGN-006). Pinning is policy/FR-SIGN-008.
 	if newBundle && len(opts.PublicKeyPEM) == 0 {
@@ -72,6 +78,9 @@ func VerifyManifestBundle(ctx context.Context, cfg Config, manifestJSON, bundleJ
 	cmd := verify.VerifyBlobCmd{
 		KeyOpts:             ko,
 		CertVerifyOptions:   certOpts,
+		TrustedRootPath:     cfg.TrustedRootPath,
+		CARoots:             cfg.CARoots,
+		CAIntermediates:     cfg.CAIntermediates,
 		IgnoreTlog:          opts.IgnoreTlog || !newBundle,
 		IgnoreSCT:           opts.IgnoreSCT || len(opts.PublicKeyPEM) > 0 || !newBundle,
 		UseSignedTimestamps: false,

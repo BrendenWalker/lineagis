@@ -88,5 +88,5 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 
 | ID | Question |
 |----|----------|
-| OQ-SIGN-001 | Pin Sigstore public good instance vs self-hosted for MVP operators? |
+| OQ-SIGN-001 | **Resolved (MVP):** Default to Sigstore public-good endpoints and TUF trust; operators override via `VERITY_SIGSTORE_*` (or `SIGSTORE_*`) — see [signing-local.md](../signing-local.md). |
 | OQ-SIGN-002 | Allow cosign attach-signatures vs integrated sign-only in CLI? |

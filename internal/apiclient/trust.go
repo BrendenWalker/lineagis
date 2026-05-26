@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+// PolicyReason is a single verify-time policy rule outcome (FR-POL-009).
+type PolicyReason struct {
+	Rule    string `json:"rule"`
+	Message string `json:"message"`
+}
+
 // TrustStatus is the aggregated trust report from GetTrustStatus (FR-API-008).
 type TrustStatus struct {
 	Namespace  string `json:"namespace"`
@@ -18,7 +24,8 @@ type TrustStatus struct {
 		Status string `json:"status"`
 	} `json:"signatures"`
 	Policy struct {
-		Status string `json:"status"`
+		Status  string         `json:"status"`
+		Reasons []PolicyReason `json:"reasons,omitempty"`
 	} `json:"policy"`
 	Attestations struct {
 		Provenance bool `json:"provenance"`

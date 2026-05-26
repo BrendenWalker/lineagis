@@ -688,6 +688,19 @@ func TestGetTrustStatus_requireSignatures_fail(t *testing.T) {
 	if resp.Overall != "fail" || resp.Signatures.Status != "missing" || resp.Policy.Status != "fail" {
 		t.Fatalf("got %+v", resp)
 	}
+	var withReasons struct {
+		Policy struct {
+			Reasons []struct {
+				Rule string `json:"rule"`
+			} `json:"reasons"`
+		} `json:"policy"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &withReasons); err != nil {
+		t.Fatal(err)
+	}
+	if len(withReasons.Policy.Reasons) == 0 || withReasons.Policy.Reasons[0].Rule != "require-signatures" {
+		t.Fatalf("policy reasons = %+v", withReasons.Policy.Reasons)
+	}
 }
 
 func TestEvaluatePolicy_deterministic(t *testing.T) {

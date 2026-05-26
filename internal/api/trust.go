@@ -12,7 +12,8 @@ type trustSignatures struct {
 }
 
 type trustPolicy struct {
-	Status string `json:"status"`
+	Status  string         `json:"status"`
+	Reasons []PolicyReason `json:"reasons,omitempty"`
 }
 
 type trustAttestations struct {
@@ -41,11 +42,11 @@ func (h *Handler) buildTrustStatus(ctx context.Context, namespaceID int64, ns, a
 	}
 
 	evaluator := h.verifyPolicy()
-	result, err := evaluator.Evaluate(ctx, namespaceID, d.ID)
+	policyEval, err := evaluator.Evaluate(ctx, namespaceID, d.ID)
 	if err != nil {
 		return nil, err
 	}
-	policyStatus := result.Outcome
+	policyStatus := policyEval.Outcome
 
 	atts, err := h.Store.ListAttestations(ctx, d.ID)
 	if err != nil {
@@ -78,7 +79,8 @@ func (h *Handler) buildTrustStatus(ctx context.Context, namespaceID int64, ns, a
 			Status: sigStatus,
 		},
 		Policy: trustPolicy{
-			Status: policyStatus,
+			Status:  policyStatus,
+			Reasons: policyEval.Reasons,
 		},
 		Attestations: trustAttestations{
 			Provenance: prov,

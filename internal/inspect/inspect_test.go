@@ -64,8 +64,14 @@ func TestRun_digestInvalid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.MustLines) != 1 || result.MustLines[0].Pass || result.MustLines[0].Text != "✗ Signature invalid" {
+	if len(result.MustLines) != 1 || result.MustLines[0].Pass {
 		t.Fatalf("got %+v", result.MustLines)
+	}
+	if result.MustLines[0].RequirementID != "FR-SIGN-005" {
+		t.Fatalf("requirement_id = %q", result.MustLines[0].RequirementID)
+	}
+	if !strings.Contains(result.MustLines[0].Text, "FR-SIGN-005") {
+		t.Fatalf("text = %q", result.MustLines[0].Text)
 	}
 	if !inspect.MustFailed(result.MustLines) {
 		t.Fatal("expected Must failure")
@@ -93,8 +99,14 @@ func TestRun_tagMissing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.MustLines) != 1 || result.MustLines[0].Pass || result.MustLines[0].Text != "✗ Signature missing" {
+	if len(result.MustLines) != 1 || result.MustLines[0].Pass {
 		t.Fatalf("got %+v", result.MustLines)
+	}
+	if result.MustLines[0].RequirementID != "FR-SIGN-005" {
+		t.Fatalf("requirement_id = %q", result.MustLines[0].RequirementID)
+	}
+	if !strings.Contains(result.MustLines[0].Text, "FR-SIGN-005") {
+		t.Fatalf("text = %q", result.MustLines[0].Text)
 	}
 	if !inspect.MustFailed(result.MustLines) {
 		t.Fatal("expected Must failure")
@@ -133,6 +145,65 @@ func TestRun_localPath(t *testing.T) {
 	}
 }
 
+func TestRun_policyRuleOnSignatureFailure(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"namespace":  "ns",
+			"artifact":   "app",
+			"digest":     "sha256:unsigned",
+			"signatures": map[string]string{"status": "missing"},
+			"policy": map[string]any{
+				"status": "fail",
+				"reasons": []map[string]string{
+					{"rule": "require-signatures", "message": "digest has no signature; attach a Sigstore bundle before verify"},
+				},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	result, err := inspect.Run(context.Background(), apiclient.New(srv.URL, "tok"), inspect.Options{
+		Namespace: "ns",
+		Artifact:  "app",
+		Ref:       "sha256:unsigned",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.MustLines) != 1 {
+		t.Fatalf("lines = %+v", result.MustLines)
+	}
+	line := result.MustLines[0]
+	if line.RuleID != "require-signatures" {
+		t.Fatalf("rule_id = %q", line.RuleID)
+	}
+	if !strings.Contains(line.Text, "rule require-signatures") {
+		t.Fatalf("text = %q", line.Text)
+	}
+}
+
+func TestJSONReport_schemaFields(t *testing.T) {
+	t.Parallel()
+	result := &inspect.Result{
+		Trust: &apiclient.TrustStatus{
+			Namespace: "ns",
+			Artifact:  "app",
+			Digest:    "sha256:abc",
+		},
+		MustLines: []inspect.ChecklistLine{
+			{Text: "✓ Signed by GitHub Actions", Must: true, Pass: true, RequirementID: "FR-SIGN-005"},
+		},
+	}
+	report := inspect.JSONReport(result)
+	if report.Version != 1 || report.Overall != "pass" || len(report.Checks) != 1 {
+		t.Fatalf("got %+v", report)
+	}
+	if report.Checks[0].RequirementID != "FR-SIGN-005" || report.Checks[0].Status != "pass" {
+		t.Fatalf("check = %+v", report.Checks[0])
+	}
+}
+
 func TestMustChecklist_signatureStates(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -141,9 +212,9 @@ func TestMustChecklist_signatureStates(t *testing.T) {
 		pass   bool
 	}{
 		{"valid", "✓ Signed by GitHub Actions", true},
-		{"missing", "✗ Signature missing", false},
-		{"invalid", "✗ Signature invalid", false},
-		{"weird", "✗ Signature status unknown (weird)", false},
+		{"missing", "Signature missing", false},
+		{"invalid", "Signature invalid", false},
+		{"weird", "Signature status unknown (weird)", false},
 	}
 	for _, tc := range cases {
 		tc := tc
@@ -152,8 +223,15 @@ func TestMustChecklist_signatureStates(t *testing.T) {
 			trust := &apiclient.TrustStatus{}
 			trust.Signatures.Status = tc.status
 			lines := inspect.MustChecklist(trust)
-			if len(lines) != 1 || lines[0].Text != tc.text || lines[0].Pass != tc.pass || !lines[0].Must {
+			if len(lines) != 1 || lines[0].Pass != tc.pass || !lines[0].Must {
 				t.Fatalf("got %+v", lines)
+			}
+			if tc.pass {
+				if lines[0].Text != tc.text {
+					t.Fatalf("text = %q", lines[0].Text)
+				}
+			} else if !strings.Contains(lines[0].Text, tc.text) || !strings.Contains(lines[0].Text, "FR-SIGN-005") {
+				t.Fatalf("text = %q", lines[0].Text)
 			}
 		})
 	}

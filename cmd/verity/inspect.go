@@ -13,7 +13,7 @@ import (
 )
 
 func runInspect(args []string) int {
-	var namespace, artifact, ref string
+	var namespace, artifact, ref, output string
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--namespace":
@@ -30,6 +30,13 @@ func runInspect(args []string) int {
 			}
 			i++
 			artifact = args[i]
+		case "--output":
+			if i+1 >= len(args) {
+				fmt.Fprintf(os.Stderr, "inspect: --output requires a value\n")
+				return 1
+			}
+			i++
+			output = args[i]
 		case "-h", "--help":
 			printInspectUsage()
 			return 0
@@ -54,6 +61,13 @@ func runInspect(args []string) int {
 		fmt.Fprintf(os.Stderr, "inspect: --namespace and --artifact are required\n")
 		return 1
 	}
+	switch output {
+	case "", "text":
+	case "json":
+	default:
+		fmt.Fprintf(os.Stderr, "inspect: --output must be text or json\n")
+		return 1
+	}
 
 	cfg, err := cliconfig.Load()
 	if err != nil {
@@ -75,9 +89,17 @@ func runInspect(args []string) int {
 		return 1
 	}
 
-	for _, line := range result.MustLines {
-		fmt.Println(line.Text)
+	if output == "json" {
+		if err := inspect.EncodeJSON(os.Stdout, result); err != nil {
+			fmt.Fprintf(os.Stderr, "inspect: %v\n", err)
+			return 1
+		}
+	} else {
+		for _, line := range result.MustLines {
+			fmt.Println(line.Text)
+		}
 	}
+
 	if inspect.MustFailed(result.MustLines) {
 		return 1
 	}
@@ -85,7 +107,8 @@ func runInspect(args []string) int {
 }
 
 func printInspectUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: verity inspect <ref> --namespace <ns> --artifact <name>\n")
+	fmt.Fprintf(os.Stderr, "Usage: verity inspect <ref> --namespace <ns> --artifact <name> [--output text|json]\n")
 	fmt.Fprintf(os.Stderr, "\n<ref> is a local file or directory, sha256:… digest, or semver tag.\n")
 	fmt.Fprintf(os.Stderr, "Trust checks use the Verity API (signature verification is server-side).\n")
+	fmt.Fprintf(os.Stderr, "Exits non-zero when any Must check fails (FR-DX-005).\n")
 }

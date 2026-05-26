@@ -149,9 +149,9 @@ func TestRun_policyRuleOnSignatureFailure(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"namespace": "ns",
-			"artifact":  "app",
-			"digest":    "sha256:unsigned",
+			"namespace":  "ns",
+			"artifact":   "app",
+			"digest":     "sha256:unsigned",
 			"signatures": map[string]string{"status": "missing"},
 			"policy": map[string]any{
 				"status": "fail",

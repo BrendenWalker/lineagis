@@ -155,6 +155,7 @@ jobs:
         run: |
           mkdir -p dist-unsigned
           echo "unsigned smoke $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist-unsigned/release.txt
+          # No --tag: require-signatures blocks SetTag on unsigned digests (AC-POL-001).
           OUTPUT="$(./bin/verity publish dist-unsigned/ \
             --namespace "${namespace}" \
             --artifact smoke-unsigned \

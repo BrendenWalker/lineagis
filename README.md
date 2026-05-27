@@ -369,6 +369,11 @@ If you previously ran the stack with Docker Distribution (`registry:2`), reset r
 
 Detailed MVP requirements live in [docs/specs/](docs/specs/README.md): an overview with delivery matrix (Must / Should / Deferred), foundation specs (architecture, API, metadata model), and feature specs for publishing, signing, provenance, policy, and developer experience.
 
+For execution-focused docs:
+
+- [Quickstart (Phase 1 Must)](docs/guides/quickstart.md)
+- [Phase 1 Must mapping to tests](docs/sdlc/phase1-must-test-mapping.md)
+
 ---
 
 # Roadmap

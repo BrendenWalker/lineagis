@@ -118,6 +118,7 @@ jobs:
             "${VERITY_API_URL}/v1/namespaces/${namespace}/artifacts/smoke/trust?digest=${digest}" \
             | tee trust.json
           jq -e '.signatures.status == "valid"' trust.json
+          jq -e '.attestations.provenance == true' trust.json
           jq -e '.overall == "pass"' trust.json
 
       - name: Inspect signed artifact (JSON, AC-DX-005)
@@ -130,6 +131,7 @@ jobs:
           jq -e '.checks[0].status == "pass"' inspect-dist.json
           jq -e '.checks[0].requirement_id == "FR-SIGN-005"' inspect-dist.json
           jq -e '.checks[0].message | contains("Signed by GitHub Actions")' inspect-dist.json
+          jq -e '[.checks[].message] | any(contains("workflow"))' inspect-dist.json
 
       - name: Inspect signed artifact by digest (exit 0, AC-DX-003)
         run: |

@@ -98,6 +98,9 @@ func runInspect(args []string) int {
 		for _, line := range result.MustLines {
 			fmt.Println(line.Text)
 		}
+		for _, line := range result.ShouldLines {
+			fmt.Println(line.Text)
+		}
 	}
 
 	if inspect.MustFailed(result.MustLines) {

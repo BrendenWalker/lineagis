@@ -115,8 +115,18 @@ type policyDocument struct {
 }
 
 type policyRule struct {
-	ID   string `json:"id"`
-	Type string `json:"type"`
+	ID     string          `json:"id"`
+	Type   string          `json:"type"`
+	Config json.RawMessage `json:"config,omitempty"`
+}
+
+type trustedPublishersConfig struct {
+	Publishers []trustedPublisher `json:"publishers"`
+}
+
+type trustedPublisher struct {
+	Repository string `json:"repository"`
+	Workflow   string `json:"workflow"`
 }
 
 func validatePolicyDocument(document json.RawMessage) error {
@@ -155,10 +165,24 @@ func policyRequiresSignatures(document json.RawMessage) bool {
 }
 
 func ruleRequiresSignatures(r policyRule) bool {
+	return ruleMatches(r, "require-signatures", "require-signature")
+}
+
+func ruleTrustedPublishers(r policyRule) bool {
+	return ruleMatches(r, "trusted-publishers", "trusted-publisher")
+}
+
+func ruleRepositoryOwnership(r policyRule) bool {
+	return ruleMatches(r, "repository-ownership", "repo-ownership")
+}
+
+func ruleMatches(r policyRule, names ...string) bool {
 	for _, v := range []string{r.ID, r.Type} {
-		switch strings.ToLower(strings.TrimSpace(v)) {
-		case "require-signatures", "require-signature":
-			return true
+		v = strings.ToLower(strings.TrimSpace(v))
+		for _, name := range names {
+			if v == name {
+				return true
+			}
 		}
 	}
 	return false

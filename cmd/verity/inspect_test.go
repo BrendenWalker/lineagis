@@ -48,7 +48,7 @@ func TestRunInspect_printsMustLines(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0", code)
 	}
-	if got := strings.TrimSpace(out.String()); got != "✓ Signed by GitHub Actions" {
+	if got := out.String(); !strings.Contains(got, "✓ Signed by GitHub Actions") {
 		t.Fatalf("stdout = %q", got)
 	}
 }
@@ -118,7 +118,7 @@ func TestRunInspect_outputJSON(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
 		t.Fatalf("json: %v body=%s", err, out.String())
 	}
-	if report.Version != 1 || report.Overall != "pass" || len(report.Checks) != 1 {
+	if report.Version != 1 || report.Overall != "pass" || len(report.Checks) < 1 {
 		t.Fatalf("report = %+v", report)
 	}
 	if report.Checks[0].Status != "pass" || report.Checks[0].RequirementID != "FR-SIGN-005" {
@@ -178,7 +178,7 @@ func TestRunInspect_outputJSONMustFailureExit(t *testing.T) {
 	if report.Overall != "fail" {
 		t.Fatalf("overall = %q", report.Overall)
 	}
-	if len(report.Checks) != 1 || report.Checks[0].Status != "fail" || report.Checks[0].RuleID != "require-signatures" {
+	if len(report.Checks) < 1 || report.Checks[0].Status != "fail" || report.Checks[0].RuleID != "require-signatures" {
 		t.Fatalf("checks = %+v", report.Checks)
 	}
 }

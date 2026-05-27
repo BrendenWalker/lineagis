@@ -38,6 +38,22 @@ func (s *Store) CreateNamespace(ctx context.Context, name string, config json.Ra
 	return &ns, nil
 }
 
+// GetNamespaceByID returns a namespace by id.
+func (s *Store) GetNamespaceByID(ctx context.Context, id int64) (*Namespace, error) {
+	var ns Namespace
+	err := s.pool.QueryRow(ctx, `
+		SELECT id, name, config, created_at, updated_at
+		FROM namespaces WHERE id = $1
+	`, id).Scan(&ns.ID, &ns.Name, &ns.Config, &ns.CreatedAt, &ns.UpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get namespace: %w", err)
+	}
+	return &ns, nil
+}
+
 // GetNamespaceByName returns a namespace by name.
 func (s *Store) GetNamespaceByName(ctx context.Context, name string) (*Namespace, error) {
 	var ns Namespace
@@ -349,7 +365,7 @@ func (s *Store) ListSignatures(ctx context.Context, digestID int64) ([]Signature
 // ListAttestations returns attestations indexed for a digest.
 func (s *Store) ListAttestations(ctx context.Context, digestID int64) ([]Attestation, error) {
 	rows, err := s.pool.Query(ctx, `
-		SELECT id, digest_id, predicate_type, envelope_ref, envelope_digest, created_at
+		SELECT id, digest_id, predicate_type, envelope_ref, envelope_digest, envelope_json, created_at
 		FROM attestations WHERE digest_id = $1 ORDER BY created_at ASC
 	`, digestID)
 	if err != nil {
@@ -360,7 +376,7 @@ func (s *Store) ListAttestations(ctx context.Context, digestID int64) ([]Attesta
 	var atts []Attestation
 	for rows.Next() {
 		var att Attestation
-		if err := rows.Scan(&att.ID, &att.DigestID, &att.PredicateType, &att.EnvelopeRef, &att.EnvelopeDigest, &att.CreatedAt); err != nil {
+		if err := rows.Scan(&att.ID, &att.DigestID, &att.PredicateType, &att.EnvelopeRef, &att.EnvelopeDigest, &att.EnvelopeJSON, &att.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan attestation: %w", err)
 		}
 		atts = append(atts, att)
@@ -369,22 +385,68 @@ func (s *Store) ListAttestations(ctx context.Context, digestID int64) ([]Attesta
 }
 
 // AttachAttestation stores an attestation index row for a digest.
-func (s *Store) AttachAttestation(ctx context.Context, digestID int64, predicateType string, envelopeRef, envelopeDigest *string) (*Attestation, error) {
+func (s *Store) AttachAttestation(ctx context.Context, digestID int64, predicateType string, envelopeRef, envelopeDigest *string, envelopeJSON json.RawMessage) (*Attestation, error) {
 	if _, err := s.GetDigestByID(ctx, digestID); err != nil {
 		return nil, err
 	}
+	if envelopeRef == nil && envelopeDigest == nil && len(envelopeJSON) == 0 {
+		return nil, fmt.Errorf("attach attestation: envelope required")
+	}
 	var att Attestation
 	err := s.pool.QueryRow(ctx, `
-		INSERT INTO attestations (digest_id, predicate_type, envelope_ref, envelope_digest)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, digest_id, predicate_type, envelope_ref, envelope_digest, created_at
-	`, digestID, predicateType, envelopeRef, envelopeDigest).Scan(
-		&att.ID, &att.DigestID, &att.PredicateType, &att.EnvelopeRef, &att.EnvelopeDigest, &att.CreatedAt,
+		INSERT INTO attestations (digest_id, predicate_type, envelope_ref, envelope_digest, envelope_json)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, digest_id, predicate_type, envelope_ref, envelope_digest, envelope_json, created_at
+	`, digestID, predicateType, envelopeRef, envelopeDigest, envelopeJSON).Scan(
+		&att.ID, &att.DigestID, &att.PredicateType, &att.EnvelopeRef, &att.EnvelopeDigest, &att.EnvelopeJSON, &att.CreatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("attach attestation: %w", err)
 	}
 	return &att, nil
+}
+
+// InsertProvenanceRecord persists parsed provenance fields linked to an attestation.
+func (s *Store) InsertProvenanceRecord(ctx context.Context, attestationID, digestID int64, repo string, commit, workflow, workflowRef, runID *string, verified bool) (*ProvenanceRecord, error) {
+	var rec ProvenanceRecord
+	err := s.pool.QueryRow(ctx, `
+		INSERT INTO provenance_records (
+			attestation_id, digest_id, repository_uri, commit_sha,
+			workflow_name, workflow_ref, run_id, verified
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id, attestation_id, digest_id, repository_uri, commit_sha,
+			workflow_name, workflow_ref, run_id, verified, created_at
+	`, attestationID, digestID, repo, commit, workflow, workflowRef, runID, verified).Scan(
+		&rec.ID, &rec.AttestationID, &rec.DigestID, &rec.RepositoryURI,
+		&rec.CommitSHA, &rec.WorkflowName, &rec.WorkflowRef, &rec.RunID, &rec.Verified, &rec.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("insert provenance record: %w", err)
+	}
+	return &rec, nil
+}
+
+// GetProvenanceByDigest returns the latest provenance record for a digest, if any.
+func (s *Store) GetProvenanceByDigest(ctx context.Context, digestID int64) (*ProvenanceRecord, error) {
+	var rec ProvenanceRecord
+	err := s.pool.QueryRow(ctx, `
+		SELECT id, attestation_id, digest_id, repository_uri, commit_sha,
+			workflow_name, workflow_ref, run_id, verified, created_at
+		FROM provenance_records
+		WHERE digest_id = $1
+		ORDER BY created_at DESC, id DESC
+		LIMIT 1
+	`, digestID).Scan(
+		&rec.ID, &rec.AttestationID, &rec.DigestID, &rec.RepositoryURI,
+		&rec.CommitSHA, &rec.WorkflowName, &rec.WorkflowRef, &rec.RunID, &rec.Verified, &rec.CreatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get provenance: %w", err)
+	}
+	return &rec, nil
 }
 
 // PutPolicy creates a new policy version, deactivates prior versions, and audit-logs the change.

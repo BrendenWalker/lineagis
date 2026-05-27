@@ -115,11 +115,6 @@ func evaluateAttestations(ctx context.Context, atts []metadata.Attestation) trus
 		}
 		if isSBOMPredicate(pt) {
 			out.SBOM = true
-			if raw := attestationEnvelopeBytes(att); len(raw) > 0 {
-				if _, verified, err := verifyAttestationEnvelope(ctx, raw); err == nil && verified {
-					// SBOM signature verified
-				}
-			}
 		}
 	}
 	return out

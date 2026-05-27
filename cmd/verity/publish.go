@@ -95,11 +95,11 @@ func runPublish(args []string) int {
 	digest, err := publish.Publish(ctx, reg, api, publish.Options{
 		Namespace:      namespace,
 		Artifact:       artifact,
-		Tag:              tag,
-		Path:             path,
-		SBOMPath:         sbomPath,
-		SkipSign:         skipSign,
-		SkipProvenance:   skipProvenance,
+		Tag:            tag,
+		Path:           path,
+		SBOMPath:       sbomPath,
+		SkipSign:       skipSign,
+		SkipProvenance: skipProvenance,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "publish: %v\n", err)

@@ -69,7 +69,7 @@ type Statement struct {
 }
 
 type Subject struct {
-	Name   string          `json:"name"`
+	Name   string            `json:"name"`
 	Digest map[string]string `json:"digest"`
 }
 
@@ -79,19 +79,19 @@ type Predicate struct {
 }
 
 type BuildDefinition struct {
-	BuildType string          `json:"buildType"`
-	ExternalParameters map[string]any `json:"externalParameters,omitempty"`
+	BuildType            string               `json:"buildType"`
+	ExternalParameters   map[string]any       `json:"externalParameters,omitempty"`
 	ResolvedDependencies []ResolvedDependency `json:"resolvedDependencies,omitempty"`
 }
 
 type ResolvedDependency struct {
-	URI     string            `json:"uri"`
-	Digest  map[string]string `json:"digest"`
+	URI    string            `json:"uri"`
+	Digest map[string]string `json:"digest"`
 }
 
 type RunDetails struct {
-	Builder   BuilderInfo `json:"builder"`
-	Metadata  RunMetadata `json:"metadata"`
+	Builder  BuilderInfo `json:"builder"`
+	Metadata RunMetadata `json:"metadata"`
 }
 
 type BuilderInfo struct {
@@ -123,7 +123,7 @@ func BuildSLSAStatement(ctx BuildContext) (Statement, error) {
 	var deps []ResolvedDependency
 	if ctx.RepositoryURI != "" && ctx.CommitSHA != "" {
 		deps = append(deps, ResolvedDependency{
-			URI: ctx.RepositoryURI + "/.git",
+			URI:    ctx.RepositoryURI + "/.git",
 			Digest: map[string]string{"gitCommit": ctx.CommitSHA},
 		})
 	}

@@ -22,12 +22,12 @@ type ManifestSigner interface {
 type Options struct {
 	Namespace      string
 	Artifact       string
-	Tag              string
-	Path             string
-	SBOMPath         string
-	SkipSign         bool
-	SkipProvenance   bool
-	Signer           ManifestSigner
+	Tag            string
+	Path           string
+	SBOMPath       string
+	SkipSign       bool
+	SkipProvenance bool
+	Signer         ManifestSigner
 }
 
 // RegistryRepo returns the OCI repository name {namespace}/{artifact}.

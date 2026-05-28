@@ -53,8 +53,10 @@ export VERITY_TOKEN=dev-local-token
 | Flag / setting | Purpose |
 |----------------|---------|
 | `VERITY_DEV_TOKEN` / `VERITY_TOKEN` | Local API bearer — **not for production** |
-| `--skip-sign` | Skip Fulcio when signing offline (dev only) |
-| `--skip-provenance` | Skip SLSA provenance when not in CI |
+| `--skip-sign` | **Local dev only** — skip Fulcio when offline; forbidden in production release CI |
+| `--skip-provenance` | **Local dev only** — skip SLSA provenance when not in CI |
+
+**Production:** use [github-actions-publish.md](github-actions-publish.md) with keyless signing; never pass `--skip-sign` or `--skip-provenance` on release jobs.
 
 **Do not use `--skip-sign` with `--tag` on a namespace that has `require-signatures` policy** — tagging unsigned digests is rejected.
 

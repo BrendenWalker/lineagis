@@ -35,7 +35,8 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 | US-DX-002 | Must | As a consumer, I want `verity inspect package.whl` to print a trust checklist. |
 | US-DX-003 | Should | As a maintainer, I want a GitHub Action to run publish on release without custom scripts. |
 | US-DX-004 | Must | As a user, I want configuration via environment variables and config file for API/registry endpoints. |
-| US-DX-005 | Should | As a consumer, I want non-zero exit code on inspect failure for CI gates. |
+| US-DX-005 | Must | As a consumer, I want non-zero exit code when any configured policy or Must check fails so that CI can gate releases. |
+| US-DX-006 | Must | As a maintainer, I want `--skip-sign` and dev tokens documented as local-only so that production releases always use keyless signing. |
 
 ## CLI commands (MVP)
 
@@ -54,7 +55,8 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 | `--tag` | Must | Semver tag to apply (default from env or prompt). |
 | `--namespace` | Must | Target namespace. |
 | `--artifact` | Must | Logical artifact name. |
-| `--skip-sign` | Should | Skip signing (fails if policy requires signature). |
+| `--skip-sign` | Must (dev-only) | Skip signing for local stack only; SHALL NOT be used in production release workflows; fails if policy requires signature when tagging. |
+| `--skip-provenance` | Must (dev-only) | Skip provenance for local stack only; SHALL NOT be used in production release workflows. |
 | `--sbom <file>` | Should | Attach SBOM file. |
 | `--provenance <file>` | Should | Attach custom provenance (else generate from CI env). |
 
@@ -66,12 +68,12 @@ Map to README example and feature specs:
 |------|----------|-------------|
 | `✓ Signed by GitHub Actions` | Must | [02-signing-verification.md](02-signing-verification.md) |
 | `✓ Repository verified` | Should | [03-provenance-metadata.md](03-provenance-metadata.md), [04-policy-enforcement.md](04-policy-enforcement.md) |
-| `✓ Maintainer verified` | Should | [04-policy-enforcement.md](04-policy-enforcement.md) |
+| `✓ Publisher allowed` | Must (when rule configured) | [04-policy-enforcement.md](04-policy-enforcement.md) — trusted-publishers |
 | `✓ SBOM attached` | Should | [03-provenance-metadata.md](03-provenance-metadata.md) |
 | `✓ Provenance verified` | Should | [03-provenance-metadata.md](03-provenance-metadata.md) |
 | `✓ No critical vulnerabilities detected` | Deferred | [04-policy-enforcement.md](04-policy-enforcement.md) |
 
-Failed checks use `✗` with reason; optional checks use `⚠` when Should features are not configured.
+Failed checks use `✗` with reason. Configured policy failures are never downgraded to `⚠`. Unconfigured checks use `—` or `⚠` (missing optional attestation), never `✓`.
 
 ## GitHub Actions integration
 
@@ -102,7 +104,8 @@ steps:
 
 | ID | Priority | Requirement |
 |----|----------|-------------|
-| FR-DX-005 | Must | CLI SHALL exit non-zero on inspect when any Must check fails. |
+| FR-DX-005 | Must | CLI SHALL exit non-zero on inspect when any Must check or any **configured** policy rule fails. |
+| FR-DX-010 | Must | CLI help and guides SHALL state that `--skip-sign`, `--skip-provenance`, and `VERITY_DEV_TOKEN` are for local development only. |
 | FR-DX-006 | Must | CLI SHALL support `--output json` for machine-readable trust reports. |
 | FR-DX-007 | Must | Error messages SHALL reference failing requirement id when applicable (e.g. policy rule). |
 | FR-DX-008 | Should | CLI version SHALL be reported in API client user-agent for support. |

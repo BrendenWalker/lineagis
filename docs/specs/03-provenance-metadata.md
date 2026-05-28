@@ -54,7 +54,7 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix). Most requirements are 
 | FR-PROV-010 | Must | The metadata DB SHALL store parsed provenance fields per [metadata-model.md](metadata-model.md). |
 | FR-PROV-011 | Should | `GetTrustStatus` SHALL include provenance and SBOM presence in the trust report. |
 | FR-PROV-012 | Should | Inspect SHALL report `✓ Repository verified` when repository claim matches configured ownership rules. |
-| FR-PROV-013 | Should | Inspect SHALL report `✓ Maintainer verified` when publisher identity matches trusted publisher policy. |
+| FR-PROV-013 | Must (when rule configured) | Inspect SHALL report publisher allowlist result when **trusted-publishers** is configured (`✓ Publisher allowed` or failure); SHALL NOT show `✓` when the rule is absent. |
 
 ## Non-functional requirements
 

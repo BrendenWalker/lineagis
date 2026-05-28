@@ -88,7 +88,36 @@ After publish, verify trust before promoting a release:
             --output json
 ```
 
-Exit code `1` when any **Must** check fails (`require-signatures`, invalid signature). **Should** lines (provenance, SBOM, repository) show `⚠` and do not fail the job unless you add separate policy gates.
+Exit code `1` when any **Must** check fails (`require-signatures`, invalid signature) or any **configured** policy rule fails (including `trusted-publishers`). Unconfigured checks show `—` or `⚠`, not `✓`. Optional attestation lines (provenance, SBOM) may show `⚠` until Layer B verify is complete.
+
+## Trusted publishers (optional, recommended)
+
+Configure a namespace policy so only your release workflow can satisfy signing policy. The allowlist is **your** choice per Verity instance — not a global list maintained by Verity.
+
+```json
+{
+  "document": {
+    "rules": [
+      { "type": "require-signatures" },
+      {
+        "type": "trusted-publishers",
+        "config": {
+          "publishers": [
+            {
+              "repository": "your-org/your-repo",
+              "workflow": "release.yml"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+Apply via operator API (`PutPolicy`). Pin both `repository` and `workflow` when possible; `repository` alone allows any workflow in that repo.
+
+When this rule is present, `verity inspect` **fails** if the artifact was signed by a different workflow identity. See [04-policy-enforcement.md](../specs/04-policy-enforcement.md#trusted-publishers).
 
 Human output includes:
 

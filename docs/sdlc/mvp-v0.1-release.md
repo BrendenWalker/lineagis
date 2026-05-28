@@ -46,7 +46,8 @@ make smoke
 |------------|-------|
 | Inspect trusts the Verity API | No local cosign verification in CLI (`OQ-ARCH-002` deferred) |
 | No `verity pull` | Consumers resolve by digest/tag via API + registry out-of-band |
-| Should policies verify-time only | `trusted-publishers`, `repository-ownership` do not block `SetTag` |
+| Configured policies on `SetTag` | `require-signatures` blocks tag; `trusted-publishers` / `repository-ownership` may evaluate only at inspect until v0.2 (`FR-POL-012`) |
+| Trusted publishers | Fail-closed when rule is in policy; operator defines allowlist per namespace |
 | Unsigned digest registration | OCI push + `RegisterDigest` can succeed before sign; `require-signatures` blocks **tagging** |
 | Dev token | `VERITY_DEV_TOKEN` for local compose only — disable in production |
 | CVE / federation | Deferred per delivery matrix (#67, #68) |
@@ -63,8 +64,9 @@ See [SECURITY.md](../../SECURITY.md).
 
 ## Out of scope for v0.1 tag
 
-- Push-time enforcement of Should policies
+- Push-time enforcement for every configured policy type (`FR-POL-012`, v0.2)
+- Honest inspect lines for all check types (partial; `NFR-OV-005` ongoing)
 - CLI OIDC token acquisition
 - CVE blocking, transparency log UI, federation
 
-Track follow-up work under the **v0.1 hardening / post-v0.1** milestone on GitHub.
+Track follow-up under **v0.2 — Attribution** and **v0.3 — Governance** milestones (see [00-overview.md](../specs/00-overview.md)).

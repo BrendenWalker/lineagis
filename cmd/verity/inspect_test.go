@@ -9,6 +9,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/BrendenWalker/verity/internal/inspect"
 )
 
 func TestRunInspect_printsMustLines(t *testing.T) {
@@ -48,7 +50,11 @@ func TestRunInspect_printsMustLines(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0", code)
 	}
-	if got := out.String(); !strings.Contains(got, "✓ Signed by GitHub Actions") {
+	got := out.String()
+	if !strings.Contains(got, inspect.TrustHeader) {
+		t.Fatalf("stdout missing trust header: %q", got)
+	}
+	if !strings.Contains(got, "✓ Signed by GitHub Actions") {
 		t.Fatalf("stdout = %q", got)
 	}
 }
@@ -123,6 +129,28 @@ func TestRunInspect_outputJSON(t *testing.T) {
 	}
 	if report.Checks[0].Status != "pass" || report.Checks[0].RequirementID != "FR-SIGN-005" {
 		t.Fatalf("check = %+v", report.Checks[0])
+	}
+}
+
+func TestRunInspect_shouldWarningExitZero(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"namespace":  "ns",
+			"artifact":   "app",
+			"digest":     "sha256:abc",
+			"signatures": map[string]string{"status": "valid"},
+			"attestations": map[string]any{
+				"sbom": false,
+			},
+		})
+	}))
+	defer srv.Close()
+
+	t.Setenv("VERITY_TOKEN", "tok")
+	t.Setenv("VERITY_API_URL", srv.URL)
+
+	if got := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app"}); got != 0 {
+		t.Fatalf("exit = %d, want 0 when only Should lines warn", got)
 	}
 }
 

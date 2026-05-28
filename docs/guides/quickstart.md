@@ -1,6 +1,8 @@
-# Quickstart (Phase 1 Must)
+# Quickstart (local development)
 
-This guide walks a maintainer through the MVP Must path: publish an artifact and inspect trust output.
+> **Production maintainers:** use [GitHub Actions keyless publish](github-actions-publish.md) instead. This guide is for contributors running the stack locally with a dev token.
+
+This walkthrough covers the Phase 1 **Must** path: publish an artifact and inspect trust output using `VERITY_DEV_TOKEN`.
 
 Related acceptance criteria:
 
@@ -34,7 +36,7 @@ mkdir -p dist
 echo "quickstart $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/release.txt
 ```
 
-## 4) Publish
+## 4) Publish (dev-only flags)
 
 ```bash
 export VERITY_API_URL=http://localhost:8080
@@ -44,10 +46,17 @@ export VERITY_TOKEN=dev-local-token
   --namespace gh/acme/quickstart \
   --artifact quickstart \
   --tag v0.1.0 \
+  --skip-sign \
   --skip-provenance
 ```
 
-Local publish uses `VERITY_DEV_TOKEN`; use `--skip-provenance` when Fulcio is unavailable. In GitHub Actions, omit that flag to attach SLSA provenance automatically.
+| Flag / setting | Purpose |
+|----------------|---------|
+| `VERITY_DEV_TOKEN` / `VERITY_TOKEN` | Local API bearer — **not for production** |
+| `--skip-sign` | Skip Fulcio when signing offline (dev only) |
+| `--skip-provenance` | Skip SLSA provenance when not in CI |
+
+**Do not use `--skip-sign` with `--tag` on a namespace that has `require-signatures` policy** — tagging unsigned digests is rejected.
 
 Expected result:
 
@@ -64,8 +73,9 @@ Use the digest printed by `publish`:
 
 Expected result:
 
-- output includes `Signed by GitHub Actions` (Must) and optional Should lines (provenance, SBOM)
-- command exits `0` for signed artifacts
+- header: `Trust verified by Verity API (server-side Sigstore checks)`
+- signature line reflects API trust status (unsigned artifacts show `✗` when policy requires signatures)
+- Should lines may show `⚠` for missing provenance/SBOM
 
 ## 6) Tear down
 
@@ -75,4 +85,4 @@ make compose-down
 
 ## CI coverage
 
-The GitHub workflow `publish-keyless-smoke` runs the same publish -> inspect path in automation, including a failure case for unsigned artifacts under `require-signatures` policy.
+The required GitHub workflow `publish-keyless-smoke` runs keyless publish → inspect → `require-signatures` enforcement on every pull request to `main`. See [phase1-must-test-mapping.md](../sdlc/phase1-must-test-mapping.md).

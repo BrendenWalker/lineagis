@@ -95,11 +95,8 @@ func runInspect(args []string) int {
 			return 1
 		}
 	} else {
-		for _, line := range result.MustLines {
-			fmt.Println(line.Text)
-		}
-		for _, line := range result.ShouldLines {
-			fmt.Println(line.Text)
+		for _, line := range inspect.HumanLines(result) {
+			fmt.Println(line)
 		}
 	}
 

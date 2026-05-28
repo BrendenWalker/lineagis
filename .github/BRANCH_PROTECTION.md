@@ -8,14 +8,17 @@ In **Settings → Branches → Branch protection rules → `main`**, enable **Re
 
 | Status check | Job |
 |--------------|-----|
-| `lint` | golangci-lint |
-| `test` | `go test` with race detector |
-| `build` | `make build` |
+| `lint` | golangci-lint (`ci.yml`) |
+| `test` | `go test` with race detector (`ci.yml`) |
+| `build` | `make build` (`ci.yml`) |
+| `keyless-publish` | publish → inspect → `require-signatures` (`publish-keyless-smoke.yml`) |
 
 Also enable **Require branches to be up to date before merging** so the latest commit is always validated.
 
 Checks appear in the picker after at least one workflow run on a pull request (or after this workflow has run on `main`).
 
+`keyless-publish` satisfies **AC-OV-004** (Phase 1 acceptance). See [docs/sdlc/phase1-must-test-mapping.md](../docs/sdlc/phase1-must-test-mapping.md).
+
 ## Not in required CI
 
-- `make smoke` / `make smoke-registry` — need Docker and a full stack; run locally or in release/integration pipelines, not on every PR.
+- `make smoke` / `make smoke-registry` — optional local operator validation; the acceptance workflow starts its own Postgres + Zot services.

@@ -5,15 +5,9 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - ".github/workflows/publish-keyless-smoke.yml"
-      - "cmd/verity/**"
-      - "internal/inspect/**"
-      - "internal/api/**"
-      - "internal/publish/**"
-      - "internal/signing/**"
-      - "internal/apiclient/**"
-      - "docs/schemas/inspect-report.v1.json"
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -21,6 +15,7 @@ permissions:
 
 jobs:
   keyless-publish:
+    name: keyless-publish
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -131,6 +126,9 @@ jobs:
           jq -e '.checks[0].status == "pass"' inspect-dist.json
           jq -e '.checks[0].requirement_id == "FR-SIGN-005"' inspect-dist.json
           jq -e '.checks[0].message | contains("Signed by GitHub Actions")' inspect-dist.json
+          # Human output includes trust header (v0.1 inspect honesty)
+          HUMAN="$(./bin/verity inspect dist/ --namespace "${namespace}" --artifact smoke)"
+          echo "${HUMAN}" | grep -F 'Trust verified by Verity API'
           jq -e '[.checks[].message] | any(contains("workflow"))' inspect-dist.json
 
       - name: Inspect signed artifact by digest (exit 0, AC-DX-003)
@@ -169,6 +167,20 @@ jobs:
           UNSIGNED_DIGEST="$(echo "$OUTPUT" | grep -E '^sha256:[a-f0-9]{64}$' | tail -1)"
           test -n "$UNSIGNED_DIGEST"
           echo "unsigned_digest=${UNSIGNED_DIGEST}" >> "$GITHUB_ENV"
+
+      - name: Unsigned publish with tag fails (FR-SIGN-007)
+        run: |
+          set +e
+          OUTPUT="$(./bin/verity publish dist-unsigned/ \
+            --namespace "${namespace}" \
+            --artifact smoke-unsigned \
+            --skip-sign \
+            --tag "0.0.0+unsigned.${{ github.run_id }}" 2>&1)"
+          RC=$?
+          set -e
+          echo "$OUTPUT"
+          test "${RC}" -ne 0
+          echo "${OUTPUT}" | grep -F 'require-signatures'
 
       - name: Verify trust reports policy failure with reasons
         run: |

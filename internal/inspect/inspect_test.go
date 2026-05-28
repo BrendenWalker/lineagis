@@ -204,6 +204,32 @@ func TestJSONReport_schemaFields(t *testing.T) {
 	}
 }
 
+func TestHumanLines_includesTrustHeader(t *testing.T) {
+	t.Parallel()
+	result := &inspect.Result{
+		MustLines: []inspect.ChecklistLine{
+			{Text: "✓ Signed by GitHub Actions", Must: true, Pass: true},
+		},
+		ShouldLines: []inspect.ChecklistLine{
+			{Text: "⚠ SBOM not attached", Must: false, Pass: false},
+		},
+	}
+	lines := inspect.HumanLines(result)
+	if len(lines) != 3 || lines[0] != inspect.TrustHeader {
+		t.Fatalf("lines = %v", lines)
+	}
+}
+
+func TestMustFailed_ignoresShouldOnly(t *testing.T) {
+	t.Parallel()
+	if inspect.MustFailed([]inspect.ChecklistLine{{Must: false, Pass: false}}) {
+		t.Fatal("should-only lines must not count as Must failure")
+	}
+	if !inspect.MustFailed([]inspect.ChecklistLine{{Must: true, Pass: false}}) {
+		t.Fatal("must failure expected")
+	}
+}
+
 func TestMustChecklist_signatureStates(t *testing.T) {
 	t.Parallel()
 	cases := []struct {

@@ -92,9 +92,15 @@ func Publish(ctx context.Context, reg *registry.Client, api *apiclient.Client, o
 	if !opts.SkipSign {
 		bundle, issuer, subject, err := signer.SignManifest(ctx, manifestJSON)
 		if err != nil {
+			if opts.Tag != "" {
+				return "", fmt.Errorf("sign manifest (tag %q not applied): %w", opts.Tag, err)
+			}
 			return "", fmt.Errorf("sign manifest: %w", err)
 		}
 		if err := api.AttachSignature(ctx, opts.Namespace, opts.Artifact, digest, bundle, issuer, subject); err != nil {
+			if opts.Tag != "" {
+				return "", fmt.Errorf("attach signature (tag %q not applied): %w", opts.Tag, err)
+			}
 			return "", fmt.Errorf("attach signature: %w", err)
 		}
 	}
@@ -114,7 +120,10 @@ func Publish(ctx context.Context, reg *registry.Client, api *apiclient.Client, o
 
 	if opts.Tag != "" {
 		if err := api.SetTag(ctx, opts.Namespace, opts.Artifact, opts.Tag, digest); err != nil {
-			return "", fmt.Errorf("set tag: %w", err)
+			if opts.SkipSign {
+				return "", fmt.Errorf("set tag %q: %w (unsigned artifacts cannot be tagged when require-signatures is enabled)", opts.Tag, err)
+			}
+			return "", fmt.Errorf("set tag %q: %w", opts.Tag, err)
 		}
 	}
 

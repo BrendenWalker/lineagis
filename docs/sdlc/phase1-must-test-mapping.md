@@ -55,3 +55,4 @@ Notes:
 
 - Local smoke: `make smoke` validates stack readiness and registry connectivity.
 - The workflow assertion for unsigned inspect under `require-signatures` directly covers the Must policy behavior in `AC-OV-002`.
+- **AC-OV-004** requires the `keyless-publish` job in `publish-keyless-smoke.yml` to be a **required status check** on `main` (see [.github/BRANCH_PROTECTION.md](../../.github/BRANCH_PROTECTION.md)).

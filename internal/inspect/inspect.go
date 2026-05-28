@@ -14,6 +14,9 @@ import (
 
 const reportVersion = 1
 
+// TrustHeader is printed before human checklist lines (v0.1 honesty: server-side verify).
+const TrustHeader = "Trust verified by Verity API (server-side Sigstore checks)"
+
 // Options configures an inspect run (FR-SIGN-005, FR-DX-002).
 type Options struct {
 	Namespace string
@@ -83,6 +86,21 @@ func Run(ctx context.Context, api *apiclient.Client, opts Options) (*Result, err
 		MustLines:   MustChecklist(trust),
 		ShouldLines: ShouldChecklist(trust),
 	}, nil
+}
+
+// HumanLines returns printable inspect rows including the trust header.
+func HumanLines(result *Result) []string {
+	if result == nil {
+		return []string{TrustHeader}
+	}
+	lines := []string{TrustHeader}
+	for _, l := range result.MustLines {
+		lines = append(lines, l.Text)
+	}
+	for _, l := range result.ShouldLines {
+		lines = append(lines, l.Text)
+	}
+	return lines
 }
 
 // MustFailed reports whether any Must checklist line failed (FR-DX-005).

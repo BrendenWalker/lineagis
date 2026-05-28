@@ -68,84 +68,82 @@ The goal is to answer questions like:
 
 ---
 
-# MVP Scope
+# MVP Scope (v0.1)
 
-The initial MVP focuses on a minimal but compelling trust workflow for open-source maintainers.
+The initial release delivers a **Phase 1 (Must)** trust workflow for open-source maintainers. Authoritative phasing is in [docs/specs/00-overview.md](docs/specs/00-overview.md) (Must / Should / Deferred).
 
-## Initial Features
+## Guaranteed in v0.1 (Must)
 
-### Artifact Publishing
+| Area | Capabilities |
+|------|----------------|
+| **Publishing** | OCI artifact push, immutable `sha256:` digests, semver tags |
+| **Signing** | Sigstore keyless signing (GitHub Actions), server-side signature verification on trust status |
+| **CLI** | `verity publish`, `verity inspect` (text + JSON), non-zero exit on Must failures |
+| **Policy** | `require-signatures` enforced at tag time and inspect |
 
-* OCI artifact push/pull
-* immutable digests
-* semantic version tagging
+## Optional in v0.1 (Should — may show `⚠` on inspect)
 
-### Signing & Verification
+* SLSA-style provenance and SBOM attachment
+* Repository / maintainer checklist lines
+* `trusted-publishers` and `repository-ownership` policies (verify-time; warn unless configured to fail)
+* [GitHub Actions publish guide](docs/guides/github-actions-publish.md) and [composite action](.github/actions/verity-publish/action.yml)
 
-* Sigstore integration
-* keyless signing
-* signature verification
-* provenance verification
+## Not in v0.1 (Deferred)
 
-### Provenance & Metadata
+* CVE / vulnerability blocking
+* Federation and transparency-log UX
+* `verity pull`, CLI OIDC token exchange, offline cosign verify on inspect
 
-* SLSA-style attestations
-* source repository linkage
-* git commit tracking
-* CI workflow identity
-* SBOM attachment
+## What `verity inspect` proves (and does not)
 
-### Policy Enforcement
+**Proves:** cryptographic signature validity (via the Verity API), tamper evidence for the registered digest, and active namespace policy results.
 
-Initial policy support:
+**Does not prove:** that the artifact is safe, malware-free, or free of vulnerable dependencies. A validly signed malicious artifact is still malicious. Compromised CI can produce valid signatures and provenance.
 
-* require signatures
-* restrict trusted publishers
-* verify repository ownership
-* block known critical vulnerabilities
-
-### Developer Experience
-
-* CLI-first workflow
-* GitHub Actions integration
-* simple verification tooling
+Pin releases by digest (`sha256:…`), not mutable tags alone.
 
 ---
 
 # Example Workflow
 
-## Publish
+## Publish (GitHub Actions — recommended)
+
+Use keyless signing from CI. See [docs/guides/github-actions-publish.md](docs/guides/github-actions-publish.md).
 
 ```bash
-verity publish dist/*
+verity publish dist/* --namespace gh/org/app --artifact app --tag v1.0.0
 ```
 
-Automatically:
+In GitHub Actions (with `id-token: write`), publish typically:
 
-* signs artifacts
-* generates provenance
-* uploads metadata
-* attaches attestations
-* publishes to OCI storage
+* signs the artifact digest with Sigstore
+* attaches SLSA provenance (when not skipped)
+* registers metadata and sets the semver tag
+
+## Publish (local development only)
+
+Local stack uses `VERITY_DEV_TOKEN` and often `--skip-sign` / `--skip-provenance` when Fulcio is unavailable. **Do not use dev tokens or skip flags in production.** See [docs/guides/quickstart.md](docs/guides/quickstart.md).
 
 ---
 
 ## Verify
 
 ```bash
-verity inspect package.whl
+verity inspect sha256:<digest> --namespace gh/org/app --artifact app
 ```
 
-Example output:
+Example output (v0.1):
 
 ```text
+Trust verified by Verity API (server-side Sigstore checks)
 ✓ Signed by GitHub Actions
-✓ Repository verified
-✓ Maintainer verified
-✓ SBOM attached
-✓ Provenance verified
-✓ No critical vulnerabilities detected
+⚠ Repository not verified (no provenance repository)
+⚠ Maintainer not verified (signature missing or invalid)
+⚠ SBOM not attached
+⚠ Provenance not attached
 ```
+
+Must checks (signature + active policy) must pass for exit code `0`. Should lines are informational unless policy fails.
 
 ---
 
@@ -287,7 +285,7 @@ export VERITY_TOKEN=dev-local-token
 
 On success the command prints the manifest digest (`sha256:…`, AC-PUB-001). Registry repository is `{namespace}/{artifact}` (e.g. `gh/acme/widget/widget`).
 
-CI runs on every pull request and on pushes to `main` as three status checks: `lint`, `test`, and `build`. Coverage is uploaded as a workflow artifact when tests run. To block merges until CI passes, require those checks on `main` — see [.github/BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md).
+CI runs on every pull request and on pushes to `main`. Required status checks: `lint`, `test`, `build`, and `keyless-publish` (acceptance: publish → inspect → `require-signatures`). See [.github/BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md).
 
 ## Local development stack
 
@@ -371,8 +369,11 @@ Detailed MVP requirements live in [docs/specs/](docs/specs/README.md): an overvi
 
 For execution-focused docs:
 
-- [Quickstart (Phase 1 Must)](docs/guides/quickstart.md)
+- [GitHub Actions publish (recommended)](docs/guides/github-actions-publish.md)
+- [Quickstart — local dev only](docs/guides/quickstart.md)
+- [v0.1 release checklist](docs/sdlc/mvp-v0.1-release.md)
 - [Phase 1 Must mapping to tests](docs/sdlc/phase1-must-test-mapping.md)
+- [Security](SECURITY.md)
 
 ---
 

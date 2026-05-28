@@ -17,8 +17,14 @@ type trustPolicy struct {
 }
 
 type trustAttestations struct {
-	Provenance bool `json:"provenance"`
-	SBOM       bool `json:"sbom"`
+	Provenance         bool   `json:"provenance"`
+	SBOM               bool   `json:"sbom"`
+	ProvenanceVerified bool   `json:"provenance_verified"`
+	Repository         string `json:"repository,omitempty"`
+	Commit             string `json:"commit,omitempty"`
+	Workflow           string `json:"workflow,omitempty"`
+	WorkflowRef        string `json:"workflow_ref,omitempty"`
+	RunID              string `json:"run_id,omitempty"`
 }
 
 type trustStatusResponse struct {
@@ -52,15 +58,24 @@ func (h *Handler) buildTrustStatus(ctx context.Context, namespaceID int64, ns, a
 	if err != nil {
 		return nil, err
 	}
-	var prov, sbom bool
-	for _, att := range atts {
-		pt := strings.ToLower(att.PredicateType)
-		if strings.Contains(pt, "provenance") || strings.Contains(pt, "slsaprovenance") {
-			prov = true
+	attStatus := evaluateAttestations(ctx, atts)
+
+	provRec, _ := h.Store.GetProvenanceByDigest(ctx, d.ID)
+	if provRec != nil {
+		attStatus.Repository = provRec.RepositoryURI
+		if provRec.CommitSHA != nil {
+			attStatus.Commit = *provRec.CommitSHA
 		}
-		if strings.Contains(pt, "sbom") || strings.Contains(pt, "spdx") || strings.Contains(pt, "cyclonedx") {
-			sbom = true
+		if provRec.WorkflowName != nil {
+			attStatus.Workflow = *provRec.WorkflowName
 		}
+		if provRec.WorkflowRef != nil {
+			attStatus.WorkflowRef = *provRec.WorkflowRef
+		}
+		if provRec.RunID != nil {
+			attStatus.RunID = *provRec.RunID
+		}
+		attStatus.ProvenanceVerified = provRec.Verified
 	}
 
 	overall := "pass"
@@ -82,9 +97,25 @@ func (h *Handler) buildTrustStatus(ctx context.Context, namespaceID int64, ns, a
 			Status:  policyStatus,
 			Reasons: policyEval.Reasons,
 		},
-		Attestations: trustAttestations{
-			Provenance: prov,
-			SBOM:       sbom,
-		},
+		Attestations: attStatus,
 	}, nil
+}
+
+func evaluateAttestations(ctx context.Context, atts []metadata.Attestation) trustAttestations {
+	var out trustAttestations
+	for _, att := range atts {
+		pt := strings.ToLower(att.PredicateType)
+		if isProvenancePredicate(pt) {
+			out.Provenance = true
+			if raw := attestationEnvelopeBytes(att); len(raw) > 0 {
+				if _, verified, err := verifyAttestationEnvelope(ctx, raw); err == nil && verified {
+					out.ProvenanceVerified = true
+				}
+			}
+		}
+		if isSBOMPredicate(pt) {
+			out.SBOM = true
+		}
+	}
+	return out
 }

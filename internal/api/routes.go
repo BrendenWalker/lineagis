@@ -75,6 +75,14 @@ func (h *Handler) routeV1(w http.ResponseWriter, r *http.Request) {
 		h.postAttachSignature(w, r, ns, artifact)
 	case r.Method == http.MethodGet && suffix == "signatures":
 		h.getListSignatures(w, r, ns, artifact)
+	case r.Method == http.MethodPost && strings.HasPrefix(suffix, "digests/") && strings.HasSuffix(suffix, "/attestations"):
+		rest := strings.TrimPrefix(suffix, "digests/")
+		rest = strings.TrimSuffix(rest, "/attestations")
+		if rest == "" || strings.Contains(rest, "/") {
+			WriteError(w, http.StatusNotFound, "NOT_FOUND", "unknown route", nil)
+			return
+		}
+		h.postAttachAttestation(w, r, ns, artifact, rest)
 	case r.Method == http.MethodPut && strings.HasPrefix(suffix, "tags/"):
 		tag := strings.TrimPrefix(suffix, "tags/")
 		if tag == "" || strings.Contains(tag, "/") {

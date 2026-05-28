@@ -43,8 +43,11 @@ export VERITY_TOKEN=dev-local-token
 ./bin/verity publish dist/ \
   --namespace gh/acme/quickstart \
   --artifact quickstart \
-  --tag v0.1.0
+  --tag v0.1.0 \
+  --skip-provenance
 ```
+
+Local publish uses `VERITY_DEV_TOKEN`; use `--skip-provenance` when Fulcio is unavailable. In GitHub Actions, omit that flag to attach SLSA provenance automatically.
 
 Expected result:
 
@@ -61,7 +64,7 @@ Use the digest printed by `publish`:
 
 Expected result:
 
-- output includes `Signed by GitHub Actions`
+- output includes `Signed by GitHub Actions` (Must) and optional Should lines (provenance, SBOM)
 - command exits `0` for signed artifacts
 
 ## 6) Tear down

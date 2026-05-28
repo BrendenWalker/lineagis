@@ -14,12 +14,22 @@ import (
 )
 
 func runPublish(args []string) int {
-	var path, namespace, artifact, tag string
+	var path, namespace, artifact, tag, sbomPath string
 	skipSign := publish.SkipSignFromEnv()
+	skipProvenance := publish.SkipProvenanceFromEnv()
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--skip-sign":
 			skipSign = true
+		case "--skip-provenance":
+			skipProvenance = true
+		case "--sbom":
+			if i+1 >= len(args) {
+				fmt.Fprintf(os.Stderr, "publish: --sbom requires a value\n")
+				return 1
+			}
+			i++
+			sbomPath = args[i]
 		case "--namespace":
 			if i+1 >= len(args) {
 				fmt.Fprintf(os.Stderr, "publish: --namespace requires a value\n")
@@ -83,11 +93,13 @@ func runPublish(args []string) int {
 	defer cancel()
 
 	digest, err := publish.Publish(ctx, reg, api, publish.Options{
-		Namespace: namespace,
-		Artifact:  artifact,
-		Tag:       tag,
-		Path:      path,
-		SkipSign:  skipSign,
+		Namespace:      namespace,
+		Artifact:       artifact,
+		Tag:            tag,
+		Path:           path,
+		SBOMPath:       sbomPath,
+		SkipSign:       skipSign,
+		SkipProvenance: skipProvenance,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "publish: %v\n", err)
@@ -99,7 +111,7 @@ func runPublish(args []string) int {
 }
 
 func printPublishUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: verity publish <path> --namespace <ns> --artifact <name> [--tag <tag>] [--skip-sign]\n")
+	fmt.Fprintf(os.Stderr, "Usage: verity publish <path> --namespace <ns> --artifact <name> [--tag <tag>] [--sbom <file>] [--skip-sign] [--skip-provenance]\n")
 	fmt.Fprintf(os.Stderr, "\nSigning uses Sigstore public-good (Fulcio/Rekor) by default. Local dev without Fulcio: --skip-sign or VERITY_SKIP_SIGN=1.\n")
 	fmt.Fprintf(os.Stderr, "CI keyless: VERITY_SIGSTORE_ID_TOKEN / SIGSTORE_ID_TOKEN, or GitHub Actions ambient OIDC (id-token: write).\n")
 	fmt.Fprintf(os.Stderr, "Operator trust roots: VERITY_SIGSTORE_* (see docs/signing-local.md).\n")

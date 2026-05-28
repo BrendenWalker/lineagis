@@ -28,8 +28,14 @@ type TrustStatus struct {
 		Reasons []PolicyReason `json:"reasons,omitempty"`
 	} `json:"policy"`
 	Attestations struct {
-		Provenance bool `json:"provenance"`
-		SBOM       bool `json:"sbom"`
+		Provenance         bool   `json:"provenance"`
+		SBOM               bool   `json:"sbom"`
+		ProvenanceVerified bool   `json:"provenance_verified"`
+		Repository         string `json:"repository,omitempty"`
+		Commit             string `json:"commit,omitempty"`
+		Workflow           string `json:"workflow,omitempty"`
+		WorkflowRef        string `json:"workflow_ref,omitempty"`
+		RunID              string `json:"run_id,omitempty"`
 	} `json:"attestations"`
 }
 

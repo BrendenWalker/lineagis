@@ -51,8 +51,9 @@ type ReportCheck struct {
 
 // Result is the trust checklist outcome for printing and exit codes.
 type Result struct {
-	Trust     *apiclient.TrustStatus
-	MustLines []ChecklistLine
+	Trust       *apiclient.TrustStatus
+	MustLines   []ChecklistLine
+	ShouldLines []ChecklistLine
 }
 
 // Run resolves ref, fetches API trust status (server-side signature verify), and formats output.
@@ -78,8 +79,9 @@ func Run(ctx context.Context, api *apiclient.Client, opts Options) (*Result, err
 	}
 
 	return &Result{
-		Trust:     trust,
-		MustLines: MustChecklist(trust),
+		Trust:       trust,
+		MustLines:   MustChecklist(trust),
+		ShouldLines: ShouldChecklist(trust),
 	}, nil
 }
 
@@ -99,8 +101,9 @@ func JSONReport(result *Result) Report {
 	if MustFailed(result.MustLines) {
 		overall = "fail"
 	}
-	checks := make([]ReportCheck, 0, len(result.MustLines))
-	for _, line := range result.MustLines {
+	all := append(append([]ChecklistLine{}, result.MustLines...), result.ShouldLines...)
+	checks := make([]ReportCheck, 0, len(all))
+	for _, line := range all {
 		priority := "should"
 		if line.Must {
 			priority = "must"
@@ -143,6 +146,156 @@ func MustChecklist(trust *apiclient.TrustStatus) []ChecklistLine {
 	lines := []ChecklistLine{signatureLine(trust.Signatures.Status, trust.Policy.Reasons)}
 	lines = append(lines, policyMustLines(trust)...)
 	return lines
+}
+
+// ShouldChecklist builds Phase 2 Should lines (FR-PROV-006, FR-PROV-008, FR-PROV-012, FR-PROV-013).
+func ShouldChecklist(trust *apiclient.TrustStatus) []ChecklistLine {
+	if trust == nil {
+		return nil
+	}
+	var lines []ChecklistLine
+	lines = append(lines, repositoryLine(trust))
+	lines = append(lines, maintainerLine(trust))
+	lines = append(lines, sbomLine(trust))
+	lines = append(lines, provenanceLine(trust))
+	lines = append(lines, workflowLine(trust))
+	return lines
+}
+
+func repositoryLine(trust *apiclient.TrustStatus) ChecklistLine {
+	if trust.Attestations.Repository == "" {
+		return ChecklistLine{
+			Text:          "⚠ Repository not verified (no provenance repository)",
+			Must:          false,
+			Pass:          false,
+			RequirementID: "FR-PROV-012",
+		}
+	}
+	expected := namespaceRepo(trust.Namespace)
+	if expected != "" && !strings.EqualFold(repoFromURI(trust.Attestations.Repository), expected) {
+		return ChecklistLine{
+			Text:          fmt.Sprintf("✗ Repository mismatch (%s)", trust.Attestations.Repository),
+			Must:          false,
+			Pass:          false,
+			RequirementID: "FR-PROV-012",
+		}
+	}
+	return ChecklistLine{
+		Text:          "✓ Repository verified",
+		Must:          false,
+		Pass:          true,
+		RequirementID: "FR-PROV-012",
+	}
+}
+
+func maintainerLine(trust *apiclient.TrustStatus) ChecklistLine {
+	for _, r := range trust.Policy.Reasons {
+		if strings.EqualFold(r.Rule, "trusted-publishers") {
+			return ChecklistLine{
+				Text:          failLine("Maintainer not verified", "FR-PROV-013", r.Rule, r.Message),
+				Must:          false,
+				Pass:          false,
+				RequirementID: "FR-PROV-013",
+				RuleID:        r.Rule,
+			}
+		}
+	}
+	if trust.Signatures.Status != "valid" {
+		return ChecklistLine{
+			Text:          "⚠ Maintainer not verified (signature missing or invalid)",
+			Must:          false,
+			Pass:          false,
+			RequirementID: "FR-PROV-013",
+		}
+	}
+	return ChecklistLine{
+		Text:          "✓ Maintainer verified",
+		Must:          false,
+		Pass:          true,
+		RequirementID: "FR-PROV-013",
+	}
+}
+
+func sbomLine(trust *apiclient.TrustStatus) ChecklistLine {
+	if trust.Attestations.SBOM {
+		return ChecklistLine{
+			Text:          "✓ SBOM attached",
+			Must:          false,
+			Pass:          true,
+			RequirementID: "FR-PROV-008",
+		}
+	}
+	return ChecklistLine{
+		Text:          "⚠ SBOM not attached",
+		Must:          false,
+		Pass:          false,
+		RequirementID: "FR-PROV-008",
+	}
+}
+
+func provenanceLine(trust *apiclient.TrustStatus) ChecklistLine {
+	if trust.Attestations.ProvenanceVerified {
+		return ChecklistLine{
+			Text:          "✓ Provenance verified",
+			Must:          false,
+			Pass:          true,
+			RequirementID: "FR-PROV-006",
+		}
+	}
+	if trust.Attestations.Provenance {
+		return ChecklistLine{
+			Text:          "✗ Provenance invalid or signature failed",
+			Must:          false,
+			Pass:          false,
+			RequirementID: "FR-PROV-006",
+		}
+	}
+	return ChecklistLine{
+		Text:          "⚠ Provenance not attached",
+		Must:          false,
+		Pass:          false,
+		RequirementID: "FR-PROV-006",
+	}
+}
+
+func workflowLine(trust *apiclient.TrustStatus) ChecklistLine {
+	if trust.Attestations.Workflow == "" {
+		return ChecklistLine{
+			Text:          "⚠ GitHub Actions workflow identity unavailable",
+			Must:          false,
+			Pass:          false,
+			RequirementID: "FR-PROV-003",
+		}
+	}
+	msg := fmt.Sprintf("✓ Published via workflow %s", trust.Attestations.Workflow)
+	if trust.Attestations.WorkflowRef != "" {
+		msg += " (" + trust.Attestations.WorkflowRef + ")"
+	}
+	if trust.Attestations.RunID != "" {
+		msg += " run " + trust.Attestations.RunID
+	}
+	return ChecklistLine{
+		Text:          msg,
+		Must:          false,
+		Pass:          true,
+		RequirementID: "FR-PROV-003",
+	}
+}
+
+func namespaceRepo(ns string) string {
+	const prefix = "gh/"
+	if strings.HasPrefix(ns, prefix) {
+		return strings.TrimPrefix(ns, prefix)
+	}
+	return ""
+}
+
+func repoFromURI(uri string) string {
+	uri = strings.TrimSuffix(strings.TrimSpace(uri), "/")
+	if strings.HasPrefix(uri, "https://github.com/") {
+		return strings.TrimPrefix(uri, "https://github.com/")
+	}
+	return uri
 }
 
 func policyMustLines(trust *apiclient.TrustStatus) []ChecklistLine {

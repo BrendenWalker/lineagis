@@ -69,7 +69,22 @@ type Attestation struct {
 	PredicateType  string
 	EnvelopeRef    *string
 	EnvelopeDigest *string
+	EnvelopeJSON   json.RawMessage
 	CreatedAt      time.Time
+}
+
+// ProvenanceRecord stores parsed provenance fields for querying (FR-PROV-010).
+type ProvenanceRecord struct {
+	ID            int64
+	AttestationID int64
+	DigestID      int64
+	RepositoryURI string
+	CommitSHA     *string
+	WorkflowName  *string
+	WorkflowRef   *string
+	RunID         *string
+	Verified      bool
+	CreatedAt     time.Time
 }
 
 // Policy is a versioned rule set for a namespace.

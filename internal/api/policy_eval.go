@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/BrendenWalker/verity/internal/auth"
 	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/verity/internal/signing"
 )
 
 // EvalPhase selects push-time vs verify-time rule sets (FR-POL-004).
@@ -35,7 +38,6 @@ func parseEvalPhase(raw string) (EvalPhase, error) {
 }
 
 // evaluateActivePolicy evaluates the namespace active policy for a digest and phase.
-// Same digest, policy version, and phase always yield the same outcome and reasons.
 func evaluateActivePolicy(ctx context.Context, store *metadata.Store, namespaceID, digestID int64, phase EvalPhase) (*EvaluateResult, error) {
 	policy, err := store.GetActivePolicy(ctx, namespaceID)
 	if errors.Is(err, metadata.ErrNotFound) {
@@ -45,7 +47,12 @@ func evaluateActivePolicy(ctx context.Context, store *metadata.Store, namespaceI
 		return nil, fmt.Errorf("load active policy: %w", err)
 	}
 
-	reasons, err := evaluatePolicyDocument(ctx, store, policy.Document, digestID, phase)
+	ns, err := store.GetNamespaceByID(ctx, namespaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	reasons, err := evaluatePolicyDocument(ctx, store, ns.Name, ns.Config, policy.Document, digestID, phase)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +71,7 @@ func evaluateActivePolicy(ctx context.Context, store *metadata.Store, namespaceI
 	}, nil
 }
 
-func evaluatePolicyDocument(ctx context.Context, store *metadata.Store, document json.RawMessage, digestID int64, phase EvalPhase) ([]PolicyReason, error) {
+func evaluatePolicyDocument(ctx context.Context, store *metadata.Store, ns string, nsConfig json.RawMessage, document json.RawMessage, digestID int64, phase EvalPhase) ([]PolicyReason, error) {
 	var doc policyDocument
 	if err := json.Unmarshal(document, &doc); err != nil {
 		return nil, nil
@@ -75,23 +82,54 @@ func evaluatePolicyDocument(ctx context.Context, store *metadata.Store, document
 		if !ruleAppliesInPhase(rule, phase) {
 			continue
 		}
-		if !ruleRequiresSignatures(rule) {
-			continue
-		}
-		action := "verify"
-		if phase == EvalPhasePush {
-			action = "tagging"
-		}
-		if err := checkRequireSignatures(ctx, store, digestID, action); err != nil {
-			var pf PolicyFailure
-			if errors.As(err, &pf) {
-				reasons = append(reasons, PolicyReason{Rule: pf.Rule, Message: pf.Hint})
-				continue
+		ruleID := ruleIDFor(rule)
+		switch {
+		case ruleRequiresSignatures(rule):
+			action := "verify"
+			if phase == EvalPhasePush {
+				action = "tagging"
 			}
-			return nil, err
+			if err := checkRequireSignatures(ctx, store, digestID, action); err != nil {
+				if pf, ok := asPolicyFailure(err); ok {
+					reasons = append(reasons, PolicyReason{Rule: pf.Rule, Message: pf.Hint})
+				} else {
+					return nil, err
+				}
+			}
+		case ruleTrustedPublishers(rule):
+			if err := checkTrustedPublishers(ctx, store, digestID, rule); err != nil {
+				if pf, ok := asPolicyFailure(err); ok {
+					reasons = append(reasons, PolicyReason{Rule: ruleID, Message: pf.Hint})
+				} else {
+					return nil, err
+				}
+			}
+		case ruleRepositoryOwnership(rule):
+			if err := checkRepositoryOwnership(ctx, store, ns, nsConfig, digestID); err != nil {
+				if pf, ok := asPolicyFailure(err); ok {
+					reasons = append(reasons, PolicyReason{Rule: ruleID, Message: pf.Hint})
+				} else {
+					return nil, err
+				}
+			}
 		}
 	}
 	return reasons, nil
+}
+
+func ruleIDFor(rule policyRule) string {
+	if id := strings.TrimSpace(rule.ID); id != "" {
+		return id
+	}
+	return strings.TrimSpace(rule.Type)
+}
+
+func asPolicyFailure(err error) (PolicyFailure, bool) {
+	var pf PolicyFailure
+	if errors.As(err, &pf) {
+		return pf, true
+	}
+	return PolicyFailure{}, false
 }
 
 // ruleAppliesInPhase returns whether a rule runs for the given evaluation phase.
@@ -99,6 +137,108 @@ func ruleAppliesInPhase(rule policyRule, phase EvalPhase) bool {
 	if phase == EvalPhaseVerify {
 		return true
 	}
-	// Push-time (MVP): require-signatures and future push-scoped rules only.
 	return ruleRequiresSignatures(rule)
+}
+
+func checkTrustedPublishers(ctx context.Context, store *metadata.Store, digestID int64, rule policyRule) error {
+	cfg, err := parseTrustedPublishersConfig(rule.Config)
+	if err != nil {
+		return PolicyFailure{Rule: ruleIDFor(rule), Hint: err.Error()}
+	}
+	if len(cfg.Publishers) == 0 {
+		return PolicyFailure{Rule: ruleIDFor(rule), Hint: "trusted-publishers policy has no allowlisted publishers"}
+	}
+
+	sigs, err := store.ListSignatures(ctx, digestID)
+	if err != nil {
+		return err
+	}
+	for _, sig := range sigs {
+		bundle := signatureBundleBytes(sig)
+		if len(bundle) == 0 {
+			continue
+		}
+		pub, ok := signing.GitHubPublisherFromBundle(bundle)
+		if !ok {
+			continue
+		}
+		for _, allowed := range cfg.Publishers {
+			if matchPublisher(pub, allowed) {
+				return nil
+			}
+		}
+	}
+	return PolicyFailure{
+		Rule: ruleIDFor(rule),
+		Hint: "signer workflow identity is not in the trusted publishers allowlist",
+	}
+}
+
+func matchPublisher(actual signing.GitHubPublisher, allowed trustedPublisher) bool {
+	repo := strings.TrimSpace(allowed.Repository)
+	wf := strings.TrimSpace(allowed.Workflow)
+	if repo != "" && !strings.EqualFold(actual.Repository, repo) {
+		return false
+	}
+	if wf != "" && !strings.EqualFold(actual.Workflow, wf) {
+		return false
+	}
+	return repo != "" || wf != ""
+}
+
+func parseTrustedPublishersConfig(raw json.RawMessage) (trustedPublishersConfig, error) {
+	if len(raw) == 0 {
+		return trustedPublishersConfig{}, nil
+	}
+	var cfg trustedPublishersConfig
+	if err := json.Unmarshal(raw, &cfg); err != nil {
+		return trustedPublishersConfig{}, fmt.Errorf("trusted-publishers config: %w", err)
+	}
+	return cfg, nil
+}
+
+func checkRepositoryOwnership(ctx context.Context, store *metadata.Store, ns string, nsConfig json.RawMessage, digestID int64) error {
+	expectedRepo, ok := auth.ExpectedRepository(ns, nsConfig)
+	if !ok {
+		return PolicyFailure{
+			Rule: "repository-ownership",
+			Hint: "namespace is not linked to a GitHub repository",
+		}
+	}
+	prov, err := store.GetProvenanceByDigest(ctx, digestID)
+	if errors.Is(err, metadata.ErrNotFound) {
+		return PolicyFailure{
+			Rule: "repository-ownership",
+			Hint: "provenance attestation is required to verify repository ownership",
+		}
+	}
+	if err != nil {
+		return err
+	}
+	claimRepo := repositoryFromURI(prov.RepositoryURI)
+	if claimRepo == "" {
+		return PolicyFailure{
+			Rule: "repository-ownership",
+			Hint: "provenance does not include a repository URI",
+		}
+	}
+	if !strings.EqualFold(claimRepo, expectedRepo) {
+		return PolicyFailure{
+			Rule: "repository-ownership",
+			Hint: fmt.Sprintf("provenance repository %q does not match namespace repository %q", claimRepo, expectedRepo),
+		}
+	}
+	return nil
+}
+
+func repositoryFromURI(uri string) string {
+	uri = strings.TrimSpace(uri)
+	uri = strings.TrimSuffix(uri, "/")
+	if strings.HasPrefix(uri, "https://github.com/") {
+		return strings.TrimPrefix(uri, "https://github.com/")
+	}
+	if strings.HasPrefix(uri, "http://github.com/") {
+		return strings.TrimPrefix(uri, "http://github.com/")
+	}
+	return uri
 }

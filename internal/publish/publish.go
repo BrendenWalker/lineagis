@@ -20,12 +20,14 @@ type ManifestSigner interface {
 
 // Options configures a publish run.
 type Options struct {
-	Namespace string
-	Artifact  string
-	Tag       string
-	Path      string
-	SkipSign  bool
-	Signer    ManifestSigner
+	Namespace      string
+	Artifact       string
+	Tag            string
+	Path           string
+	SBOMPath       string
+	SkipSign       bool
+	SkipProvenance bool
+	Signer         ManifestSigner
 }
 
 // RegistryRepo returns the OCI repository name {namespace}/{artifact}.
@@ -82,17 +84,31 @@ func Publish(ctx context.Context, reg *registry.Client, api *apiclient.Client, o
 		return "", fmt.Errorf("register digest: %w", err)
 	}
 
+	signer := opts.Signer
+	if signer == nil {
+		signer = defaultManifestSigner{}
+	}
+
 	if !opts.SkipSign {
-		signer := opts.Signer
-		if signer == nil {
-			signer = defaultManifestSigner{}
-		}
 		bundle, issuer, subject, err := signer.SignManifest(ctx, manifestJSON)
 		if err != nil {
 			return "", fmt.Errorf("sign manifest: %w", err)
 		}
 		if err := api.AttachSignature(ctx, opts.Namespace, opts.Artifact, digest, bundle, issuer, subject); err != nil {
 			return "", fmt.Errorf("attach signature: %w", err)
+		}
+	}
+
+	skipProv := opts.SkipProvenance || SkipProvenanceFromEnv()
+	if !skipProv {
+		if err := attachProvenance(ctx, api, signer, opts.Namespace, opts.Artifact, digest); err != nil {
+			return "", fmt.Errorf("attach provenance: %w", err)
+		}
+	}
+
+	if strings.TrimSpace(opts.SBOMPath) != "" {
+		if err := attachSBOM(ctx, api, signer, opts.Namespace, opts.Artifact, digest, opts.SBOMPath); err != nil {
+			return "", fmt.Errorf("attach sbom: %w", err)
 		}
 	}
 

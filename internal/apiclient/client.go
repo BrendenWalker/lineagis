@@ -106,6 +106,28 @@ func (c *Client) AttachSignature(ctx context.Context, namespace, artifact, diges
 	return c.do(req, http.StatusCreated, nil)
 }
 
+// AttachAttestation stores a signed in-toto attestation for a digest (FR-PROV-005, FR-API-010).
+func (c *Client) AttachAttestation(ctx context.Context, namespace, artifact, digest, predicateType string, statement, bundle json.RawMessage) error {
+	body, err := json.Marshal(map[string]any{
+		"predicate_type": predicateType,
+		"statement":      statement,
+		"bundle":         bundle,
+	})
+	if err != nil {
+		return err
+	}
+	path, err := joinURL(c.baseURL, "v1", "namespaces", namespace, "artifacts", artifact, "digests", digest, "attestations")
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, path, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return c.do(req, http.StatusCreated, nil)
+}
+
 // SetTag maps a semver tag to a digest.
 func (c *Client) SetTag(ctx context.Context, namespace, artifact, tag, digest string) error {
 	body, err := json.Marshal(map[string]string{"digest": digest})

@@ -70,7 +70,7 @@ The goal is to answer questions like:
 
 # MVP Scope (v0.1)
 
-The initial release delivers a **Phase 1 (Must)** trust workflow for open-source maintainers. Authoritative phasing is in [docs/specs/00-overview.md](docs/specs/00-overview.md) (Must / Should / Deferred).
+The initial release delivers **Layer A — Integrity** (see [docs/specs/00-overview.md](docs/specs/00-overview.md)). Authoritative phasing uses Must / Should / Deferred.
 
 ## Guaranteed in v0.1 (Must)
 
@@ -78,15 +78,21 @@ The initial release delivers a **Phase 1 (Must)** trust workflow for open-source
 |------|----------------|
 | **Publishing** | OCI artifact push, immutable `sha256:` digests, semver tags |
 | **Signing** | Sigstore keyless signing (GitHub Actions), server-side signature verification on trust status |
-| **CLI** | `verity publish`, `verity inspect` (text + JSON), non-zero exit on Must failures |
-| **Policy** | `require-signatures` enforced at tag time and inspect |
+| **CLI** | `verity publish`, `verity inspect` (text + JSON), non-zero exit on Must / configured-policy failures |
+| **Policy** | `require-signatures` at tag time and inspect |
+| **Policy** | `trusted-publishers` **fail-closed when you add the rule** (operator-defined allowlist; verify-time in v0.1) |
+| **Honesty** | Inspect does not show `✓` for checks that were not evaluated |
 
-## Optional in v0.1 (Should — may show `⚠` on inspect)
+## Optional in v0.1 (Should)
 
 * SLSA-style provenance and SBOM attachment
-* Repository / maintainer checklist lines
-* `trusted-publishers` and `repository-ownership` policies (verify-time; warn unless configured to fail)
-* [GitHub Actions publish guide](docs/guides/github-actions-publish.md) and [composite action](.github/actions/verity-publish/action.yml)
+* Repository ownership policy (fail-closed when rule configured)
+* Push-time enforcement for all configured policies on `SetTag` (v0.2 — today `trusted-publishers` may not block tag)
+* [GitHub Actions publish guide](docs/guides/github-actions-publish.md) and [composite action](.github/actions/verity-publish/action.yml) — **production golden path**
+
+## Trusted publishers (operator-defined)
+
+Not a global safe-project list. Per namespace, operators configure which **signing identities** (e.g. GitHub `repository` + `workflow` from the Sigstore certificate) may satisfy policy when the `trusted-publishers` rule is enabled. See [docs/specs/04-policy-enforcement.md](docs/specs/04-policy-enforcement.md#trusted-publishers).
 
 ## Not in v0.1 (Deferred)
 
@@ -143,7 +149,7 @@ Trust verified by Verity API (server-side Sigstore checks)
 ⚠ Provenance not attached
 ```
 
-Must checks (signature + active policy) must pass for exit code `0`. Should lines are informational unless policy fails.
+Must checks and any **configured** policy rules must pass for exit code `0`. Unconfigured checks show `—` or `⚠`, not `✓`. Attestation lines are informational until provenance verify ships (Layer B).
 
 ---
 

@@ -103,7 +103,7 @@ Inspect output line ownership:
 |---------------------|--------------|
 | Signed by GitHub Actions | 02-signing-verification |
 | Repository verified | 03-provenance-metadata, 04-policy-enforcement |
-| Maintainer verified | 04-policy-enforcement |
+| Publisher allowed (trusted-publishers) | 04-policy-enforcement |
 | SBOM attached | 03-provenance-metadata |
 | Provenance verified | 03-provenance-metadata |
 | No critical vulnerabilities | 04-policy-enforcement (Deferred) |

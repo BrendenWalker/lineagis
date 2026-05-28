@@ -37,8 +37,10 @@ Verity provides **integrity, identity, and policy attribution** — not malware 
 
 ## Policy
 
-- **`require-signatures` (Must):** Blocks semver tagging and fails inspect when no valid signature exists for the digest.
-- **Should policies** (`trusted-publishers`, `repository-ownership`): Evaluated at verify time in v0.1; configure explicitly and treat inspect `⚠` lines accordingly.
+- **`require-signatures`:** Blocks semver tagging and fails inspect when no valid signature exists for the digest.
+- **`trusted-publishers`:** When the rule is in your namespace policy, only operator-configured signing identities (e.g. GitHub `repository` + `workflow`) pass; otherwise fails inspect (fail-closed). Not a global vendor list — you define the allowlist.
+- **`repository-ownership`:** When configured, fails if provenance repository does not match the namespace.
+- **v0.1 gap:** `trusted-publishers` may not block `SetTag` until v0.2; use inspect in CI until push-time enforcement ships.
 
 Policy changes should be auditable (`FR-POL-010`). Review audit logs after policy or namespace configuration updates.
 

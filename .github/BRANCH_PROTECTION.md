@@ -21,4 +21,4 @@ Checks appear in the picker after at least one workflow run on a pull request (o
 
 ## Not in required CI
 
-- `make smoke` / `make smoke-registry` — optional local operator validation; the acceptance workflow starts its own Postgres + Zot services.
+- `make smoke` / `make smoke-registry` — contributor convenience; builds the API from the Dockerfile. The **`operator-stack`** job in `ci.yml` is the automated AC-ARCH-001 check and uses workflow-built binaries only (see [operator-validation.md](../docs/guides/operator-validation.md)).

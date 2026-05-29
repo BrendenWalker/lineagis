@@ -1,4 +1,4 @@
-.PHONY: build test test-integration lint compose-up compose-down smoke smoke-registry
+.PHONY: build test test-integration lint compose-up compose-down smoke smoke-registry operator-stack-ci
 
 # Override for CI (Linux): make test TEST_FLAGS=-race
 # On Windows, leave empty; -race requires CGO.
@@ -21,3 +21,5 @@ smoke-registry:
 	bash scripts/smoke-registry.sh
 smoke: compose-up
 	bash scripts/smoke-stack.sh
+operator-stack-ci:
+	bash scripts/operator-stack-ci.sh

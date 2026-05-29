@@ -46,16 +46,17 @@ else
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/verity-bin.sh
+source "$SCRIPT_DIR/lib/verity-bin.sh"
 REGISTRY_URL="$REGISTRY_URL" bash "$SCRIPT_DIR/smoke-registry.sh"
 pass "registry -> s3 (push/pull via crane)"
 
-if [ -x "./bin/verity" ] || [ -x "./bin/verity.exe" ]; then
-  verity_bin="./bin/verity"
-  [ -x "./bin/verity.exe" ] && verity_bin="./bin/verity.exe"
+if verity_bin="$(verity_bin_path 2>/dev/null)"; then
+  chmod +x "$verity_bin" 2>/dev/null || true
   "$verity_bin" --version >/dev/null || fail "verity cli --version failed"
   pass "cli available ($verity_bin --version)"
 else
-  echo "SKIP: bin/verity not built; run make build for cli hop"
+  echo "SKIP: bin/verity not built; download verity-binaries-linux-amd64 or verity-binaries-windows-amd64 from CI (see docs/guides/operator-validation.md)"
 fi
 
 echo "=== all smoke checks passed ==="

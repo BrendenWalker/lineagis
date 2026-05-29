@@ -28,16 +28,22 @@ On `main`, require these status checks (see [.github/BRANCH_PROTECTION.md](../..
 
 ## Manual verification (release manager)
 
+Automated proof is in CI — no local `go build` required for release sign-off:
+
 ```bash
 make test
-make build
-gh workflow run publish-keyless-smoke.yml   # or confirm latest PR run passed
+gh run list --workflow=ci.yml --limit 3          # confirm lint, test, build, operator-stack passed
+gh run list --workflow=publish-keyless-smoke.yml --limit 3   # confirm keyless-publish passed
 ```
 
-Optional local stack:
+Optional operator-stack validation on your machine (download CI binaries, do not build from source):
 
 ```bash
-make smoke
+# Windows: verity-binaries-windows-amd64
+# Linux/WSL: verity-binaries-linux-amd64
+# See docs/guides/operator-validation.md
+gh run download --name verity-binaries-windows-amd64 --dir bin
+bash scripts/operator-stack-ci.sh
 ```
 
 ## Known limitations (v0.1)

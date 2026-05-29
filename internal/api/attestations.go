@@ -37,7 +37,13 @@ func verifyAttestationEnvelope(ctx context.Context, envelopeJSON json.RawMessage
 		return provenance.Statement{}, false, err
 	}
 	cfg := signing.LoadConfig()
-	if err := signing.VerifyManifestBundle(ctx, cfg, env.Statement, env.Bundle, signing.VerifyOptions{}); err != nil {
+	opts := signing.KeylessVerifyOptions(nil)
+	if pub := signing.VerificationKeyPEM(env.Bundle); len(pub) > 0 {
+		opts.PublicKeyPEM = pub
+		opts.IgnoreTlog = true
+		opts.IgnoreSCT = true
+	}
+	if err := signing.VerifyManifestBundle(ctx, cfg, env.Statement, env.Bundle, opts); err != nil {
 		return stmt, false, nil
 	}
 	return stmt, true, nil

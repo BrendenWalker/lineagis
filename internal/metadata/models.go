@@ -22,6 +22,12 @@ type Artifact struct {
 	CreatedAt   time.Time
 }
 
+// ArtifactDigestMatch links an artifact name to a digest via provenance index (FR-PROV-010).
+type ArtifactDigestMatch struct {
+	ArtifactName string
+	Digest       string
+}
+
 // Digest is an immutable content address for a manifest.
 type Digest struct {
 	ID         int64

@@ -902,3 +902,55 @@ func TestEvaluatePolicy_validation(t *testing.T) {
 		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
 	}
 }
+
+func TestListArtifacts_byCommit(t *testing.T) {
+	h, store, _ := testHandler(t, "test-token")
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	ctx := context.Background()
+	ns, err := store.CreateNamespace(ctx, "gh/acme/widget", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	art, err := store.RegisterArtifact(ctx, ns.ID, "widget")
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := store.RegisterDigest(ctx, art.ID, "sha256:commitquery", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	commit := "c0ffee"
+	att, err := store.AttachAttestation(ctx, d.ID, "https://slsa.dev/provenance/v1", nil, nil, json.RawMessage(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.InsertProvenanceRecord(ctx, att.ID, d.ID, "https://github.com/acme/widget", &commit, nil, nil, nil, true); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/namespaces/gh/acme/widget/artifacts?commit="+commit, nil)
+	req.Header.Set("Authorization", "Bearer test-token")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	var resp struct {
+		Commit  string `json:"commit"`
+		Results []struct {
+			Name   string `json:"name"`
+			Digest string `json:"digest"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.Commit != commit || len(resp.Results) != 1 {
+		t.Fatalf("got %+v", resp)
+	}
+	if resp.Results[0].Name != "widget" || resp.Results[0].Digest != d.Digest {
+		t.Fatalf("results = %+v", resp.Results)
+	}
+}

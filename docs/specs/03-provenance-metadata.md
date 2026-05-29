@@ -88,11 +88,15 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix). Most requirements are 
 | AC-PROV-003 | Given modified provenance bytes after sign, when verify runs, then provenance is reported invalid. | FR-PROV-009 |
 | AC-PROV-004 | Given provenance for digest D stored via API, when querying metadata by commit, then artifact D is returned (Should). | FR-PROV-010 |
 
+## Resolved open questions (v0.2)
+
+| ID | Decision | Notes |
+|----|----------|-------|
+| OQ-PROV-001 | **SLSA Build L1** for MVP | Provenance present, signed, and verified on inspect; higher levels deferred. |
+| OQ-PROV-002 | **SBOM optional** on publish | Inspect reports `⚠ SBOM not attached` when absent; operators may require via future policy. |
+| OQ-PROV-003 | **SPDX and CycloneDX accepted** | `SBOMPredicateType` detects format; guides show one SPDX example. |
+| OQ-PROV-004 | **Provenance claim + namespace match** (no GitHub API) | `repository-ownership` compares provenance URI to `gh/owner/repo`; no live repo API in v0.2. |
+
 ## Open questions
 
-| ID | Question | Cross-ref |
-|----|----------|-----------|
-| OQ-PROV-001 | Minimum SLSA build level for MVP (0 vs 1 vs 2)? | OQ-OV-002 |
-| OQ-PROV-002 | SBOM required on publish or optional? | OQ-OV-003 |
-| OQ-PROV-003 | SPDX vs CycloneDX for MVP? | OQ-OV-004 |
-| OQ-PROV-004 | Repository ownership verification via GitHub API vs provenance claim only? | [04-policy-enforcement.md](04-policy-enforcement.md) |
+None for v0.2 Attribution scope.

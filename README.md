@@ -138,18 +138,19 @@ Local stack uses `VERITY_DEV_TOKEN` and often `--skip-sign` / `--skip-provenance
 verity inspect sha256:<digest> --namespace gh/org/app --artifact app
 ```
 
-Example output (v0.1):
+Example output (Layer B / v0.2):
 
 ```text
-Trust verified by Verity API (server-side Sigstore checks)
-✓ Signed by GitHub Actions
-⚠ Repository not verified (no provenance repository)
-⚠ Maintainer not verified (signature missing or invalid)
-⚠ SBOM not attached
-⚠ Provenance not attached
+Signature verified locally (Sigstore/Rekor)
+✓ Signed by github.com/org/repo (release.yml) ref refs/heads/main
+— Repository verified (repository-ownership not configured)
+✓ Maintainer verified
+✓ SBOM attached
+✓ Provenance verified
+✓ Published via workflow release (refs/heads/main) run 12345
 ```
 
-Must checks and any **configured** policy rules must pass for exit code `0`. Unconfigured checks show `—` or `⚠`, not `✓`. Attestation lines are informational until provenance verify ships (Layer B).
+Must checks and any **configured** policy rules must pass for exit code `0`. Unconfigured checks show `—` or `⚠`, not `✓`. Provenance and SBOM lines reflect cryptographic verification when attestations are present.
 
 ---
 

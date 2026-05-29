@@ -81,6 +81,7 @@ jobs:
         run: |
           mkdir -p dist
           echo "gha keyless smoke $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/release.txt
+          cp docs/examples/sbom/minimal-spdx.json dist/sbom.spdx.json
 
       - name: Keyless publish (no --skip-sign)
         run: |
@@ -90,7 +91,8 @@ jobs:
           OUTPUT="$(./bin/verity publish dist/ \
             --namespace "${NS}" \
             --artifact smoke \
-            --tag "0.0.0+gha.${{ github.run_id }}" 2>&1)" || {
+            --tag "0.0.0+gha.${{ github.run_id }}" \
+            --sbom dist/sbom.spdx.json 2>&1)" || {
             echo "$OUTPUT"
             exit 1
           }
@@ -114,7 +116,33 @@ jobs:
             | tee trust.json
           jq -e '.signatures.status == "valid"' trust.json
           jq -e '.attestations.provenance == true' trust.json
+          jq -e '.attestations.provenance_verified == true' trust.json
+          jq -e '.attestations.sbom == true' trust.json
+          jq -e '.attestations.repository != ""' trust.json
+          jq -e --arg sha "${{ github.sha }}" '.attestations.commit == $sha' trust.json
+          jq -e '.attestations.workflow != ""' trust.json
           jq -e '.overall == "pass"' trust.json
+
+      - name: Query artifacts by commit (AC-PROV-004)
+        run: |
+          curl -sf -H "Authorization: Bearer ${VERITY_TOKEN}" \
+            "${VERITY_API_URL}/v1/namespaces/${namespace}/artifacts?commit=${{ github.sha }}" \
+            | tee by-commit.json
+          jq -e --arg digest "${digest}" \
+            '[.results[] | select(.digest == $digest and .name == "smoke")] | length == 1' by-commit.json
+
+      - name: Inspect Layer B attestations (AC-PROV-001, AC-PROV-002)
+        run: |
+          ./bin/verity inspect dist/ \
+            --namespace "${namespace}" \
+            --artifact smoke \
+            --output json > inspect-layer-b.json
+          jq -e '[.checks[]] | any(.message | contains("Provenance verified"))' inspect-layer-b.json
+          jq -e '[.checks[]] | any(.message | contains("SBOM attached"))' inspect-layer-b.json
+          HUMAN="$(./bin/verity inspect dist/ --namespace "${namespace}" --artifact smoke)"
+          echo "${HUMAN}" | grep -F 'Provenance verified'
+          echo "${HUMAN}" | grep -F 'SBOM attached'
+          echo "${HUMAN}" | grep -F 'repository-ownership not configured'
 
       - name: Verify with verity verify action
         uses: ./.github/actions/verity-verify

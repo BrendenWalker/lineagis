@@ -231,12 +231,32 @@ func ShouldChecklist(trust *apiclient.TrustStatus) []ChecklistLine {
 }
 
 func repositoryLine(trust *apiclient.TrustStatus) ChecklistLine {
-	if trust.Attestations.Repository == "" {
+	if !ruleConfigured(trust, "repository-ownership") {
 		return ChecklistLine{
-			Text:          "⚠ Repository not verified (no provenance repository)",
+			Text:          "— Repository verified (repository-ownership not configured)",
 			Must:          false,
 			Pass:          false,
 			RequirementID: "FR-PROV-012",
+		}
+	}
+	for _, r := range trust.Policy.Reasons {
+		if strings.EqualFold(r.Rule, "repository-ownership") {
+			return ChecklistLine{
+				Text:          failLine("Repository not verified", "FR-PROV-012", r.Rule, r.Message),
+				Must:          false,
+				Pass:          false,
+				RequirementID: "FR-PROV-012",
+				RuleID:        r.Rule,
+			}
+		}
+	}
+	if trust.Attestations.Repository == "" {
+		return ChecklistLine{
+			Text:          "✗ Repository not verified (no provenance repository)",
+			Must:          false,
+			Pass:          false,
+			RequirementID: "FR-PROV-012",
+			RuleID:        "repository-ownership",
 		}
 	}
 	expected := namespaceRepo(trust.Namespace)
@@ -246,6 +266,7 @@ func repositoryLine(trust *apiclient.TrustStatus) ChecklistLine {
 			Must:          false,
 			Pass:          false,
 			RequirementID: "FR-PROV-012",
+			RuleID:        "repository-ownership",
 		}
 	}
 	return ChecklistLine{
@@ -253,6 +274,7 @@ func repositoryLine(trust *apiclient.TrustStatus) ChecklistLine {
 		Must:          false,
 		Pass:          true,
 		RequirementID: "FR-PROV-012",
+		RuleID:        "repository-ownership",
 	}
 }
 

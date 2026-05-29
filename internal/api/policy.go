@@ -110,6 +110,14 @@ func (e PolicyFailure) Error() string {
 	return e.Rule + ": " + e.Hint
 }
 
+func isTrustedPublisherIdentityFailure(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "certificate identity") || strings.Contains(msg, "certificateidentity")
+}
+
 type policyDocument struct {
 	Rules []policyRule `json:"rules"`
 }
@@ -161,6 +169,19 @@ func policyRequiresSignatures(document json.RawMessage) bool {
 	}
 	for _, r := range doc.Rules {
 		if ruleRequiresSignatures(r) {
+			return true
+		}
+	}
+	return false
+}
+
+func policyHasTrustedPublishers(document json.RawMessage) bool {
+	var doc policyDocument
+	if err := json.Unmarshal(document, &doc); err != nil {
+		return false
+	}
+	for _, r := range doc.Rules {
+		if ruleTrustedPublishers(r) {
 			return true
 		}
 	}

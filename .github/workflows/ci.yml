@@ -144,6 +144,6 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Operator stack smoke (AC-ARCH-001)
-        env:
-          PATH: ${{ github.workspace }}/bin:${{ env.PATH }}
-        run: bash scripts/operator-stack-ci.sh
+        run: |
+          export PATH="${{ github.workspace }}/bin:$PATH"
+          bash scripts/operator-stack-ci.sh

@@ -158,22 +158,26 @@ func (h *Handler) postRegisterDigest(w http.ResponseWriter, r *http.Request, ns,
 			WriteError(w, http.StatusBadRequest, "VALIDATION_FAILED", err.Error(), nil)
 			return
 		}
-		keylessOpts := signing.KeylessVerifyOptions(nil)
+		var policyDoc json.RawMessage
 		if policy, polErr := h.Store.GetActivePolicy(ctx, namespace.ID); polErr == nil {
-			keylessOpts = signing.KeylessVerifyOptions(policy.Document)
+			policyDoc = policy.Document
 		}
-		opts := keylessOpts
-		if pub := signing.PublicKeyPEMFromBundle(req.Bundle); len(pub) > 0 {
+		opts := signing.KeylessVerifyOptions(policyDoc)
+		if pub := signing.VerificationKeyPEM(req.Bundle); len(pub) > 0 {
 			opts.PublicKeyPEM = pub
 			opts.IgnoreTlog = true
 			opts.IgnoreSCT = true
 		}
 		cfg := signing.LoadConfig()
 		if err := signing.VerifyManifestBundle(ctx, cfg, manifestJSON, req.Bundle, opts); err != nil {
-			writePolicyFailed(w, PolicyFailure{
+			fail := PolicyFailure{
 				Rule: "require-signatures",
 				Hint: "signature bundle does not verify for manifest digest: " + err.Error(),
-			})
+			}
+			if policyHasTrustedPublishers(policyDoc) && isTrustedPublisherIdentityFailure(err) {
+				fail.Rule = "trusted-publishers"
+			}
+			writePolicyFailed(w, fail)
 			return
 		}
 		reg, _, err := h.Store.RegisterDigestWithSignature(ctx, art.ID, req.Digest, req.MediaType, req.SizeBytes, req.Bundle, req.Issuer, req.Subject)

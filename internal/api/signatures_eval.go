@@ -43,10 +43,7 @@ func (h *Handler) evaluateSignatures(ctx context.Context, ns, artifact string, d
 		if len(bundle) == 0 {
 			continue
 		}
-		pub := signing.PublicKeyPEMFromBundle(bundle)
-		if len(pub) == 0 {
-			pub = signing.LegacyBundleCertPEM(bundle)
-		}
+		pub := signing.VerificationKeyPEM(bundle)
 		opts := keylessOpts
 		switch {
 		case len(pub) > 0:

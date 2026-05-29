@@ -28,6 +28,18 @@ type listArtifactsResponse struct {
 	Offset    int                `json:"offset"`
 }
 
+type listArtifactsByCommitResponse struct {
+	Namespace string                    `json:"namespace"`
+	Commit    string                    `json:"commit"`
+	Results   []artifactDigestResponse  `json:"results"`
+}
+
+type artifactDigestResponse struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Digest    string `json:"digest"`
+}
+
 type getTagResponse struct {
 	Tag       string `json:"tag"`
 	Digest    string `json:"digest"`
@@ -49,6 +61,34 @@ func (h *Handler) listArtifacts(w http.ResponseWriter, r *http.Request, ns strin
 	}
 	if err := authorizeRead(ctx, ns, namespace.Config); err != nil {
 		writeAuthError(w, err)
+		return
+	}
+
+	commitSHA := strings.TrimSpace(r.URL.Query().Get("commit"))
+	if commitSHA != "" {
+		matches, err := h.Store.ListArtifactsByCommit(ctx, namespace.ID, commitSHA)
+		if err != nil {
+			if mapStoreError(w, err) {
+				return
+			}
+		}
+		resp := listArtifactsByCommitResponse{
+			Namespace: namespace.Name,
+			Commit:    commitSHA,
+		}
+		for _, m := range matches {
+			resp.Results = append(resp.Results, artifactDigestResponse{
+				Name:      m.ArtifactName,
+				Namespace: namespace.Name,
+				Digest:    m.Digest,
+			})
+		}
+		if resp.Results == nil {
+			resp.Results = []artifactDigestResponse{}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(resp)
 		return
 	}
 

@@ -88,7 +88,7 @@ After publish, verify trust before promoting a release:
             --output json
 ```
 
-Exit code `1` when any **Must** check fails (`require-signatures`, invalid signature) or any **configured** policy rule fails (including `trusted-publishers`). Unconfigured checks show `—` or `⚠`, not `✓`. Optional attestation lines (provenance, SBOM) may show `⚠` until Layer B verify is complete.
+Exit code `1` when any **Must** check fails (`require-signatures`, invalid signature) or any **configured** policy rule fails (including `trusted-publishers`). Unconfigured checks show `—` or `⚠`, not `✓`. When provenance and SBOM attestations are present, inspect reports `✓ Provenance verified` and `✓ SBOM attached` after Sigstore verification (AC-PROV-003; see `internal/api/attestations_test.go`).
 
 ## Trusted publishers (optional, recommended)
 
@@ -122,8 +122,13 @@ When this rule is present, `verity inspect` **fails** if the artifact was signed
 Human output includes:
 
 ```text
-Trust verified by Verity API (server-side Sigstore checks)
+Signature verified locally (Sigstore/Rekor)
+✓ Signed by github.com/org/repo (release.yml)
+— Repository verified (repository-ownership not configured)
+✓ Provenance verified
 ```
+
+See [phase2-should-test-mapping.md](../sdlc/phase2-should-test-mapping.md) for CI proof.
 
 ## Consuming releases (verify-only)
 
@@ -156,6 +161,6 @@ jobs:
 - Treat `verity inspect` as **identity and integrity** checks, not malware scanning.
 - Local Sigstore verification is the default in `verity inspect` / `verity verify`; use `--trust-api` only when registry access is unavailable.
 
-See [SECURITY.md](../../SECURITY.md) and [mvp-v0.1-release.md](../sdlc/mvp-v0.1-release.md).
+See [SECURITY.md](../../SECURITY.md), [mvp-v0.2-release.md](../sdlc/mvp-v0.2-release.md), and [mvp-v0.1-release.md](../sdlc/mvp-v0.1-release.md).
 
 For verify-only consumers, see [github-actions-verify.md](github-actions-verify.md).

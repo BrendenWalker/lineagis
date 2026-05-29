@@ -48,11 +48,11 @@ Track progress on this branch (or child story branches). Suggested PR order at t
 
 | ID | Task | Spec / AC | Status |
 |----|------|-----------|--------|
-| W1 | Resolve OQ-PROV-001..004 in specs | OQ-PROV-* | todo |
-| W2 | `attestations_test.go` + inspect `ShouldChecklist` tests; fix `repositoryLine` honesty if needed | AC-PROV-003, NFR-OV-005 | todo |
-| W3 | Commit query API + store method | AC-PROV-004, FR-PROV-010 | todo |
-| W4 | Extend `publish-keyless-smoke`; add `phase2-should-test-mapping.md` | AC-OV-003, AC-PROV-001/002 | todo |
-| W5 | `mvp-v0.2-release.md` + README/guides; GitHub milestone + gap issues | AC-OV-003 | todo |
+| W1 | Resolve OQ-PROV-001..004 in specs | OQ-PROV-* | done |
+| W2 | `attestations_test.go` + inspect `ShouldChecklist` tests; fix `repositoryLine` honesty if needed | AC-PROV-003, NFR-OV-005 | done |
+| W3 | Commit query API + store method | AC-PROV-004, FR-PROV-010 | done |
+| W4 | Extend `publish-keyless-smoke`; add `phase2-should-test-mapping.md` | AC-OV-003, AC-PROV-001/002 | done |
+| W5 | `mvp-v0.2-release.md` + README/guides; GitHub milestone + gap issues | AC-OV-003 | done (docs); milestone/issues manual |
 
 ## Current implementation snapshot
 

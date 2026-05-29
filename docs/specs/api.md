@@ -51,7 +51,7 @@ See [00-overview.md](00-overview.md), [metadata-model.md](metadata-model.md), an
 | `GetNamespace` | GET | Must | Return namespace config and policy summary. |
 | `CreateOrUpdateArtifact` | PUT | Must | Register logical artifact under namespace. |
 | `GetArtifact` | GET | Must | Return artifact metadata and tags. |
-| `ListArtifacts` | GET | Should | List artifacts in namespace (paginated). |
+| `ListArtifacts` | GET | Should | List artifacts in namespace (paginated). Optional `?commit={sha}` returns artifact/digest pairs indexed by provenance commit (AC-PROV-004). |
 
 ### Tags and digests
 

@@ -1,0 +1,15 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "verity-smoke",
+  "documentNamespace": "https://verity.local/spdx/verity-smoke",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package",
+      "name": "verity-smoke",
+      "versionInfo": "0.0.0",
+      "downloadLocation": "NOASSERTION"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -116,6 +117,36 @@ func (s *Store) ListArtifacts(ctx context.Context, namespaceID int64, limit, off
 		arts = append(arts, a)
 	}
 	return arts, rows.Err()
+}
+
+// ListArtifactsByCommit returns artifact/digest pairs with provenance for the given commit (FR-PROV-010, AC-PROV-004).
+func (s *Store) ListArtifactsByCommit(ctx context.Context, namespaceID int64, commitSHA string) ([]ArtifactDigestMatch, error) {
+	commitSHA = strings.TrimSpace(commitSHA)
+	if commitSHA == "" {
+		return nil, fmt.Errorf("list artifacts by commit: commit_sha is required")
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT DISTINCT a.name, d.digest
+		FROM provenance_records pr
+		JOIN digests d ON d.id = pr.digest_id
+		JOIN artifacts a ON a.id = d.artifact_id
+		WHERE a.namespace_id = $1 AND pr.commit_sha = $2
+		ORDER BY a.name ASC, d.digest ASC
+	`, namespaceID, commitSHA)
+	if err != nil {
+		return nil, fmt.Errorf("list artifacts by commit: %w", err)
+	}
+	defer rows.Close()
+
+	var out []ArtifactDigestMatch
+	for rows.Next() {
+		var m ArtifactDigestMatch
+		if err := rows.Scan(&m.ArtifactName, &m.Digest); err != nil {
+			return nil, fmt.Errorf("scan artifact by commit: %w", err)
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
 }
 
 // GetArtifact returns an artifact by namespace and name.

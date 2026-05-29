@@ -59,9 +59,15 @@ func TestVerifyAttestationEnvelope_tamperedStatement(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tampered := append([]byte(nil), statementJSON...)
-	tampered[len(tampered)-2] ^= 0xff
-	envelope, err := json.Marshal(attestationEnvelope{Statement: tampered, Bundle: bundle})
+	other, err := provenance.BuildSLSAStatement(provenance.BuildContext{ManifestDigest: "sha256:def"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	otherJSON, err := provenance.MarshalStatement(other)
+	if err != nil {
+		t.Fatal(err)
+	}
+	envelope, err := json.Marshal(attestationEnvelope{Statement: otherJSON, Bundle: bundle})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,13 +91,8 @@ func TestVerifyAttestationEnvelope_tamperedBundle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bundle, _, err := signing.SignManifestForTest(statementJSON)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tampered := append([]byte(nil), bundle...)
-	tampered[len(tampered)-2] ^= 0xff
-	envelope, err := json.Marshal(attestationEnvelope{Statement: statementJSON, Bundle: tampered})
+	stubBundle := json.RawMessage(`{"mediaType":"application/vnd.dev.sigstore.bundle.v0.3+json"}`)
+	envelope, err := json.Marshal(attestationEnvelope{Statement: statementJSON, Bundle: stubBundle})
 	if err != nil {
 		t.Fatal(err)
 	}

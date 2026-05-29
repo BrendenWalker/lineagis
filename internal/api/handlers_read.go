@@ -29,9 +29,9 @@ type listArtifactsResponse struct {
 }
 
 type listArtifactsByCommitResponse struct {
-	Namespace string                    `json:"namespace"`
-	Commit    string                    `json:"commit"`
-	Results   []artifactDigestResponse  `json:"results"`
+	Namespace string                   `json:"namespace"`
+	Commit    string                   `json:"commit"`
+	Results   []artifactDigestResponse `json:"results"`
 }
 
 type artifactDigestResponse struct {

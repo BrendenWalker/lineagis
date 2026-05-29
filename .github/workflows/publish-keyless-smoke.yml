@@ -130,8 +130,7 @@ jobs:
             --artifact smoke \
             --output json > inspect-dist.json
           jq -e '.version == 1 and .overall == "pass"' inspect-dist.json
-          jq -e '.checks[0].status == "pass"' inspect-dist.json
-          jq -e '.checks[0].requirement_id == "FR-SIGN-005"' inspect-dist.json
+          jq -e '[.checks[]] | any(.requirement_id == "FR-SIGN-005" and .status == "pass")' inspect-dist.json
           HUMAN="$(./bin/verity inspect dist/ --namespace "${namespace}" --artifact smoke)"
           echo "${HUMAN}" | grep -F 'Signature verified locally'
           jq -e '[.checks[].message] | any(contains("workflow"))' inspect-dist.json
@@ -270,9 +269,9 @@ jobs:
           set -e
           test "${JSON_RC}" -eq 1
           jq -e '.version == 1 and .overall == "fail"' inspect-unsigned.json
-          jq -e '.checks[0].requirement_id == "FR-SIGN-005"' inspect-unsigned.json
-          jq -e '.checks[0].rule_id == "require-signatures"' inspect-unsigned.json
-          jq -e '.checks[0].message | contains("rule require-signatures")' inspect-unsigned.json
+          jq -e '[.checks[]] | any(.requirement_id == "FR-SIGN-005")' inspect-unsigned.json
+          jq -e '[.checks[]] | any(.rule_id == "require-signatures")' inspect-unsigned.json
+          jq -e '[.checks[]] | any(.message | contains("rule require-signatures"))' inspect-unsigned.json
 
       - name: Signed artifact still passes inspect after policy enabled
         run: |

@@ -16,10 +16,10 @@ type PolicyReason struct {
 
 // TrustStatus is the aggregated trust report from GetTrustStatus (FR-API-008).
 type TrustStatus struct {
-	Namespace       string `json:"namespace"`
-	Artifact        string `json:"artifact"`
-	Digest          string `json:"digest"`
-	Overall         string `json:"overall"`
+	Namespace       string   `json:"namespace"`
+	Artifact        string   `json:"artifact"`
+	Digest          string   `json:"digest"`
+	Overall         string   `json:"overall"`
 	ConfiguredRules []string `json:"configured_rules,omitempty"`
 	Signatures      struct {
 		Status string `json:"status"`

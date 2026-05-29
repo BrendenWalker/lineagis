@@ -17,7 +17,7 @@ type VerifyOptions struct {
 	// PublicKeyPEM verifies key-signed bundles offline (tests). When empty, keyless
 	// bundles use Config trust material (TrustedRootPath, CA PEMs, SIGSTORE_* via ApplyTrustEnv)
 	// or cosign public-good TUF when unset.
-	PublicKeyPEM []byte
+	PublicKeyPEM   []byte
 	IgnoreTlog     bool
 	IgnoreSCT      bool
 	CertIdentity   string // optional regexp; default permissive for keyless when empty

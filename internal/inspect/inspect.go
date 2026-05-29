@@ -60,12 +60,12 @@ type ReportCheck struct {
 
 // Result is the trust checklist outcome for printing and exit codes.
 type Result struct {
-	Trust         *apiclient.TrustStatus
-	LocalVerify   *LocalVerifyResult
-	ResolvedTag   string
-	TagWarning    string
-	MustLines     []ChecklistLine
-	ShouldLines   []ChecklistLine
+	Trust       *apiclient.TrustStatus
+	LocalVerify *LocalVerifyResult
+	ResolvedTag string
+	TagWarning  string
+	MustLines   []ChecklistLine
+	ShouldLines []ChecklistLine
 }
 
 // Run resolves ref, fetches API trust status (server-side signature verify), and formats output.

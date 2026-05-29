@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -193,6 +194,12 @@ func (h *Handler) putSetTag(w http.ResponseWriter, r *http.Request, ns, artifact
 			return
 		}
 	}
+
+	resID := fmt.Sprintf("%d", tagRow.ID)
+	h.recordAudit(ctx, namespace.ID, "tag.set", actorPtr, strPtr("tag"), &resID, map[string]any{
+		"tag":    tagRow.Name,
+		"digest": d.Digest,
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

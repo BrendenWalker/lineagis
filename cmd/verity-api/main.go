@@ -71,6 +71,12 @@ func run() int {
 		return 1
 	}
 
+	if cfg.DevToken != "" && cfg.OIDCIssuer != "" {
+		log.Warn("VERITY_DEV_TOKEN is set alongside OIDC; disable dev token in production deployments")
+	} else if cfg.DevToken != "" && cfg.TLSCertFile != "" {
+		log.Warn("VERITY_DEV_TOKEN is set with TLS enabled; ensure dev token is disabled in production")
+	}
+
 	srv := &server{
 		cfg:    cfg,
 		pool:   pool,

@@ -345,10 +345,31 @@ curl http://localhost:5000/v2/
 
 Run the full operator-stack smoke test (AC-ARCH-001). Requires Git Bash on Windows (`bash` on PATH):
 
+**Contributors (from source):**
+
 ```bash
 make build          # optional; verifies CLI hop
-make smoke          # compose-up + scripts/smoke-stack.sh
+make smoke          # compose-up + scripts/smoke-stack.sh (API built via Dockerfile)
 ```
+
+**Operators (workflow-built binaries — do not `go build` locally):**
+
+Windows (Git Bash):
+
+```bash
+gh run download --name verity-binaries-windows-amd64 --dir bin
+bash scripts/operator-stack-ci.sh
+```
+
+Linux / WSL:
+
+```bash
+gh run download --name verity-binaries-linux-amd64 --dir bin
+chmod +x bin/verity bin/verity-api
+bash scripts/operator-stack-ci.sh
+```
+
+See [docs/guides/operator-validation.md](docs/guides/operator-validation.md). CI runs the same path in the `operator-stack` job.
 
 Registry push/pull only (requires [crane](https://github.com/google/go-containerregistry/tree/main/cmd/crane)):
 

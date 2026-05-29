@@ -14,14 +14,20 @@ import (
 
 const reportVersion = 1
 
-// TrustHeader is printed before human checklist lines (v0.1 honesty: server-side verify).
-const TrustHeader = "Trust verified by Verity API (server-side Sigstore checks)"
+// TrustHeaderAPI notes server-side policy evaluation.
+const TrustHeaderAPI = "Policy evaluated by Verity API"
+
+// TrustHeaderLocal notes local Sigstore verification.
+const TrustHeaderLocal = "Signature verified locally (Sigstore/Rekor)"
 
 // Options configures an inspect run (FR-SIGN-005, FR-DX-002).
 type Options struct {
-	Namespace string
-	Artifact  string
-	Ref       string
+	Namespace     string
+	Artifact      string
+	Ref           string
+	LocalVerify   bool
+	RegistryURL   string
+	RequireDigest bool
 }
 
 // ChecklistLine is one inspect row for human or JSON output (AC-DX-002, FR-DX-007).
@@ -55,6 +61,9 @@ type ReportCheck struct {
 // Result is the trust checklist outcome for printing and exit codes.
 type Result struct {
 	Trust       *apiclient.TrustStatus
+	LocalVerify *LocalVerifyResult
+	ResolvedTag string
+	TagWarning  string
 	MustLines   []ChecklistLine
 	ShouldLines []ChecklistLine
 }
@@ -75,25 +84,59 @@ func Run(ctx context.Context, api *apiclient.Client, opts Options) (*Result, err
 	if err != nil {
 		return nil, err
 	}
+	if opts.RequireDigest && tag != "" {
+		return nil, fmt.Errorf("ref must be a sha256:… digest when --require-digest is set")
+	}
 
 	trust, err := api.GetTrustStatus(ctx, opts.Namespace, opts.Artifact, digest, tag)
 	if err != nil {
 		return nil, err
 	}
+	if trust.Digest != "" {
+		digest = trust.Digest
+	}
+
+	var local *LocalVerifyResult
+	if opts.LocalVerify && opts.RegistryURL != "" {
+		reg, err := registry.New(opts.RegistryURL)
+		if err != nil {
+			return nil, fmt.Errorf("registry client: %w", err)
+		}
+		local, err = VerifyLocally(ctx, reg, api, opts.Namespace, opts.Artifact, digest)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	tagWarning := ""
+	if tag != "" {
+		tagWarning = fmt.Sprintf("⚠ Resolved semver tag %q → %s (tags are mutable; pin sha256:… in CI)", tag, digest)
+	}
 
 	return &Result{
 		Trust:       trust,
-		MustLines:   MustChecklist(trust),
+		LocalVerify: local,
+		ResolvedTag: tag,
+		TagWarning:  tagWarning,
+		MustLines:   MustChecklist(trust, local),
 		ShouldLines: ShouldChecklist(trust),
 	}, nil
 }
 
-// HumanLines returns printable inspect rows including the trust header.
+// HumanLines returns printable inspect rows including trust headers.
 func HumanLines(result *Result) []string {
 	if result == nil {
-		return []string{TrustHeader}
+		return []string{TrustHeaderAPI}
 	}
-	lines := []string{TrustHeader}
+	var lines []string
+	if result.LocalVerify != nil {
+		lines = append(lines, TrustHeaderLocal)
+	} else {
+		lines = append(lines, TrustHeaderAPI+" (server-side signature checks)")
+	}
+	if result.TagWarning != "" {
+		lines = append(lines, result.TagWarning)
+	}
 	for _, l := range result.MustLines {
 		lines = append(lines, l.Text)
 	}
@@ -159,10 +202,17 @@ func EncodeJSON(w interface{ Write([]byte) (int, error) }, result *Result) error
 	return enc.Encode(JSONReport(result))
 }
 
-// MustChecklist builds MVP Must output lines from API trust status (AC-DX-002).
-func MustChecklist(trust *apiclient.TrustStatus) []ChecklistLine {
-	lines := []ChecklistLine{signatureLine(trust.Signatures.Status, trust.Policy.Reasons)}
+// MustChecklist builds MVP Must output lines from API trust status and optional local verify.
+func MustChecklist(trust *apiclient.TrustStatus, local *LocalVerifyResult) []ChecklistLine {
+	var lines []ChecklistLine
+	if local != nil {
+		lines = append(lines, localVerifyLine(local))
+	}
+	lines = append(lines, signatureLine(trust.Signatures.Status, trust.Policy.Reasons, trust.Signer))
 	lines = append(lines, policyMustLines(trust)...)
+	if ruleConfigured(trust, "require-provenance") {
+		lines = append(lines, provenanceMustLine(trust))
+	}
 	return lines
 }
 
@@ -252,6 +302,9 @@ func sbomLine(trust *apiclient.TrustStatus) ChecklistLine {
 }
 
 func provenanceLine(trust *apiclient.TrustStatus) ChecklistLine {
+	if ruleConfigured(trust, "require-provenance") {
+		return ChecklistLine{}
+	}
 	if trust.Attestations.ProvenanceVerified {
 		return ChecklistLine{
 			Text:          "✓ Provenance verified",
@@ -316,7 +369,90 @@ func repoFromURI(uri string) string {
 	return uri
 }
 
+func ruleConfigured(trust *apiclient.TrustStatus, rule string) bool {
+	if trust == nil {
+		return false
+	}
+	rule = strings.ToLower(strings.TrimSpace(rule))
+	for _, r := range trust.ConfiguredRules {
+		if strings.EqualFold(strings.TrimSpace(r), rule) {
+			return true
+		}
+	}
+	return false
+}
+
+func localVerifyLine(local *LocalVerifyResult) ChecklistLine {
+	switch local.Status {
+	case "valid":
+		msg := "✓ Local Sigstore signature valid"
+		if local.Signer.Repository != "" {
+			msg = fmt.Sprintf("✓ Signed by %s (%s)", local.Signer.Repository, local.Signer.Workflow)
+			if local.Signer.Ref != "" {
+				msg += " ref " + local.Signer.Ref
+			}
+		}
+		return ChecklistLine{Text: msg, Must: true, Pass: true, RequirementID: "FR-SIGN-005"}
+	case "missing":
+		return ChecklistLine{
+			Text:          failLine("Local signature missing", "FR-SIGN-005", "", "no Sigstore bundle found for digest"),
+			Must:          true,
+			Pass:          false,
+			RequirementID: "FR-SIGN-005",
+		}
+	default:
+		return ChecklistLine{
+			Text:          failLine("Local signature invalid", "FR-SIGN-005", "", "cosign verify failed for all bundles"),
+			Must:          true,
+			Pass:          false,
+			RequirementID: "FR-SIGN-005",
+		}
+	}
+}
+
+func provenanceMustLine(trust *apiclient.TrustStatus) ChecklistLine {
+	if trust.Attestations.ProvenanceVerified {
+		return ChecklistLine{
+			Text:          "✓ Provenance verified (require-provenance)",
+			Must:          true,
+			Pass:          true,
+			RequirementID: "FR-PROV-011",
+			RuleID:        "require-provenance",
+		}
+	}
+	for _, r := range trust.Policy.Reasons {
+		if strings.EqualFold(r.Rule, "require-provenance") {
+			return ChecklistLine{
+				Text:          failLine("Provenance required", "FR-PROV-011", r.Rule, r.Message),
+				Must:          true,
+				Pass:          false,
+				RequirementID: "FR-PROV-011",
+				RuleID:        r.Rule,
+			}
+		}
+	}
+	if trust.Attestations.Provenance {
+		return ChecklistLine{
+			Text:          failLine("Provenance invalid", "FR-PROV-011", "require-provenance", "provenance signature verification failed"),
+			Must:          true,
+			Pass:          false,
+			RequirementID: "FR-PROV-011",
+			RuleID:        "require-provenance",
+		}
+	}
+	return ChecklistLine{
+		Text:          failLine("Provenance missing", "FR-PROV-011", "require-provenance", "attach SLSA provenance during publish"),
+		Must:          true,
+		Pass:          false,
+		RequirementID: "FR-PROV-011",
+		RuleID:        "require-provenance",
+	}
+}
+
 func policyMustLines(trust *apiclient.TrustStatus) []ChecklistLine {
+	if trust == nil {
+		return nil
+	}
 	if trust.Policy.Status != "fail" {
 		return nil
 	}
@@ -325,6 +461,9 @@ func policyMustLines(trust *apiclient.TrustStatus) []ChecklistLine {
 	}
 	var out []ChecklistLine
 	for _, r := range trust.Policy.Reasons {
+		if strings.EqualFold(r.Rule, "require-provenance") {
+			continue
+		}
 		reqID := policyRequirementID(r.Rule)
 		out = append(out, ChecklistLine{
 			Text:          failLine(r.Message, reqID, r.Rule, r.Message),
@@ -346,12 +485,22 @@ func policyRequirementID(rule string) string {
 	}
 }
 
-func signatureLine(status string, policyReasons []apiclient.PolicyReason) ChecklistLine {
+func signatureLine(status string, policyReasons []apiclient.PolicyReason, signer *apiclient.TrustSigner) ChecklistLine {
 	ruleID := policyRuleForSignatures(policyReasons)
+	signedMsg := "✓ Signed by GitHub Actions"
+	if signer != nil && signer.Repository != "" {
+		signedMsg = fmt.Sprintf("✓ Signed by %s", signer.Repository)
+		if signer.Workflow != "" {
+			signedMsg += " (" + signer.Workflow + ")"
+		}
+		if signer.Ref != "" {
+			signedMsg += " ref " + signer.Ref
+		}
+	}
 	switch status {
 	case "valid":
 		return ChecklistLine{
-			Text:          "✓ Signed by GitHub Actions",
+			Text:          signedMsg,
 			Must:          true,
 			Pass:          true,
 			RequirementID: "FR-SIGN-005",

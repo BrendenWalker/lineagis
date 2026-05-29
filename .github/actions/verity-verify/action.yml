@@ -1,0 +1,68 @@
+name: Verity verify
+description: Verify artifact trust for a pinned digest (local Sigstore + API policy)
+inputs:
+  digest:
+    description: sha256 digest to verify (required)
+    required: true
+  namespace:
+    description: Verity namespace (e.g. gh/owner/repo)
+    required: true
+  artifact:
+    description: Artifact name within the namespace
+    required: true
+  local-verify:
+    description: Run local cosign verify (default true)
+    required: false
+    default: "true"
+  verity-api-url:
+    description: Verity API URL (defaults to VERITY_API_URL)
+    required: false
+    default: ""
+  verity-registry-url:
+    description: OCI registry URL (defaults to VERITY_REGISTRY_URL)
+    required: false
+    default: ""
+  verity-token:
+    description: API bearer token (defaults to VERITY_TOKEN)
+    required: false
+    default: ""
+outputs:
+  digest:
+    description: Verified digest
+    value: ${{ steps.verify.outputs.digest }}
+  passed:
+    description: "true when verification passed"
+    value: ${{ steps.verify.outputs.passed }}
+runs:
+  using: composite
+  steps:
+    - name: Build verity CLI
+      shell: bash
+      run: go build -o "${{ runner.temp }}/verity" ./cmd/verity
+
+    - name: Verify trust
+      id: verify
+      shell: bash
+      env:
+        VERITY_API_URL: ${{ inputs.verity-api-url != '' && inputs.verity-api-url || env.VERITY_API_URL }}
+        VERITY_REGISTRY_URL: ${{ inputs.verity-registry-url != '' && inputs.verity-registry-url || env.VERITY_REGISTRY_URL }}
+        VERITY_TOKEN: ${{ inputs.verity-token != '' && inputs.verity-token || env.VERITY_TOKEN }}
+      run: |
+        set -euo pipefail
+        args=(
+          "${{ runner.temp }}/verity" verify "${{ inputs.digest }}"
+          --namespace "${{ inputs.namespace }}"
+          --artifact "${{ inputs.artifact }}"
+          --output json
+        )
+        if [ "${{ inputs.local-verify }}" != "true" ]; then
+          args+=(--trust-api)
+        fi
+        if ! out="$("${args[@]}")"; then
+          echo "passed=false" >> "$GITHUB_OUTPUT"
+          echo "$out"
+          exit 1
+        fi
+        echo "digest=${{ inputs.digest }}" >> "$GITHUB_OUTPUT"
+        echo "passed=true" >> "$GITHUB_OUTPUT"
+        echo "$out"

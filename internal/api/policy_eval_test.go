@@ -29,16 +29,16 @@ func TestRuleAppliesInPhase(t *testing.T) {
 	t.Parallel()
 	sig := policyRule{ID: "require-signatures"}
 	other := policyRule{ID: "trusted-publishers"}
-	if !ruleAppliesInPhase(sig, EvalPhasePush) {
-		t.Fatal("require-signatures should apply on push")
-	}
-	if !ruleAppliesInPhase(sig, EvalPhaseVerify) {
-		t.Fatal("require-signatures should apply on verify")
-	}
-	if ruleAppliesInPhase(other, EvalPhasePush) {
-		t.Fatal("trusted-publishers should not apply on push in MVP")
-	}
-	if !ruleAppliesInPhase(other, EvalPhaseVerify) {
-		t.Fatal("trusted-publishers should apply on verify")
+	prov := policyRule{ID: "require-provenance"}
+	for _, phase := range []EvalPhase{EvalPhasePush, EvalPhaseVerify} {
+		if !ruleAppliesInPhase(sig, phase) {
+			t.Fatalf("require-signatures should apply on %s", phase)
+		}
+		if !ruleAppliesInPhase(other, phase) {
+			t.Fatalf("trusted-publishers should apply on %s", phase)
+		}
+		if !ruleAppliesInPhase(prov, phase) {
+			t.Fatalf("require-provenance should apply on %s", phase)
+		}
 	}
 }

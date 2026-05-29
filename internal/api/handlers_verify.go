@@ -127,6 +127,16 @@ func (h *Handler) runVerify(ctx context.Context, namespaceID int64, ns, artifact
 		}
 	}
 
+	actor := ActorFromContext(ctx)
+	var actorPtr *string
+	if actor != "" {
+		actorPtr = &actor
+	}
+	h.recordAudit(ctx, namespaceID, "verify.completed", actorPtr, strPtr("digest"), &d.Digest, map[string]any{
+		"outcome": outcomeFromVerify(sigStatus, result.Outcome),
+		"digest":  d.Digest,
+	})
+
 	outcome := "pass"
 	if sigStatus != "valid" || result.Outcome == "fail" {
 		outcome = "fail"
@@ -147,4 +157,14 @@ func (h *Handler) runVerify(ctx context.Context, namespaceID int64, ns, artifact
 			Reasons: result.Reasons,
 		},
 	}, nil
+}
+
+func outcomeFromVerify(sigStatus, policyOutcome string) string {
+	if sigStatus != "valid" || policyOutcome == "fail" {
+		return "fail"
+	}
+	if policyOutcome == "warn" {
+		return "warn"
+	}
+	return "pass"
 }

@@ -94,5 +94,56 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Build
+      - name: Build Linux binaries
         run: make build
+
+      - name: Build Windows binaries
+        run: |
+          GOOS=windows GOARCH=amd64 go build -o bin/verity.exe ./cmd/verity
+          GOOS=windows GOARCH=amd64 go build -o bin/verity-api.exe ./cmd/verity-api
+
+      - name: Upload Linux binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: verity-binaries-linux-amd64
+          path: |
+            bin/verity
+            bin/verity-api
+          if-no-files-found: error
+
+      - name: Upload Windows binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: verity-binaries-windows-amd64
+          path: |
+            bin/verity.exe
+            bin/verity-api.exe
+          if-no-files-found: error
+
+  operator-stack:
+    name: operator-stack
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download workflow-built binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: verity-binaries-linux-amd64
+          path: bin
+
+      - name: Install crane
+        run: |
+          go install github.com/google/go-containerregistry/cmd/crane@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Operator stack smoke (AC-ARCH-001)
+        env:
+          PATH: ${{ github.workspace }}/bin:${{ env.PATH }}
+        run: bash scripts/operator-stack-ci.sh

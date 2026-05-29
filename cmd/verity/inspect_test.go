@@ -34,7 +34,7 @@ func TestRunInspect_printsMustLines(t *testing.T) {
 		t.Fatal(err)
 	}
 	os.Stdout = w
-	code := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app"})
+	code := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app", "--trust-api"})
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestRunInspect_printsMustLines(t *testing.T) {
 		t.Fatalf("exit = %d, want 0", code)
 	}
 	got := out.String()
-	if !strings.Contains(got, inspect.TrustHeader) {
+	if !strings.Contains(got, inspect.TrustHeaderAPI) {
 		t.Fatalf("stdout missing trust header: %q", got)
 	}
 	if !strings.Contains(got, "✓ Signed by GitHub Actions") {
@@ -70,7 +70,7 @@ func TestRunInspect_exitOnMustFailure(t *testing.T) {
 	t.Setenv("VERITY_TOKEN", "tok")
 	t.Setenv("VERITY_API_URL", srv.URL)
 
-	if got := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app"}); got != 1 {
+	if got := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app", "--trust-api"}); got != 1 {
 		t.Fatalf("exit = %d, want 1", got)
 	}
 }
@@ -96,7 +96,7 @@ func TestRunInspect_outputJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 	os.Stdout = w
-	code := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app", "--output", "json"})
+	code := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app", "--output", "json", "--trust-api"})
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestRunInspect_shouldWarningExitZero(t *testing.T) {
 	t.Setenv("VERITY_TOKEN", "tok")
 	t.Setenv("VERITY_API_URL", srv.URL)
 
-	if got := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app"}); got != 0 {
+	if got := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app", "--trust-api"}); got != 0 {
 		t.Fatalf("exit = %d, want 0 when only Should lines warn", got)
 	}
 }
@@ -180,7 +180,7 @@ func TestRunInspect_outputJSONMustFailureExit(t *testing.T) {
 		t.Fatal(err)
 	}
 	os.Stdout = w
-	code := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app", "--output", "json"})
+	code := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app", "--output", "json", "--trust-api"})
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}

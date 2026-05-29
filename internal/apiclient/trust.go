@@ -16,11 +16,12 @@ type PolicyReason struct {
 
 // TrustStatus is the aggregated trust report from GetTrustStatus (FR-API-008).
 type TrustStatus struct {
-	Namespace  string `json:"namespace"`
-	Artifact   string `json:"artifact"`
-	Digest     string `json:"digest"`
-	Overall    string `json:"overall"`
-	Signatures struct {
+	Namespace       string   `json:"namespace"`
+	Artifact        string   `json:"artifact"`
+	Digest          string   `json:"digest"`
+	Overall         string   `json:"overall"`
+	ConfiguredRules []string `json:"configured_rules,omitempty"`
+	Signatures      struct {
 		Status string `json:"status"`
 	} `json:"signatures"`
 	Policy struct {
@@ -37,6 +38,15 @@ type TrustStatus struct {
 		WorkflowRef        string `json:"workflow_ref,omitempty"`
 		RunID              string `json:"run_id,omitempty"`
 	} `json:"attestations"`
+	Signer *TrustSigner `json:"signer,omitempty"`
+}
+
+// TrustSigner is signing identity surfaced in trust reports (FR-SIGN-008).
+type TrustSigner struct {
+	Repository string `json:"repository,omitempty"`
+	Workflow   string `json:"workflow,omitempty"`
+	Ref        string `json:"ref,omitempty"`
+	Issuer     string `json:"issuer,omitempty"`
 }
 
 // GetTrustStatus returns trust for a digest or tag (FR-SIGN-006).

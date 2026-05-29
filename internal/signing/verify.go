@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	cosignoptions "github.com/sigstore/cosign/v2/cmd/cosign/cli/options"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/verify"
@@ -16,9 +17,11 @@ type VerifyOptions struct {
 	// PublicKeyPEM verifies key-signed bundles offline (tests). When empty, keyless
 	// bundles use Config trust material (TrustedRootPath, CA PEMs, SIGSTORE_* via ApplyTrustEnv)
 	// or cosign public-good TUF when unset.
-	PublicKeyPEM []byte
-	IgnoreTlog   bool
-	IgnoreSCT    bool
+	PublicKeyPEM   []byte
+	IgnoreTlog     bool
+	IgnoreSCT      bool
+	CertIdentity   string // optional regexp; default permissive for keyless when empty
+	CertOidcIssuer string // optional regexp; default permissive for keyless when empty
 }
 
 // VerifyManifestBundle checks that bundle cryptographically covers manifestJSON (FR-SIGN-003, FR-SIGN-006).
@@ -68,11 +71,18 @@ func VerifyManifestBundle(ctx context.Context, cfg Config, manifestJSON, bundleJ
 		CARoots:         cfg.CARoots,
 		CAIntermediates: cfg.CAIntermediates,
 	}
-	// Keyless v0.3 bundles require identity/issuer matchers in sigstore-go; use permissive
-	// patterns for trust-status crypto checks (FR-SIGN-006). Pinning is policy/FR-SIGN-008.
+	// Keyless v0.3 bundles require identity/issuer matchers in sigstore-go.
 	if newBundle && len(opts.PublicKeyPEM) == 0 {
-		certOpts.CertIdentityRegexp = ".*"
-		certOpts.CertOidcIssuerRegexp = ".*"
+		identity := strings.TrimSpace(opts.CertIdentity)
+		issuer := strings.TrimSpace(opts.CertOidcIssuer)
+		if identity == "" {
+			identity = ".*"
+		}
+		if issuer == "" {
+			issuer = ".*"
+		}
+		certOpts.CertIdentityRegexp = identity
+		certOpts.CertOidcIssuerRegexp = issuer
 	}
 
 	cmd := verify.VerifyBlobCmd{

@@ -116,29 +116,75 @@ jobs:
           jq -e '.attestations.provenance == true' trust.json
           jq -e '.overall == "pass"' trust.json
 
+      - name: Verify with verity verify action
+        uses: ./.github/actions/verity-verify
+        with:
+          digest: ${{ env.digest }}
+          namespace: ${{ env.namespace }}
+          artifact: smoke
+
       - name: Inspect signed artifact (JSON, AC-DX-005)
         run: |
           ./bin/verity inspect dist/ \
             --namespace "${namespace}" \
             --artifact smoke \
-            --output json > inspect-dist.json
+            --output json \
+            --trust-api > inspect-dist.json
           jq -e '.version == 1 and .overall == "pass"' inspect-dist.json
           jq -e '.checks[0].status == "pass"' inspect-dist.json
           jq -e '.checks[0].requirement_id == "FR-SIGN-005"' inspect-dist.json
-          jq -e '.checks[0].message | contains("Signed by GitHub Actions")' inspect-dist.json
-          # Human output includes trust header (v0.1 inspect honesty)
-          HUMAN="$(./bin/verity inspect dist/ --namespace "${namespace}" --artifact smoke)"
-          echo "${HUMAN}" | grep -F 'Trust verified by Verity API'
+          HUMAN="$(./bin/verity inspect dist/ --namespace "${namespace}" --artifact smoke --trust-api)"
+          echo "${HUMAN}" | grep -F 'Policy evaluated by Verity API'
           jq -e '[.checks[].message] | any(contains("workflow"))' inspect-dist.json
 
       - name: Inspect signed artifact by digest (exit 0, AC-DX-003)
         run: |
-          ./bin/verity inspect "${digest}" \
+          ./bin/verity verify "${digest}" \
             --namespace "${namespace}" \
             --artifact smoke \
             --output json > inspect-digest.json
           jq -e --arg digest "${digest}" \
             '.version == 1 and .overall == "pass" and .digest == $digest' inspect-digest.json
+
+      - name: Apply strict-release policy (wrong workflow, AC-POL-002b)
+        run: |
+          POLICY="$(jq --arg repo "${{ github.repository }}" \
+            '.document.rules[1].config.publishers[0].repository = $repo' \
+            docs/examples/policies/strict-release.json)"
+          curl -sf -X PUT \
+            -H "Authorization: Bearer ${VERITY_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$POLICY" \
+            "${VERITY_API_URL}/v1/namespaces/${namespace}/policy"
+          curl -sf -H "Authorization: Bearer ${VERITY_TOKEN}" \
+            "${VERITY_API_URL}/v1/namespaces/${namespace}/policy" \
+            | jq -e '.document.rules | map(.type // .id) | index("trusted-publishers") != null'
+
+      - name: Push-time block for wrong workflow (strict-release)
+        run: |
+          set +e
+          OUTPUT="$(./bin/verity publish dist/ \
+            --namespace "${namespace}" \
+            --artifact smoke \
+            --tag "0.0.0+wrong-workflow.${{ github.run_id }}" 2>&1)"
+          RC=$?
+          set -e
+          echo "$OUTPUT"
+          test "${RC}" -ne 0
+          echo "${OUTPUT}" | grep -Fi 'trusted-publishers'
+
+      - name: Verify fails under strict-release wrong workflow (AC-OV-005)
+        run: |
+          set +e
+          ./bin/verity verify "${digest}" \
+            --namespace "${namespace}" \
+            --artifact smoke \
+            --output json > verify-strict-fail.json
+          RC=$?
+          set -e
+          test "${RC}" -eq 1
+          jq -e '.overall == "fail"' verify-strict-fail.json
+          jq -e '[.checks[]] | any(.rule_id == "trusted-publishers")' verify-strict-fail.json
 
       - name: Enable require-signatures policy
         run: |
@@ -196,7 +242,8 @@ jobs:
           set +e
           INSPECT_OUT="$(./bin/verity inspect dist-unsigned/ \
             --namespace "${namespace}" \
-            --artifact smoke-unsigned 2>&1)"
+            --artifact smoke-unsigned \
+            --trust-api 2>&1)"
           INSPECT_RC=$?
           set -e
           echo "$INSPECT_OUT"
@@ -208,6 +255,7 @@ jobs:
           ./bin/verity inspect dist-unsigned/ \
             --namespace "${namespace}" \
             --artifact smoke-unsigned \
+            --trust-api \
             --output json > inspect-unsigned.json
           JSON_RC=$?
           set -e
@@ -222,5 +270,6 @@ jobs:
           ./bin/verity inspect dist/ \
             --namespace "${namespace}" \
             --artifact smoke \
+            --trust-api \
             --output json > inspect-signed-after-policy.json
           jq -e '.overall == "pass"' inspect-signed-after-policy.json

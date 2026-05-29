@@ -125,8 +125,11 @@ type trustedPublishersConfig struct {
 }
 
 type trustedPublisher struct {
-	Repository string `json:"repository"`
-	Workflow   string `json:"workflow"`
+	Repository  string `json:"repository"`
+	Workflow    string `json:"workflow"`
+	Ref         string `json:"ref,omitempty"`
+	Environment string `json:"environment,omitempty"`
+	Issuer      string `json:"issuer,omitempty"`
 }
 
 func validatePolicyDocument(document json.RawMessage) error {
@@ -174,6 +177,10 @@ func ruleTrustedPublishers(r policyRule) bool {
 
 func ruleRepositoryOwnership(r policyRule) bool {
 	return ruleMatches(r, "repository-ownership", "repo-ownership")
+}
+
+func ruleRequireProvenance(r policyRule) bool {
+	return ruleMatches(r, "require-provenance", "require-provenances")
 }
 
 func ruleMatches(r policyRule, names ...string) bool {

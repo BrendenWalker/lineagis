@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -102,6 +103,16 @@ func (h *Handler) postAttachSignature(w http.ResponseWriter, r *http.Request, ns
 			return
 		}
 	}
+
+	actor := ActorFromContext(ctx)
+	var actorPtr *string
+	if actor != "" {
+		actorPtr = &actor
+	}
+	resID := fmt.Sprintf("%d", sig.ID)
+	h.recordAudit(ctx, namespace.ID, "signature.attached", actorPtr, strPtr("signature"), &resID, map[string]any{
+		"digest": d.Digest,
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

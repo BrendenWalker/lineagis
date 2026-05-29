@@ -107,6 +107,8 @@ func runPublish(args []string) int {
 	}
 
 	fmt.Println(digest)
+	fmt.Fprintf(os.Stderr, "Published digest: %s\n", digest)
+	fmt.Fprintf(os.Stderr, "Pin this sha256 digest in consumers and CI (verity verify %s ...).\n", digest)
 	return 0
 }
 

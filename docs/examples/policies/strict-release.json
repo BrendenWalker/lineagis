@@ -1,0 +1,21 @@
+{
+  "document": {
+    "rules": [
+      { "type": "require-signatures" },
+      {
+        "type": "trusted-publishers",
+        "config": {
+          "publishers": [
+            {
+              "repository": "your-org/your-repo",
+              "workflow": "release.yml",
+              "ref": "refs/tags/*",
+              "issuer": "https://token.actions.githubusercontent.com"
+            }
+          ]
+        }
+      },
+      { "type": "require-provenance" }
+    ]
+  }
+}

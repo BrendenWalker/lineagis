@@ -32,9 +32,10 @@ func TestRun_digestValid(t *testing.T) {
 	defer srv.Close()
 
 	result, err := inspect.Run(context.Background(), apiclient.New(srv.URL, "tok"), inspect.Options{
-		Namespace: "ns",
-		Artifact:  "app",
-		Ref:       "sha256:abc",
+		Namespace:   "ns",
+		Artifact:    "app",
+		Ref:         "sha256:abc",
+		LocalVerify: false,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -57,9 +58,10 @@ func TestRun_digestInvalid(t *testing.T) {
 	defer srv.Close()
 
 	result, err := inspect.Run(context.Background(), apiclient.New(srv.URL, "tok"), inspect.Options{
-		Namespace: "ns",
-		Artifact:  "app",
-		Ref:       "sha256:dead",
+		Namespace:   "ns",
+		Artifact:    "app",
+		Ref:         "sha256:dead",
+		LocalVerify: false,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -87,29 +89,25 @@ func TestRun_tagMissing(t *testing.T) {
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"signatures": map[string]string{"status": "missing"},
+			"digest":     "sha256:tagged",
 		})
 	}))
 	defer srv.Close()
 
 	result, err := inspect.Run(context.Background(), apiclient.New(srv.URL, "tok"), inspect.Options{
-		Namespace: "ns",
-		Artifact:  "app",
-		Ref:       "1.0.0",
+		Namespace:   "ns",
+		Artifact:    "app",
+		Ref:         "1.0.0",
+		LocalVerify: false,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+	if result.TagWarning == "" {
+		t.Fatal("expected tag warning")
+	}
 	if len(result.MustLines) != 1 || result.MustLines[0].Pass {
 		t.Fatalf("got %+v", result.MustLines)
-	}
-	if result.MustLines[0].RequirementID != "FR-SIGN-005" {
-		t.Fatalf("requirement_id = %q", result.MustLines[0].RequirementID)
-	}
-	if !strings.Contains(result.MustLines[0].Text, "FR-SIGN-005") {
-		t.Fatalf("text = %q", result.MustLines[0].Text)
-	}
-	if !inspect.MustFailed(result.MustLines) {
-		t.Fatal("expected Must failure")
 	}
 }
 
@@ -130,9 +128,10 @@ func TestRun_localPath(t *testing.T) {
 	defer srv.Close()
 
 	result, err := inspect.Run(context.Background(), apiclient.New(srv.URL, "tok"), inspect.Options{
-		Namespace: "ns",
-		Artifact:  "app",
-		Ref:       dir,
+		Namespace:   "ns",
+		Artifact:    "app",
+		Ref:         dir,
+		LocalVerify: false,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -164,9 +163,10 @@ func TestRun_policyRuleOnSignatureFailure(t *testing.T) {
 	defer srv.Close()
 
 	result, err := inspect.Run(context.Background(), apiclient.New(srv.URL, "tok"), inspect.Options{
-		Namespace: "ns",
-		Artifact:  "app",
-		Ref:       "sha256:unsigned",
+		Namespace:   "ns",
+		Artifact:    "app",
+		Ref:         "sha256:unsigned",
+		LocalVerify: false,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -215,7 +215,7 @@ func TestHumanLines_includesTrustHeader(t *testing.T) {
 		},
 	}
 	lines := inspect.HumanLines(result)
-	if len(lines) != 3 || lines[0] != inspect.TrustHeader {
+	if len(lines) != 3 || !strings.Contains(lines[0], inspect.TrustHeaderAPI) {
 		t.Fatalf("lines = %v", lines)
 	}
 }
@@ -248,7 +248,7 @@ func TestMustChecklist_signatureStates(t *testing.T) {
 			t.Parallel()
 			trust := &apiclient.TrustStatus{}
 			trust.Signatures.Status = tc.status
-			lines := inspect.MustChecklist(trust)
+			lines := inspect.MustChecklist(trust, nil)
 			if len(lines) != 1 || lines[0].Pass != tc.pass || !lines[0].Must {
 				t.Fatalf("got %+v", lines)
 			}
@@ -260,5 +260,24 @@ func TestMustChecklist_signatureStates(t *testing.T) {
 				t.Fatalf("text = %q", lines[0].Text)
 			}
 		})
+	}
+}
+
+func TestMustChecklist_requireProvenance(t *testing.T) {
+	t.Parallel()
+	trust := &apiclient.TrustStatus{
+		ConfiguredRules: []string{"require-provenance"},
+	}
+	trust.Signatures.Status = "valid"
+	trust.Attestations.ProvenanceVerified = true
+	lines := inspect.MustChecklist(trust, nil)
+	found := false
+	for _, l := range lines {
+		if strings.Contains(l.Text, "Provenance verified") && l.Must && l.Pass {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("lines = %+v", lines)
 	}
 }

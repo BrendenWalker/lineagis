@@ -28,16 +28,22 @@ On `main`, require these status checks (see [.github/BRANCH_PROTECTION.md](../..
 
 ## Manual verification (release manager)
 
+Automated proof is in CI — no local `go build` required for release sign-off:
+
 ```bash
 make test
-make build
-gh workflow run publish-keyless-smoke.yml   # or confirm latest PR run passed
+gh run list --workflow=ci.yml --limit 3          # confirm lint, test, build, operator-stack passed
+gh run list --workflow=publish-keyless-smoke.yml --limit 3   # confirm keyless-publish passed
 ```
 
-Optional local stack:
+Optional operator-stack validation on your machine (download CI binaries, do not build from source):
 
 ```bash
-make smoke
+# Windows: verity-binaries-windows-amd64
+# Linux/WSL: verity-binaries-linux-amd64
+# See docs/guides/operator-validation.md
+gh run download --name verity-binaries-windows-amd64 --dir bin
+bash scripts/operator-stack-ci.sh
 ```
 
 ## Known limitations (v0.1)
@@ -46,7 +52,8 @@ make smoke
 |------------|-------|
 | Inspect trusts the Verity API | No local cosign verification in CLI (`OQ-ARCH-002` deferred) |
 | No `verity pull` | Consumers resolve by digest/tag via API + registry out-of-band |
-| Configured policies on `SetTag` | `require-signatures` blocks tag; `trusted-publishers` / `repository-ownership` may evaluate only at inspect until v0.2 (`FR-POL-012`) |
+| Configured policies on `SetTag` | All configured rules (`require-signatures`, `trusted-publishers`, `require-provenance`, `repository-ownership`) evaluated at tag time (FR-POL-012) |
+| Local verify | `verity inspect` / `verity verify` default to local cosign verify; `--trust-api` opts out |
 | Trusted publishers | Fail-closed when rule is in policy; operator defines allowlist per namespace |
 | Unsigned digest registration | OCI push + `RegisterDigest` can succeed before sign; `require-signatures` blocks **tagging** |
 | Dev token | `VERITY_DEV_TOKEN` for local compose only — disable in production |

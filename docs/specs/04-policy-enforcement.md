@@ -115,7 +115,7 @@ Rules not in the document are not evaluated and MUST NOT fail the overall result
 
 | Phase | Trigger | Rules run |
 |-------|---------|-----------|
-| **Push-time** | `SetTag`, end of `publish` | All configured rules (target); v0.1: `require-signatures` at minimum |
+| **Push-time** | `RegisterDigest` (with bundle when `require-signatures`), `SetTag`, end of `publish` | All configured rules (target); v0.1: `require-signatures` at minimum |
 | **Verify-time** | `inspect`, `Verify` | All configured rules |
 
 ## Non-functional requirements

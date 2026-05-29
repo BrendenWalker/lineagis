@@ -56,13 +56,23 @@ func (c *Client) EnsureArtifact(ctx context.Context, namespace, artifact string)
 	return c.do(req, http.StatusOK, nil)
 }
 
-// RegisterDigest records a manifest digest after OCI push.
-func (c *Client) RegisterDigest(ctx context.Context, namespace, artifact, digest string, mediaType *string, sizeBytes *int64) error {
-	body, err := json.Marshal(map[string]any{
+// RegisterDigest records a manifest digest after OCI push. When bundle is set, the signature is stored atomically.
+func (c *Client) RegisterDigest(ctx context.Context, namespace, artifact, digest string, mediaType *string, sizeBytes *int64, bundle json.RawMessage, issuer, subject *string) error {
+	payload := map[string]any{
 		"digest":     digest,
 		"media_type": mediaType,
 		"size_bytes": sizeBytes,
-	})
+	}
+	if len(bundle) > 0 {
+		payload["bundle"] = bundle
+	}
+	if issuer != nil {
+		payload["issuer"] = *issuer
+	}
+	if subject != nil {
+		payload["subject"] = *subject
+	}
+	body, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}

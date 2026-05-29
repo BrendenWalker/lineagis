@@ -128,13 +128,12 @@ jobs:
           ./bin/verity inspect dist/ \
             --namespace "${namespace}" \
             --artifact smoke \
-            --output json \
-            --trust-api > inspect-dist.json
+            --output json > inspect-dist.json
           jq -e '.version == 1 and .overall == "pass"' inspect-dist.json
           jq -e '.checks[0].status == "pass"' inspect-dist.json
           jq -e '.checks[0].requirement_id == "FR-SIGN-005"' inspect-dist.json
-          HUMAN="$(./bin/verity inspect dist/ --namespace "${namespace}" --artifact smoke --trust-api)"
-          echo "${HUMAN}" | grep -F 'Policy evaluated by Verity API'
+          HUMAN="$(./bin/verity inspect dist/ --namespace "${namespace}" --artifact smoke)"
+          echo "${HUMAN}" | grep -F 'Signature verified locally'
           jq -e '[.checks[].message] | any(contains("workflow"))' inspect-dist.json
 
       - name: Inspect signed artifact by digest (exit 0, AC-DX-003)
@@ -145,6 +144,22 @@ jobs:
             --output json > inspect-digest.json
           jq -e --arg digest "${digest}" \
             '.version == 1 and .overall == "pass" and .digest == $digest' inspect-digest.json
+
+      - name: Publish unsigned artifact before policy (--skip-sign)
+        run: |
+          mkdir -p dist-unsigned
+          echo "unsigned smoke $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist-unsigned/release.txt
+          OUTPUT="$(./bin/verity publish dist-unsigned/ \
+            --namespace "${namespace}" \
+            --artifact smoke-unsigned \
+            --skip-sign 2>&1)" || {
+            echo "$OUTPUT"
+            exit 1
+          }
+          echo "$OUTPUT"
+          UNSIGNED_DIGEST="$(echo "$OUTPUT" | grep -E '^sha256:[a-f0-9]{64}$' | tail -1)"
+          test -n "$UNSIGNED_DIGEST"
+          echo "unsigned_digest=${UNSIGNED_DIGEST}" >> "$GITHUB_ENV"
 
       - name: Apply strict-release policy (wrong workflow, AC-POL-002b)
         run: |
@@ -197,22 +212,18 @@ jobs:
             "${VERITY_API_URL}/v1/namespaces/${namespace}/policy" \
             | jq -e '.document.rules[0].id == "require-signatures"'
 
-      - name: Publish unsigned artifact (--skip-sign)
+      - name: Unsigned RegisterDigest fails after policy (FR-SIGN-007)
         run: |
-          mkdir -p dist-unsigned
-          echo "unsigned smoke $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist-unsigned/release.txt
-          # No --tag: require-signatures blocks SetTag on unsigned digests (AC-POL-001).
+          set +e
           OUTPUT="$(./bin/verity publish dist-unsigned/ \
             --namespace "${namespace}" \
-            --artifact smoke-unsigned \
-            --skip-sign 2>&1)" || {
-            echo "$OUTPUT"
-            exit 1
-          }
+            --artifact smoke-unsigned-new \
+            --skip-sign 2>&1)"
+          RC=$?
+          set -e
           echo "$OUTPUT"
-          UNSIGNED_DIGEST="$(echo "$OUTPUT" | grep -E '^sha256:[a-f0-9]{64}$' | tail -1)"
-          test -n "$UNSIGNED_DIGEST"
-          echo "unsigned_digest=${UNSIGNED_DIGEST}" >> "$GITHUB_ENV"
+          test "${RC}" -ne 0
+          echo "${OUTPUT}" | grep -F 'require-signatures'
 
       - name: Unsigned publish with tag fails (FR-SIGN-007)
         run: |
@@ -242,8 +253,7 @@ jobs:
           set +e
           INSPECT_OUT="$(./bin/verity inspect dist-unsigned/ \
             --namespace "${namespace}" \
-            --artifact smoke-unsigned \
-            --trust-api 2>&1)"
+            --artifact smoke-unsigned 2>&1)"
           INSPECT_RC=$?
           set -e
           echo "$INSPECT_OUT"
@@ -255,7 +265,6 @@ jobs:
           ./bin/verity inspect dist-unsigned/ \
             --namespace "${namespace}" \
             --artifact smoke-unsigned \
-            --trust-api \
             --output json > inspect-unsigned.json
           JSON_RC=$?
           set -e
@@ -270,6 +279,5 @@ jobs:
           ./bin/verity inspect dist/ \
             --namespace "${namespace}" \
             --artifact smoke \
-            --trust-api \
             --output json > inspect-signed-after-policy.json
           jq -e '.overall == "pass"' inspect-signed-after-policy.json

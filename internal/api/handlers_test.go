@@ -203,6 +203,57 @@ func TestSetTag_movePreservesDigest(t *testing.T) {
 	}
 }
 
+func TestRegisterDigest_requireSignatures_requiresBundle(t *testing.T) {
+	h, store, _ := testHandler(t, "test-token")
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	layers := []registry.FileLayer{{Path: "bin/app", Data: []byte("register-policy-test")}}
+	manifestJSON, digest, err := registry.BuildArtifactManifest(layers, registry.ManifestOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	digestStr := digest.String()
+	h.Manifests = api.NewStaticManifestSource(map[string][]byte{digestStr: manifestJSON})
+
+	ctx := context.Background()
+	ns, err := store.CreateNamespace(ctx, "gh/acme/widget", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.RegisterArtifact(ctx, ns.ID, "widget"); err != nil {
+		t.Fatal(err)
+	}
+	doc := []byte(`{"rules":[{"id":"require-signatures"}]}`)
+	if _, err := store.PutPolicy(ctx, ns.ID, doc, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	unsignedBody, _ := json.Marshal(map[string]string{"digest": digestStr})
+	req := httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/digests", bytes.NewReader(unsignedBody))
+	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("unsigned register status = %d body = %s", rec.Code, rec.Body.String())
+	}
+
+	bundle, _, err := signing.SignManifestForTest(manifestJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	signedBody, _ := json.Marshal(map[string]any{"digest": digestStr, "bundle": bundle})
+	req = httptest.NewRequest(http.MethodPost, "/v1/namespaces/gh/acme/widget/artifacts/widget/digests", bytes.NewReader(signedBody))
+	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("signed register status = %d body = %s", rec.Code, rec.Body.String())
+	}
+}
+
 // AC-API-002 / AC-POL-001: require-signatures blocks unsigned SetTag.
 func TestSetTag_requireSignatures_policyFailed(t *testing.T) {
 	h, store, _ := testHandler(t, "test-token")

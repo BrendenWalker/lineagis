@@ -29,7 +29,14 @@ func (h *Handler) evaluateSignatures(ctx context.Context, ns, artifact string, d
 	}
 
 	cfg := signing.LoadConfig()
-	var opts signing.VerifyOptions
+	keylessOpts := signing.KeylessVerifyOptions(nil)
+	if h.Store != nil {
+		if namespace, err := h.Store.GetNamespaceByName(ctx, ns); err == nil {
+			if policy, err := h.Store.GetActivePolicy(ctx, namespace.ID); err == nil {
+				keylessOpts = signing.KeylessVerifyOptions(policy.Document)
+			}
+		}
+	}
 
 	for _, sig := range sigs {
 		bundle := signatureBundleBytes(sig)
@@ -40,6 +47,7 @@ func (h *Handler) evaluateSignatures(ctx context.Context, ns, artifact string, d
 		if len(pub) == 0 {
 			pub = signing.LegacyBundleCertPEM(bundle)
 		}
+		opts := keylessOpts
 		switch {
 		case len(pub) > 0:
 			opts.PublicKeyPEM = pub
@@ -49,7 +57,6 @@ func (h *Handler) evaluateSignatures(ctx context.Context, ns, artifact string, d
 			opts.PublicKeyPEM = nil
 			opts.IgnoreTlog = false
 			opts.IgnoreSCT = false
-			opts.CertOidcIssuer = `https://token\.actions\.githubusercontent\.com`
 		}
 		if err := signing.VerifyManifestBundle(ctx, cfg, manifestJSON, bundle, opts); err == nil {
 			return "valid", nil

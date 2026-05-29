@@ -154,7 +154,7 @@ jobs:
 
 - Pin `sha256:…` digests in documentation and lockfiles; do not rely on mutable tags alone.
 - Treat `verity inspect` as **identity and integrity** checks, not malware scanning.
-- Trust the Verity API endpoint (TLS, your operator) or plan for post-v0.1 local cosign verification.
+- Local Sigstore verification is the default in `verity inspect` / `verity verify`; use `--trust-api` only when registry access is unavailable.
 
 See [SECURITY.md](../../SECURITY.md) and [mvp-v0.1-release.md](../sdlc/mvp-v0.1-release.md).
 

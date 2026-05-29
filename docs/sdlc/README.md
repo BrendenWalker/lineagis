@@ -218,3 +218,4 @@ Name milestones explicitly (e.g. `milestone/phase-1-must`) rather than only “P
 - [AGENTS.md](../../AGENTS.md) — concise agent instructions
 - [docs/specs/README.md](../specs/README.md) — requirement conventions
 - [docs/specs/00-overview.md](../specs/00-overview.md) — MVP boundaries
+- [layer-b-v0.2-plan.md](layer-b-v0.2-plan.md) — v0.2 Attribution milestone plan (active)

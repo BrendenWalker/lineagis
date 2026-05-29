@@ -321,6 +321,102 @@ func (s *Store) ListTagEvents(ctx context.Context, tagID int64) ([]TagEvent, err
 	return events, rows.Err()
 }
 
+// RegisterDigestWithSignature records a digest and attaches a signature atomically.
+func (s *Store) RegisterDigestWithSignature(ctx context.Context, artifactID int64, digest string, mediaType *string, sizeBytes *int64, bundleJSON json.RawMessage, issuer, subject *string) (*Digest, *Signature, error) {
+	if len(bundleJSON) == 0 {
+		return nil, nil, fmt.Errorf("bundle is required")
+	}
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var d Digest
+	err = tx.QueryRow(ctx, `
+		INSERT INTO digests (digest, artifact_id, media_type, size_bytes)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (digest) DO NOTHING
+		RETURNING id, digest, artifact_id, media_type, size_bytes, created_at
+	`, digest, artifactID, mediaType, sizeBytes).Scan(
+		&d.ID, &d.Digest, &d.ArtifactID, &d.MediaType, &d.SizeBytes, &d.CreatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		existing, getErr := s.getDigestByStringTx(ctx, tx, digest)
+		if getErr != nil {
+			return nil, nil, getErr
+		}
+		if existing.ArtifactID != artifactID {
+			return nil, nil, ErrDigestWrongArtifact
+		}
+		d = *existing
+		sigs, listErr := s.listSignaturesTx(ctx, tx, d.ID)
+		if listErr != nil {
+			return nil, nil, listErr
+		}
+		if len(sigs) > 0 {
+			if err := tx.Commit(ctx); err != nil {
+				return nil, nil, fmt.Errorf("commit tx: %w", err)
+			}
+			return &d, &sigs[0], nil
+		}
+	} else if err != nil {
+		return nil, nil, fmt.Errorf("register digest: %w", err)
+	}
+
+	var sig Signature
+	err = tx.QueryRow(ctx, `
+		INSERT INTO signatures (digest_id, bundle_ref, bundle_json, issuer, subject)
+		VALUES ($1, NULL, $2, $3, $4)
+		RETURNING id, digest_id, bundle_ref, bundle_json, issuer, subject, created_at
+	`, d.ID, bundleJSON, issuer, subject).Scan(
+		&sig.ID, &sig.DigestID, &sig.BundleRef, &sig.BundleJSON, &sig.Issuer, &sig.Subject, &sig.CreatedAt,
+	)
+	if err != nil {
+		return nil, nil, fmt.Errorf("attach signature: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, nil, fmt.Errorf("commit tx: %w", err)
+	}
+	return &d, &sig, nil
+}
+
+func (s *Store) listSignaturesTx(ctx context.Context, tx pgx.Tx, digestID int64) ([]Signature, error) {
+	rows, err := tx.Query(ctx, `
+		SELECT id, digest_id, bundle_ref, bundle_json, issuer, subject, created_at
+		FROM signatures WHERE digest_id = $1 ORDER BY created_at ASC
+	`, digestID)
+	if err != nil {
+		return nil, fmt.Errorf("list signatures: %w", err)
+	}
+	defer rows.Close()
+	var sigs []Signature
+	for rows.Next() {
+		var sig Signature
+		if err := rows.Scan(&sig.ID, &sig.DigestID, &sig.BundleRef, &sig.BundleJSON, &sig.Issuer, &sig.Subject, &sig.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan signature: %w", err)
+		}
+		sigs = append(sigs, sig)
+	}
+	return sigs, rows.Err()
+}
+
+func (s *Store) getDigestByStringTx(ctx context.Context, tx pgx.Tx, digest string) (*Digest, error) {
+	var d Digest
+	err := tx.QueryRow(ctx, `
+		SELECT id, digest, artifact_id, media_type, size_bytes, created_at
+		FROM digests WHERE digest = $1
+	`, digest).Scan(&d.ID, &d.Digest, &d.ArtifactID, &d.MediaType, &d.SizeBytes, &d.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get digest: %w", err)
+	}
+	return &d, nil
+}
+
 // AttachSignature stores a signature reference for a digest.
 func (s *Store) AttachSignature(ctx context.Context, digestID int64, bundleRef *string, bundleJSON json.RawMessage, issuer, subject *string) (*Signature, error) {
 	if _, err := s.GetDigestByID(ctx, digestID); err != nil {

@@ -50,12 +50,11 @@ bash scripts/operator-stack-ci.sh
 
 | Limitation | Notes |
 |------------|-------|
-| Inspect trusts the Verity API | No local cosign verification in CLI (`OQ-ARCH-002` deferred) |
 | No `verity pull` | Consumers resolve by digest/tag via API + registry out-of-band |
 | Configured policies on `SetTag` | All configured rules (`require-signatures`, `trusted-publishers`, `require-provenance`, `repository-ownership`) evaluated at tag time (FR-POL-012) |
-| Local verify | `verity inspect` / `verity verify` default to local cosign verify; `--trust-api` opts out |
+| Local verify | `verity inspect` / `verity verify` default to local cosign verify; `--trust-api` opts out (FR-SIGN-005) |
 | Trusted publishers | Fail-closed when rule is in policy; operator defines allowlist per namespace |
-| Unsigned digest registration | OCI push + `RegisterDigest` can succeed before sign; `require-signatures` blocks **tagging** |
+| RegisterDigest + signatures | When `require-signatures` is active, `RegisterDigest` requires a valid bundle in the same request |
 | Dev token | `VERITY_DEV_TOKEN` for local compose only — disable in production |
 | CVE / federation | Deferred per delivery matrix (#67, #68) |
 

@@ -9,8 +9,6 @@ import (
 	"github.com/BrendenWalker/verity/internal/signing"
 )
 
-const githubActionsIssuer = `https://token\.actions\.githubusercontent\.com`
-
 // LocalVerifyResult holds client-side Sigstore verification outcome (FR-SIGN-005).
 type LocalVerifyResult struct {
 	Status   string // valid, invalid, missing
@@ -38,13 +36,13 @@ func VerifyLocally(ctx context.Context, reg *registry.Client, api *apiclient.Cli
 	}
 
 	cfg := signing.LoadConfig()
+	policyDoc := policyDocument(ctx, api, namespace)
+	keylessOpts := signing.KeylessVerifyOptions(policyDoc)
 	for _, sig := range sigs {
 		if len(sig.Bundle) == 0 {
 			continue
 		}
-		opts := signing.VerifyOptions{
-			CertOidcIssuer: githubActionsIssuer,
-		}
+		opts := keylessOpts
 		if pub := signing.PublicKeyPEMFromBundle(sig.Bundle); len(pub) > 0 {
 			opts.PublicKeyPEM = pub
 			opts.IgnoreTlog = true

@@ -98,11 +98,11 @@ Not a global safe-project list. Per namespace, operators configure which **signi
 
 * CVE / vulnerability blocking
 * Federation and transparency-log UX
-* `verity pull`, CLI OIDC token exchange, offline cosign verify on inspect
+* `verity pull`, CLI OIDC token exchange
 
 ## What `verity inspect` proves (and does not)
 
-**Proves:** cryptographic signature validity (via the Verity API), tamper evidence for the registered digest, and active namespace policy results.
+**Proves:** cryptographic signature validity (local cosign verify by default, plus API policy), tamper evidence for the registered digest, and active namespace policy results.
 
 **Does not prove:** that the artifact is safe, malware-free, or free of vulnerable dependencies. A validly signed malicious artifact is still malicious. Compromised CI can produce valid signatures and provenance.
 

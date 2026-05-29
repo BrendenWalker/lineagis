@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/BrendenWalker/verity/internal/metadata"
 	"github.com/BrendenWalker/verity/internal/semver"
+	"github.com/BrendenWalker/verity/internal/signing"
 )
 
 // Handler serves Verity control-plane HTTP routes (OQ-API-001 layout).
@@ -21,9 +23,12 @@ type Handler struct {
 }
 
 type registerDigestRequest struct {
-	Digest    string  `json:"digest"`
-	MediaType *string `json:"media_type,omitempty"`
-	SizeBytes *int64  `json:"size_bytes,omitempty"`
+	Digest    string          `json:"digest"`
+	MediaType *string         `json:"media_type,omitempty"`
+	SizeBytes *int64          `json:"size_bytes,omitempty"`
+	Bundle    json.RawMessage `json:"bundle,omitempty"`
+	Issuer    *string         `json:"issuer,omitempty"`
+	Subject   *string         `json:"subject,omitempty"`
 }
 
 type registerDigestResponse struct {
@@ -112,19 +117,96 @@ func (h *Handler) postRegisterDigest(w http.ResponseWriter, r *http.Request, ns,
 		}
 	}
 
-	d, err := h.Store.RegisterDigest(ctx, art.ID, req.Digest, req.MediaType, req.SizeBytes)
-	if err != nil {
-		if mapStoreError(w, err) {
+	requireSig := false
+	if policy, polErr := h.Store.GetActivePolicy(ctx, namespace.ID); polErr == nil {
+		requireSig = policyRequiresSignatures(policy.Document)
+	} else if !errors.Is(polErr, metadata.ErrNotFound) {
+		if mapStoreError(w, polErr) {
 			return
 		}
 	}
 
+	if requireSig && len(req.Bundle) == 0 {
+		if existing, getErr := h.Store.GetDigestByString(ctx, req.Digest); getErr == nil {
+			if existing.ArtifactID == art.ID {
+				sigs, listErr := h.Store.ListSignatures(ctx, existing.ID)
+				if listErr == nil && len(sigs) > 0 {
+					writeRegisterDigest(w, existing.Digest, art.Name, namespace.Name)
+					return
+				}
+			}
+		}
+		writePolicyFailed(w, PolicyFailure{
+			Rule: "require-signatures",
+			Hint: "digest has no signature; attach a Sigstore bundle in RegisterDigest when require-signatures is enabled",
+		})
+		return
+	}
+
+	var d *metadata.Digest
+	if len(req.Bundle) > 0 {
+		if h.Manifests == nil {
+			WriteError(w, http.StatusInternalServerError, "INTERNAL", "manifest source not configured", nil)
+			return
+		}
+		manifestJSON, err := h.Manifests.FetchManifest(ctx, ns, artifact, req.Digest)
+		if err != nil {
+			WriteError(w, http.StatusBadRequest, "VALIDATION_FAILED", "cannot verify signature without registry manifest: "+err.Error(), nil)
+			return
+		}
+		if err := manifestDigestMatches(manifestJSON, req.Digest); err != nil {
+			WriteError(w, http.StatusBadRequest, "VALIDATION_FAILED", err.Error(), nil)
+			return
+		}
+		var policyDoc json.RawMessage
+		if policy, polErr := h.Store.GetActivePolicy(ctx, namespace.ID); polErr == nil {
+			policyDoc = policy.Document
+		}
+		opts := signing.KeylessVerifyOptions(policyDoc)
+		if pub := signing.VerificationKeyPEM(req.Bundle); len(pub) > 0 {
+			opts.PublicKeyPEM = pub
+			opts.IgnoreTlog = true
+			opts.IgnoreSCT = true
+		}
+		cfg := signing.LoadConfig()
+		if err := signing.VerifyManifestBundle(ctx, cfg, manifestJSON, req.Bundle, opts); err != nil {
+			fail := PolicyFailure{
+				Rule: "require-signatures",
+				Hint: "signature bundle does not verify for manifest digest: " + err.Error(),
+			}
+			if policyHasTrustedPublishers(policyDoc) && isTrustedPublisherIdentityFailure(err) {
+				fail.Rule = "trusted-publishers"
+			}
+			writePolicyFailed(w, fail)
+			return
+		}
+		reg, _, err := h.Store.RegisterDigestWithSignature(ctx, art.ID, req.Digest, req.MediaType, req.SizeBytes, req.Bundle, req.Issuer, req.Subject)
+		if err != nil {
+			if mapStoreError(w, err) {
+				return
+			}
+		}
+		d = reg
+	} else {
+		reg, err := h.Store.RegisterDigest(ctx, art.ID, req.Digest, req.MediaType, req.SizeBytes)
+		if err != nil {
+			if mapStoreError(w, err) {
+				return
+			}
+		}
+		d = reg
+	}
+
+	writeRegisterDigest(w, d.Digest, art.Name, namespace.Name)
+}
+
+func writeRegisterDigest(w http.ResponseWriter, digest, artifact, namespace string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(registerDigestResponse{
-		Digest:    d.Digest,
-		Artifact:  art.Name,
-		Namespace: namespace.Name,
+		Digest:    digest,
+		Artifact:  artifact,
+		Namespace: namespace,
 	})
 }
 

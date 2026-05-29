@@ -32,8 +32,8 @@ Verity provides **integrity, identity, and policy attribution** — not malware 
 ## Signing and verification
 
 - Publish from **GitHub Actions** with `permissions.id-token: write` for keyless Sigstore signing.
-- `verity inspect` performs **server-side** Sigstore verification via the API. Consumers must trust the API endpoint or add separate verification (post-v0.1: local cosign verify).
-- Keyless certificate identity pinning for trust-status crypto checks uses permissive matchers in some dev paths; production identity enforcement relies on policy (`require-signatures`, `trusted-publishers` when enabled).
+- `verity inspect` / `verity verify` default to **local** Sigstore verification against registry manifest bytes; use `--trust-api` to skip local crypto and rely on API trust status only.
+- Keyless certificate identity matchers are derived from namespace `trusted-publishers` policy when configured; set `VERITY_PERMISSIVE_KEYLESS_IDENTITY=1` only for local dev.
 
 ## Policy
 
@@ -41,8 +41,7 @@ Verity provides **integrity, identity, and policy attribution** — not malware 
 - **`trusted-publishers`:** When the rule is in your namespace policy, only operator-configured signing identities pass at **tag time and inspect** (fail-closed). Pin `repository`, `workflow`, optional `ref` and `issuer` — avoid broad org wildcards.
 - **`require-provenance`:** When configured, fails if provenance is missing or signature verification failed.
 - **`repository-ownership`:** When configured, fails if provenance repository does not match the namespace.
-- **Push-time enforcement:** All configured rules run on `SetTag` (FR-POL-012). Use `verity verify` with a pinned digest in CI.
-- **v0.1 → v0.2:** `verity inspect` defaults to local Sigstore verify; use `--trust-api` to skip local crypto.
+- **Push-time enforcement:** `require-signatures` applies on `RegisterDigest` (bundle required) and `SetTag`; other rules run on `SetTag` and inspect (FR-POL-012). Use `verity verify` with a pinned digest in CI.
 
 Policy changes should be auditable (`FR-POL-010`). Review audit logs after policy or namespace configuration updates.
 

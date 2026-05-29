@@ -80,29 +80,27 @@ func Publish(ctx context.Context, reg *registry.Client, api *apiclient.Client, o
 	if err := api.EnsureArtifact(ctx, opts.Namespace, opts.Artifact); err != nil {
 		return "", fmt.Errorf("ensure artifact: %w", err)
 	}
-	if err := api.RegisterDigest(ctx, opts.Namespace, opts.Artifact, digest, &mediaType, &size); err != nil {
-		return "", fmt.Errorf("register digest: %w", err)
-	}
 
 	signer := opts.Signer
 	if signer == nil {
 		signer = defaultManifestSigner{}
 	}
 
+	var bundle json.RawMessage
+	var issuer, subject *string
 	if !opts.SkipSign {
-		bundle, issuer, subject, err := signer.SignManifest(ctx, manifestJSON)
+		var err error
+		bundle, issuer, subject, err = signer.SignManifest(ctx, manifestJSON)
 		if err != nil {
 			if opts.Tag != "" {
 				return "", fmt.Errorf("sign manifest (tag %q not applied): %w", opts.Tag, err)
 			}
 			return "", fmt.Errorf("sign manifest: %w", err)
 		}
-		if err := api.AttachSignature(ctx, opts.Namespace, opts.Artifact, digest, bundle, issuer, subject); err != nil {
-			if opts.Tag != "" {
-				return "", fmt.Errorf("attach signature (tag %q not applied): %w", opts.Tag, err)
-			}
-			return "", fmt.Errorf("attach signature: %w", err)
-		}
+	}
+
+	if err := api.RegisterDigest(ctx, opts.Namespace, opts.Artifact, digest, &mediaType, &size, bundle, issuer, subject); err != nil {
+		return "", fmt.Errorf("register digest: %w", err)
 	}
 
 	skipProv := opts.SkipProvenance || SkipProvenanceFromEnv()

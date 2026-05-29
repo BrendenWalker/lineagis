@@ -11,6 +11,14 @@ func isSigstoreBundleV3(bundleJSON []byte) bool {
 	return bytes.Contains(bundleJSON, []byte("application/vnd.dev.sigstore.bundle.v0.3"))
 }
 
+// VerificationKeyPEM returns PEM bytes for offline key verification from any supported bundle format.
+func VerificationKeyPEM(bundleJSON []byte) []byte {
+	if pub := PublicKeyPEMFromBundle(bundleJSON); len(pub) > 0 {
+		return pub
+	}
+	return LegacyBundleCertPEM(bundleJSON)
+}
+
 // PublicKeyPEMFromBundle returns PEM public key bytes when explicitly embedded in a v0.3 bundle.
 func PublicKeyPEMFromBundle(bundleJSON []byte) []byte {
 	if !isSigstoreBundleV3(bundleJSON) {

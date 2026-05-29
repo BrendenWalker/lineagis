@@ -82,6 +82,7 @@ Rules not in the document are not evaluated and MUST NOT fail the overall result
 | **trusted-publishers** | Must (when rule configured) | Fail when no signature matches the operator allowlist. |
 | **repository-ownership** | Should (when rule configured) | Fail when provenance repository does not match namespace-linked repository. |
 | **block-critical-cves** | Deferred | Reject when SBOM/vuln scan reports critical CVEs. |
+| **require-provenance** | Should (when rule configured) | Fail when provenance attestation is missing or invalid. |
 
 ## User stories
 

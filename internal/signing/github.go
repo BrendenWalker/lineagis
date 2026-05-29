@@ -10,9 +10,10 @@ import (
 
 // GitHubPublisher holds workflow identity from a Fulcio certificate (FR-SIGN-008, FR-POL-006).
 type GitHubPublisher struct {
-	Repository string
-	Workflow   string
-	Ref        string
+	Repository  string
+	Workflow    string
+	Ref         string
+	Environment string
 }
 
 // GitHubPublisherFromCertificate extracts GitHub Actions workflow identity when present.
@@ -26,9 +27,10 @@ func GitHubPublisherFromCertificate(cert *x509.Certificate) (GitHubPublisher, bo
 		return GitHubPublisher{}, false
 	}
 	return GitHubPublisher{
-		Repository: repo,
-		Workflow:   strings.TrimSpace(ext.GetCertExtensionGithubWorkflowName()),
-		Ref:        strings.TrimSpace(ext.GetCertExtensionGithubWorkflowRef()),
+		Repository:  repo,
+		Workflow:    strings.TrimSpace(ext.GetCertExtensionGithubWorkflowName()),
+		Ref:         strings.TrimSpace(ext.GetCertExtensionGithubWorkflowRef()),
+		Environment: strings.TrimSpace(ext.GetCertExtensionGithubWorkflowTrigger()),
 	}, true
 }
 

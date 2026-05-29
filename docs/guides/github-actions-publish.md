@@ -157,3 +157,5 @@ jobs:
 - Trust the Verity API endpoint (TLS, your operator) or plan for post-v0.1 local cosign verification.
 
 See [SECURITY.md](../../SECURITY.md) and [mvp-v0.1-release.md](../sdlc/mvp-v0.1-release.md).
+
+For verify-only consumers, see [github-actions-verify.md](github-actions-verify.md).

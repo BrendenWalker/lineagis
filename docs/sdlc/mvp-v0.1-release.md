@@ -46,7 +46,8 @@ make smoke
 |------------|-------|
 | Inspect trusts the Verity API | No local cosign verification in CLI (`OQ-ARCH-002` deferred) |
 | No `verity pull` | Consumers resolve by digest/tag via API + registry out-of-band |
-| Configured policies on `SetTag` | `require-signatures` blocks tag; `trusted-publishers` / `repository-ownership` may evaluate only at inspect until v0.2 (`FR-POL-012`) |
+| Configured policies on `SetTag` | All configured rules (`require-signatures`, `trusted-publishers`, `require-provenance`, `repository-ownership`) evaluated at tag time (FR-POL-012) |
+| Local verify | `verity inspect` / `verity verify` default to local cosign verify; `--trust-api` opts out |
 | Trusted publishers | Fail-closed when rule is in policy; operator defines allowlist per namespace |
 | Unsigned digest registration | OCI push + `RegisterDigest` can succeed before sign; `require-signatures` blocks **tagging** |
 | Dev token | `VERITY_DEV_TOKEN` for local compose only — disable in production |

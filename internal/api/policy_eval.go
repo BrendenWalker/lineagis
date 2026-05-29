@@ -112,6 +112,14 @@ func evaluatePolicyDocument(ctx context.Context, store *metadata.Store, ns strin
 					return nil, err
 				}
 			}
+		case ruleRequireProvenance(rule):
+			if err := checkRequireProvenance(ctx, store, digestID); err != nil {
+				if pf, ok := asPolicyFailure(err); ok {
+					reasons = append(reasons, PolicyReason{Rule: ruleID, Message: pf.Hint})
+				} else {
+					return nil, err
+				}
+			}
 		}
 	}
 	return reasons, nil
@@ -132,12 +140,17 @@ func asPolicyFailure(err error) (PolicyFailure, bool) {
 	return PolicyFailure{}, false
 }
 
-// ruleAppliesInPhase returns whether a rule runs for the given evaluation phase.
+// ruleAppliesInPhase returns whether a rule runs for the given evaluation phase (FR-POL-012).
 func ruleAppliesInPhase(rule policyRule, phase EvalPhase) bool {
-	if phase == EvalPhaseVerify {
-		return true
+	switch phase {
+	case EvalPhasePush, EvalPhaseVerify:
+		return ruleRequiresSignatures(rule) ||
+			ruleTrustedPublishers(rule) ||
+			ruleRepositoryOwnership(rule) ||
+			ruleRequireProvenance(rule)
+	default:
+		return false
 	}
-	return ruleRequiresSignatures(rule)
 }
 
 func checkTrustedPublishers(ctx context.Context, store *metadata.Store, digestID int64, rule policyRule) error {
@@ -162,8 +175,12 @@ func checkTrustedPublishers(ctx context.Context, store *metadata.Store, digestID
 		if !ok {
 			continue
 		}
+		var id signing.Identity
+		if pem := signing.LegacyBundleCertPEM(bundle); len(pem) > 0 {
+			id, _ = signing.IdentityFromCertificatePEM(pem)
+		}
 		for _, allowed := range cfg.Publishers {
-			if matchPublisher(pub, allowed) {
+			if matchPublisher(pub, allowed, id) {
 				return nil
 			}
 		}
@@ -174,16 +191,40 @@ func checkTrustedPublishers(ctx context.Context, store *metadata.Store, digestID
 	}
 }
 
-func matchPublisher(actual signing.GitHubPublisher, allowed trustedPublisher) bool {
+func matchPublisher(actual signing.GitHubPublisher, allowed trustedPublisher, identity signing.Identity) bool {
 	repo := strings.TrimSpace(allowed.Repository)
 	wf := strings.TrimSpace(allowed.Workflow)
+	ref := strings.TrimSpace(allowed.Ref)
+	issuer := strings.TrimSpace(allowed.Issuer)
 	if repo != "" && !strings.EqualFold(actual.Repository, repo) {
 		return false
 	}
 	if wf != "" && !strings.EqualFold(actual.Workflow, wf) {
 		return false
 	}
-	return repo != "" || wf != ""
+	if ref != "" && !matchRefPattern(actual.Ref, ref) {
+		return false
+	}
+	if issuer != "" && !strings.EqualFold(identity.Issuer, issuer) {
+		return false
+	}
+	if env := strings.TrimSpace(allowed.Environment); env != "" && !strings.EqualFold(actual.Environment, env) {
+		return false
+	}
+	return repo != "" || wf != "" || ref != "" || issuer != "" || strings.TrimSpace(allowed.Environment) != ""
+}
+
+func matchRefPattern(actual, pattern string) bool {
+	actual = strings.TrimSpace(actual)
+	pattern = strings.TrimSpace(pattern)
+	if pattern == "" {
+		return true
+	}
+	if strings.HasSuffix(pattern, "*") {
+		prefix := strings.TrimSuffix(pattern, "*")
+		return strings.HasPrefix(actual, prefix)
+	}
+	return strings.EqualFold(actual, pattern)
 }
 
 func parseTrustedPublishersConfig(raw json.RawMessage) (trustedPublishersConfig, error) {
@@ -195,6 +236,26 @@ func parseTrustedPublishersConfig(raw json.RawMessage) (trustedPublishersConfig,
 		return trustedPublishersConfig{}, fmt.Errorf("trusted-publishers config: %w", err)
 	}
 	return cfg, nil
+}
+
+func checkRequireProvenance(ctx context.Context, store *metadata.Store, digestID int64) error {
+	prov, err := store.GetProvenanceByDigest(ctx, digestID)
+	if errors.Is(err, metadata.ErrNotFound) {
+		return PolicyFailure{
+			Rule: "require-provenance",
+			Hint: "provenance attestation is required",
+		}
+	}
+	if err != nil {
+		return err
+	}
+	if !prov.Verified {
+		return PolicyFailure{
+			Rule: "require-provenance",
+			Hint: "provenance signature verification failed or attestation is invalid",
+		}
+	}
+	return nil
 }
 
 func checkRepositoryOwnership(ctx context.Context, store *metadata.Store, ns string, nsConfig json.RawMessage, digestID int64) error {

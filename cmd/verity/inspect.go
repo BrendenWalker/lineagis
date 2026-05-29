@@ -12,8 +12,37 @@ import (
 	"github.com/BrendenWalker/verity/internal/inspect"
 )
 
+func runVerify(args []string) int {
+	// verify is an alias for inspect with digest-first defaults (FR-DX-005).
+	if len(args) == 0 || args[0] == "-h" || args[0] == "--help" {
+		printVerifyUsage()
+		return 0
+	}
+	if !hasFlag(args, "--require-digest") {
+		args = append([]string{"--require-digest"}, args...)
+	}
+	return runInspect(args)
+}
+
+func printVerifyUsage() {
+	fmt.Fprintf(os.Stderr, "Usage: verity verify <sha256:digest> --namespace <ns> --artifact <name> [--local-verify] [--output json]\n")
+	fmt.Fprintf(os.Stderr, "\nAlias for inspect with --require-digest enabled. Pin sha256:… digests in CI.\n")
+}
+
+func hasFlag(args []string, name string) bool {
+	for _, a := range args {
+		if a == name {
+			return true
+		}
+	}
+	return false
+}
+
 func runInspect(args []string) int {
 	var namespace, artifact, ref, output string
+	localVerify := true
+	trustAPIOnly := false
+	requireDigest := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--namespace":
@@ -37,6 +66,13 @@ func runInspect(args []string) int {
 			}
 			i++
 			output = args[i]
+		case "--local-verify":
+			localVerify = true
+		case "--trust-api":
+			localVerify = false
+			trustAPIOnly = true
+		case "--require-digest":
+			requireDigest = true
 		case "-h", "--help":
 			printInspectUsage()
 			return 0
@@ -61,6 +97,10 @@ func runInspect(args []string) int {
 		fmt.Fprintf(os.Stderr, "inspect: --namespace and --artifact are required\n")
 		return 1
 	}
+	if requireDigest && !strings.HasPrefix(ref, "sha256:") {
+		fmt.Fprintf(os.Stderr, "inspect: --require-digest requires a sha256:… digest reference (got %q)\n", ref)
+		return 1
+	}
 	switch output {
 	case "", "text":
 	case "json":
@@ -68,6 +108,7 @@ func runInspect(args []string) int {
 		fmt.Fprintf(os.Stderr, "inspect: --output must be text or json\n")
 		return 1
 	}
+	_ = trustAPIOnly
 
 	cfg, err := cliconfig.Load()
 	if err != nil {
@@ -80,9 +121,12 @@ func runInspect(args []string) int {
 	defer cancel()
 
 	result, err := inspect.Run(ctx, api, inspect.Options{
-		Namespace: namespace,
-		Artifact:  artifact,
-		Ref:       ref,
+		Namespace:     namespace,
+		Artifact:      artifact,
+		Ref:           ref,
+		LocalVerify:   localVerify,
+		RegistryURL:   cfg.RegistryURL,
+		RequireDigest: requireDigest,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "inspect: %v\n", err)
@@ -107,8 +151,8 @@ func runInspect(args []string) int {
 }
 
 func printInspectUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: verity inspect <ref> --namespace <ns> --artifact <name> [--output text|json]\n")
+	fmt.Fprintf(os.Stderr, "Usage: verity inspect <ref> --namespace <ns> --artifact <name> [--output text|json] [--local-verify] [--trust-api] [--require-digest]\n")
 	fmt.Fprintf(os.Stderr, "\n<ref> is a local file or directory, sha256:… digest, or semver tag.\n")
-	fmt.Fprintf(os.Stderr, "Trust checks use the Verity API (signature verification is server-side).\n")
+	fmt.Fprintf(os.Stderr, "Default: local Sigstore verify + API policy checks. Use --trust-api to skip local crypto.\n")
 	fmt.Fprintf(os.Stderr, "Exits non-zero when any Must check fails (FR-DX-005).\n")
 }

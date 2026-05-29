@@ -36,6 +36,15 @@ func (h *Handler) routeV1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if ns, ok := parseNamespaceAuditPath(rest); ok {
+		if r.Method == http.MethodGet {
+			h.getAuditEvents(w, r, ns)
+			return
+		}
+		WriteError(w, http.StatusNotFound, "NOT_FOUND", "unknown route", nil)
+		return
+	}
+
 	if ns, ok := parseNamespaceArtifactsListPath(rest); ok {
 		if r.Method == http.MethodGet {
 			h.listArtifacts(w, r, ns)
@@ -111,6 +120,21 @@ func parseNamespaceArtifactsListPath(path string) (namespace string, ok bool) {
 	}
 	ns := strings.TrimSuffix(rest, suffix)
 	if ns == "" || strings.Contains(ns, "/artifacts") {
+		return "", false
+	}
+	return ns, true
+}
+
+// parseNamespaceAuditPath parses namespaces/{ns}/audit.
+func parseNamespaceAuditPath(path string) (namespace string, ok bool) {
+	const prefix = "namespaces/"
+	const suffix = "/audit"
+	if !strings.HasPrefix(path, prefix) || !strings.HasSuffix(path, suffix) {
+		return "", false
+	}
+	rest := strings.TrimPrefix(path, prefix)
+	ns := strings.TrimSuffix(rest, suffix)
+	if ns == "" || strings.Contains(ns, "/audit") {
 		return "", false
 	}
 	return ns, true

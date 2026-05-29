@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -107,6 +108,17 @@ func (h *Handler) postAttachAttestation(w http.ResponseWriter, r *http.Request, 
 			return
 		}
 	}
+
+	actor := ActorFromContext(ctx)
+	var actorPtr *string
+	if actor != "" {
+		actorPtr = &actor
+	}
+	resID := fmt.Sprintf("%d", att.ID)
+	h.recordAudit(ctx, namespace.ID, "attestation.attached", actorPtr, strPtr("attestation"), &resID, map[string]any{
+		"digest":         d.Digest,
+		"predicate_type": req.PredicateType,
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

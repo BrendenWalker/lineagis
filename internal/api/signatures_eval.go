@@ -49,6 +49,7 @@ func (h *Handler) evaluateSignatures(ctx context.Context, ns, artifact string, d
 			opts.PublicKeyPEM = nil
 			opts.IgnoreTlog = false
 			opts.IgnoreSCT = false
+			opts.CertOidcIssuer = `https://token\.actions\.githubusercontent\.com`
 		}
 		if err := signing.VerifyManifestBundle(ctx, cfg, manifestJSON, bundle, opts); err == nil {
 			return "valid", nil

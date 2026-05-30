@@ -1,7 +1,7 @@
 # Layer B (v0.2 Attribution) — implementation plan
 
 **Branch:** `milestone/v0.2-attribution`  
-**Status:** Planning (not yet v0.2.0 release)  
+**Status:** Released as **v0.2.0** (see [docs/releases/v0.2.0.md](../releases/v0.2.0.md))  
 **Authoritative scope:** [docs/specs/00-overview.md](../specs/00-overview.md)
 
 ## Goal

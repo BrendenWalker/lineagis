@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build Linux binaries
+        run: make build VERSION=${{ github.ref_name }}
+
+      - name: Build Windows binaries
+        run: |
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X github.com/BrendenWalker/verity/internal/version.Version=${{ github.ref_name }}" -o bin/verity.exe ./cmd/verity
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X github.com/BrendenWalker/verity/internal/version.Version=${{ github.ref_name }}" -o bin/verity-api.exe ./cmd/verity-api
+
+      - name: Package artifacts
+        run: |
+          mkdir -p dist
+          tar -czf dist/verity-binaries-linux-amd64.tar.gz -C bin verity verity-api
+          zip -j dist/verity-binaries-windows-amd64.zip bin/verity.exe bin/verity-api.exe
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/verity-binaries-linux-amd64.tar.gz
+            dist/verity-binaries-windows-amd64.zip

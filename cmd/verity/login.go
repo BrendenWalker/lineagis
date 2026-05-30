@@ -10,12 +10,12 @@ import (
 )
 
 func runLogin(args []string) int {
-	for _, a := range args {
-		if a == "-h" || a == "--help" {
+	if len(args) > 0 {
+		if len(args) == 1 && (args[0] == "-h" || args[0] == "--help") {
 			printLoginUsage()
 			return 0
 		}
-		fmt.Fprintf(os.Stderr, "login: unexpected argument %q\n", a)
+		fmt.Fprintf(os.Stderr, "login: unexpected argument %q\n", args[0])
 		return 1
 	}
 

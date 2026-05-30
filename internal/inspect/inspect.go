@@ -41,13 +41,13 @@ type ChecklistLine struct {
 
 // Report is the machine-readable inspect output (FR-DX-006, AC-DX-005).
 type Report struct {
-	Version     int           `json:"version"`
-	Namespace   string        `json:"namespace"`
-	Artifact    string        `json:"artifact"`
-	Digest      string        `json:"digest"`
-	Overall     string        `json:"overall"`
-	TagWarning  string        `json:"tag_warning,omitempty"`
-	Checks      []ReportCheck `json:"checks"`
+	Version    int           `json:"version"`
+	Namespace  string        `json:"namespace"`
+	Artifact   string        `json:"artifact"`
+	Digest     string        `json:"digest"`
+	Overall    string        `json:"overall"`
+	TagWarning string        `json:"tag_warning,omitempty"`
+	Checks     []ReportCheck `json:"checks"`
 }
 
 // ReportCheck is one row in a JSON inspect report.

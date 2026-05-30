@@ -14,8 +14,8 @@ import (
 	"github.com/BrendenWalker/verity/internal/auth"
 	"github.com/BrendenWalker/verity/internal/config"
 	"github.com/BrendenWalker/verity/internal/db"
-	"github.com/BrendenWalker/verity/internal/metadata"
 	"github.com/BrendenWalker/verity/internal/github"
+	"github.com/BrendenWalker/verity/internal/metadata"
 	"github.com/BrendenWalker/verity/internal/registry"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

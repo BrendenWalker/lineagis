@@ -33,7 +33,7 @@ func ParseRef(raw string) (Ref, error) {
 	if i := strings.LastIndex(raw, ":"); i >= 0 {
 		left, right := raw[:i], raw[i+1:]
 		if strings.HasPrefix(right, "sha256:") {
-			return Ref{}, fmt.Errorf("use @sha256:… for digest references, not :")
+			return Ref{}, fmt.Errorf("use @sha256 for digest references instead of a colon separator")
 		}
 		ns, art, err := splitNamespaceArtifact(left)
 		if err != nil {

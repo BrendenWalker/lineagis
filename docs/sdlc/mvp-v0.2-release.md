@@ -68,3 +68,4 @@ Confirm smoke output includes `provenance_verified: true` and inspect shows Laye
 - [layer-b-v0.2-plan.md](layer-b-v0.2-plan.md) — implementation plan
 - [phase2-should-test-mapping.md](phase2-should-test-mapping.md) — traceability
 - [mvp-v0.1-release.md](mvp-v0.1-release.md) — v0.1 bar
+- [v0.2.0 release notes](../releases/v0.2.0.md)

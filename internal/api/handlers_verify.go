@@ -32,7 +32,9 @@ func (h *Handler) verifyPolicy() VerifyPolicy {
 	if h.VerifyPolicy != nil {
 		return h.VerifyPolicy
 	}
-	return NewStoreVerifyPolicy(h.Store)
+	p := NewStoreVerifyPolicy(h.Store)
+	p.GitHub = h.GitHub
+	return p
 }
 
 func (h *Handler) postVerify(w http.ResponseWriter, r *http.Request, ns, artifact string) {
@@ -90,7 +92,8 @@ func (h *Handler) postVerify(w http.ResponseWriter, r *http.Request, ns, artifac
 		return
 	}
 
-	resp, err := h.runVerify(ctx, namespace.ID, ns, artifact, d)
+	byTag := req.Tag != ""
+	resp, err := h.runVerify(ctx, namespace.ID, ns, artifact, d, byTag)
 	if err != nil {
 		if mapStoreError(w, err) {
 			return
@@ -102,7 +105,7 @@ func (h *Handler) postVerify(w http.ResponseWriter, r *http.Request, ns, artifac
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (h *Handler) runVerify(ctx context.Context, namespaceID int64, ns, artifact string, d *metadata.Digest) (*verifyResponse, error) {
+func (h *Handler) runVerify(ctx context.Context, namespaceID int64, ns, artifact string, d *metadata.Digest, byTag bool) (*verifyResponse, error) {
 	sigs, err := h.Store.ListSignatures(ctx, d.ID)
 	if err != nil {
 		return nil, err
@@ -112,7 +115,7 @@ func (h *Handler) runVerify(ctx context.Context, namespaceID int64, ns, artifact
 		return nil, err
 	}
 
-	result, err := h.verifyPolicy().Evaluate(ctx, namespaceID, d.ID)
+	result, err := h.verifyPolicy().Evaluate(ctx, namespaceID, d.ID, VerifyEvalOpts{ByTag: byTag})
 	if err != nil {
 		return nil, err
 	}
@@ -143,6 +146,15 @@ func (h *Handler) runVerify(ctx context.Context, namespaceID int64, ns, artifact
 	} else if result.Outcome == "warn" {
 		outcome = "warn"
 	}
+
+	eventType := "verify.passed"
+	if outcome == "fail" {
+		eventType = "verify.failed"
+	}
+	h.emitWebhook(ctx, namespaceID, ns, eventType, map[string]any{
+		"digest":  d.Digest,
+		"outcome": outcome,
+	}, d.Digest)
 
 	return &verifyResponse{
 		Namespace: ns,

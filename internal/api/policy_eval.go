@@ -38,7 +38,7 @@ func parseEvalPhase(raw string) (EvalPhase, error) {
 }
 
 // evaluateActivePolicy evaluates the namespace active policy for a digest and phase.
-func evaluateActivePolicy(ctx context.Context, store *metadata.Store, namespaceID, digestID int64, phase EvalPhase) (*EvaluateResult, error) {
+func evaluateActivePolicy(ctx context.Context, store *metadata.Store, namespaceID, digestID int64, phase EvalPhase, verifyOpts VerifyEvalOpts) (*EvaluateResult, error) {
 	policy, err := store.GetActivePolicy(ctx, namespaceID)
 	if errors.Is(err, metadata.ErrNotFound) {
 		return &EvaluateResult{Outcome: "none"}, nil
@@ -52,7 +52,8 @@ func evaluateActivePolicy(ctx context.Context, store *metadata.Store, namespaceI
 		return nil, err
 	}
 
-	reasons, err := evaluatePolicyDocument(ctx, store, ns.Name, ns.Config, policy.Document, digestID, phase)
+	evalCtx := policyEvalContext{verifyByTag: verifyOpts.ByTag, github: verifyOpts.GitHub}
+	reasons, err := evaluatePolicyDocument(ctx, store, ns.Name, ns.Config, policy.Document, digestID, phase, evalCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +72,7 @@ func evaluateActivePolicy(ctx context.Context, store *metadata.Store, namespaceI
 	}, nil
 }
 
-func evaluatePolicyDocument(ctx context.Context, store *metadata.Store, ns string, nsConfig json.RawMessage, document json.RawMessage, digestID int64, phase EvalPhase) ([]PolicyReason, error) {
+func evaluatePolicyDocument(ctx context.Context, store *metadata.Store, ns string, nsConfig json.RawMessage, document json.RawMessage, digestID int64, phase EvalPhase, evalCtx policyEvalContext) ([]PolicyReason, error) {
 	var doc policyDocument
 	if err := json.Unmarshal(document, &doc); err != nil {
 		return nil, nil
@@ -105,7 +106,7 @@ func evaluatePolicyDocument(ctx context.Context, store *metadata.Store, ns strin
 				}
 			}
 		case ruleRepositoryOwnership(rule):
-			if err := checkRepositoryOwnership(ctx, store, ns, nsConfig, digestID); err != nil {
+			if err := checkRepositoryOwnership(ctx, store, ns, nsConfig, digestID, rule, evalCtx.github); err != nil {
 				if pf, ok := asPolicyFailure(err); ok {
 					reasons = append(reasons, PolicyReason{Rule: ruleID, Message: pf.Hint})
 				} else {
@@ -119,6 +120,13 @@ func evaluatePolicyDocument(ctx context.Context, store *metadata.Store, ns strin
 				} else {
 					return nil, err
 				}
+			}
+		case ruleRequireDigestOnVerify(rule):
+			if phase == EvalPhaseVerify && evalCtx.verifyByTag {
+				reasons = append(reasons, PolicyReason{
+					Rule:    ruleID,
+					Message: "verify by semver tag is not allowed; use a sha256:… digest reference",
+				})
 			}
 		}
 	}
@@ -142,6 +150,9 @@ func asPolicyFailure(err error) (PolicyFailure, bool) {
 
 // ruleAppliesInPhase returns whether a rule runs for the given evaluation phase (FR-POL-012).
 func ruleAppliesInPhase(rule policyRule, phase EvalPhase) bool {
+	if ruleRequireDigestOnVerify(rule) {
+		return phase == EvalPhaseVerify
+	}
 	switch phase {
 	case EvalPhasePush, EvalPhaseVerify:
 		return ruleRequiresSignatures(rule) ||
@@ -258,7 +269,16 @@ func checkRequireProvenance(ctx context.Context, store *metadata.Store, digestID
 	return nil
 }
 
-func checkRepositoryOwnership(ctx context.Context, store *metadata.Store, ns string, nsConfig json.RawMessage, digestID int64) error {
+func parseRepositoryOwnershipConfig(raw json.RawMessage) repositoryOwnershipConfig {
+	if len(raw) == 0 {
+		return repositoryOwnershipConfig{}
+	}
+	var cfg repositoryOwnershipConfig
+	_ = json.Unmarshal(raw, &cfg)
+	return cfg
+}
+
+func checkRepositoryOwnership(ctx context.Context, store *metadata.Store, ns string, nsConfig json.RawMessage, digestID int64, rule policyRule, github GitHubRepoChecker) error {
 	expectedRepo, ok := auth.ExpectedRepository(ns, nsConfig)
 	if !ok {
 		return PolicyFailure{
@@ -287,6 +307,30 @@ func checkRepositoryOwnership(ctx context.Context, store *metadata.Store, ns str
 		return PolicyFailure{
 			Rule: "repository-ownership",
 			Hint: fmt.Sprintf("provenance repository %q does not match namespace repository %q", claimRepo, expectedRepo),
+		}
+	}
+
+	cfg := parseRepositoryOwnershipConfig(rule.Config)
+	if !cfg.VerifyWithGitHubAPI {
+		return nil
+	}
+	if github == nil {
+		return PolicyFailure{
+			Rule: "repository-ownership",
+			Hint: "GitHub API verification is required but VERITY_GITHUB_TOKEN is not configured on the server",
+		}
+	}
+	exists, err := github.RepositoryExists(ctx, expectedRepo)
+	if err != nil {
+		return PolicyFailure{
+			Rule: "repository-ownership",
+			Hint: fmt.Sprintf("GitHub API verification failed: %v", err),
+		}
+	}
+	if !exists {
+		return PolicyFailure{
+			Rule: "repository-ownership",
+			Hint: fmt.Sprintf("GitHub repository %q was not found", expectedRepo),
 		}
 	}
 	return nil

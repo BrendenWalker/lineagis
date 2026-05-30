@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/BrendenWalker/verity/internal/auth"
@@ -58,6 +59,9 @@ func (h *Handler) putPolicy(w http.ResponseWriter, r *http.Request, ns string) {
 			return
 		}
 	}
+	h.emitWebhook(ctx, namespace.ID, ns, "policy.updated", map[string]any{
+		"policy_version": p.Version,
+	}, fmt.Sprintf("%d", p.ID))
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

@@ -1,6 +1,9 @@
 # Quickstart (local development)
 
-> **Production maintainers:** use [GitHub Actions keyless publish](github-actions-publish.md) instead. This guide is for contributors running the stack locally with a dev token.
+> **Production maintainers:** use [GitHub Actions keyless publish](github-actions-publish.md) instead.  
+> **Consumers:** see [consumer-getting-started.md](consumer-getting-started.md).
+
+This guide is for contributors running the stack locally with a dev token.
 
 This walkthrough covers the Phase 1 **Must** path: publish an artifact and inspect trust output using `VERITY_DEV_TOKEN`.
 

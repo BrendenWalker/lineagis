@@ -8,7 +8,7 @@ Verity is an open-source trust platform for publishing, verifying, and governing
 |-------|--------|--------|
 | **A — Integrity** | v0.1 | OCI digests, Sigstore signatures, `require-signatures`, `publish` / `inspect` |
 | **B — Attribution** | v0.2 | Provenance verify on inspect, GitHub Actions golden path, honest trust reports |
-| **C — Governance** | v0.3+ | Push-time policy for all enabled rules, repository ownership validation depth |
+| **C — Governance** | v0.3+ | Consumer `login`/`pull`, digest-pin UX, webhooks, optional GitHub API ownership depth |
 
 This document defines MVP boundaries, reconciles README roadmap phasing with MVP scope, and links to feature and foundation specs.
 
@@ -77,7 +77,7 @@ The [README MVP scope](../../README.md#mvp-scope) lists features that the [roadm
 
 - **Phase 1 / Layer A (v0.1):** Integrity Must items.
 - **Phase 2 / Layer B (v0.2):** Attribution Should items (provenance verify, GHA golden path).
-- **Phase 3 / Layer C:** Push-time enforcement for every configured policy rule; deferred CVE/federation items.
+- **Phase 3 / Layer C (v0.3):** Consumer DX, webhooks, digest-pin policy, GitHub API ownership option; deferred CVE/federation items.
 
 Feature specs tag each functional requirement with **Must**, **Should**, or **Deferred** per this matrix.
 

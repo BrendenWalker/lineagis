@@ -730,3 +730,77 @@ func (s *Store) ListAuditEvents(ctx context.Context, namespaceID int64, limit in
 	}
 	return events, rows.Err()
 }
+
+// ListWebhookEndpoints returns webhook endpoints for a namespace.
+func (s *Store) ListWebhookEndpoints(ctx context.Context, namespaceID int64) ([]WebhookEndpoint, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, namespace_id, name, url, secret, enabled, created_at
+		FROM webhook_endpoints WHERE namespace_id = $1 ORDER BY name
+	`, namespaceID)
+	if err != nil {
+		return nil, fmt.Errorf("list webhooks: %w", err)
+	}
+	defer rows.Close()
+	var out []WebhookEndpoint
+	for rows.Next() {
+		var e WebhookEndpoint
+		if err := rows.Scan(&e.ID, &e.NamespaceID, &e.Name, &e.URL, &e.Secret, &e.Enabled, &e.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan webhook: %w", err)
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// PutWebhookEndpoint creates or updates a webhook endpoint by name.
+func (s *Store) PutWebhookEndpoint(ctx context.Context, namespaceID int64, name, url string, secret *string, enabled bool) (*WebhookEndpoint, error) {
+	var e WebhookEndpoint
+	err := s.pool.QueryRow(ctx, `
+		INSERT INTO webhook_endpoints (namespace_id, name, url, secret, enabled)
+		VALUES ($1, $2, $3, $4, $5)
+		ON CONFLICT (namespace_id, name) DO UPDATE SET
+			url = EXCLUDED.url,
+			secret = EXCLUDED.secret,
+			enabled = EXCLUDED.enabled
+		RETURNING id, namespace_id, name, url, secret, enabled, created_at
+	`, namespaceID, name, url, secret, enabled).Scan(
+		&e.ID, &e.NamespaceID, &e.Name, &e.URL, &e.Secret, &e.Enabled, &e.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("put webhook: %w", err)
+	}
+	return &e, nil
+}
+
+// DeleteWebhookEndpoint removes a webhook endpoint by name.
+func (s *Store) DeleteWebhookEndpoint(ctx context.Context, namespaceID int64, name string) error {
+	tag, err := s.pool.Exec(ctx, `DELETE FROM webhook_endpoints WHERE namespace_id = $1 AND name = $2`, namespaceID, name)
+	if err != nil {
+		return fmt.Errorf("delete webhook: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// ListEnabledWebhookEndpoints returns enabled endpoints for delivery.
+func (s *Store) ListEnabledWebhookEndpoints(ctx context.Context, namespaceID int64) ([]WebhookEndpoint, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, namespace_id, name, url, secret, enabled, created_at
+		FROM webhook_endpoints WHERE namespace_id = $1 AND enabled = true ORDER BY id
+	`, namespaceID)
+	if err != nil {
+		return nil, fmt.Errorf("list enabled webhooks: %w", err)
+	}
+	defer rows.Close()
+	var out []WebhookEndpoint
+	for rows.Next() {
+		var e WebhookEndpoint
+		if err := rows.Scan(&e.ID, &e.NamespaceID, &e.Name, &e.URL, &e.Secret, &e.Enabled, &e.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan webhook: %w", err)
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}

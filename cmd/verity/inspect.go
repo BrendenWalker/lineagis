@@ -139,6 +139,9 @@ func runInspect(args []string) int {
 			return 1
 		}
 	} else {
+		if result.TagWarning != "" {
+			fmt.Fprintln(os.Stderr, result.TagWarning)
+		}
 		for _, line := range inspect.HumanLines(result) {
 			fmt.Println(line)
 		}

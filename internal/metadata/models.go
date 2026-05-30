@@ -113,6 +113,17 @@ type PolicyDecision struct {
 	EvaluatedAt time.Time
 }
 
+// WebhookEndpoint is a namespace-scoped HTTPS callback (FR-API-012).
+type WebhookEndpoint struct {
+	ID          int64
+	NamespaceID int64
+	Name        string
+	URL         string
+	Secret      *string
+	Enabled     bool
+	CreatedAt   time.Time
+}
+
 // AuditEvent is an append-only audit log entry.
 type AuditEvent struct {
 	ID           int64

@@ -110,6 +110,8 @@ steps:
 | FR-DX-007 | Must | Error messages SHALL reference failing requirement id when applicable (e.g. policy rule). |
 | FR-DX-008 | Should | CLI version SHALL be reported in API client user-agent for support. |
 | FR-DX-009 | Should | `verity publish` in GitHub Actions SHALL use `ACTIONS_ID_TOKEN_REQUEST_TOKEN` / OIDC for signing and API auth. |
+| FR-DX-011 | Should | `verity login` SHALL obtain an API bearer token (env, GitHub Actions OIDC, or cached config) and persist it for subsequent CLI commands. |
+| FR-DX-012 | Should | `verity pull` SHALL resolve a tag or digest via the Verity API, pull manifest and layers from the OCI registry, and write files to a local directory. |
 
 ## Non-functional requirements
 
@@ -141,6 +143,8 @@ steps:
 | AC-DX-003 | Given inspect with failed Must check, when exit code is checked, then it is non-zero. | FR-DX-005 |
 | AC-DX-004 | Given sample GitHub workflow, when run on tag push, then release artifacts are published without manual keys. | FR-DX-001, FR-DX-009 |
 | AC-DX-005 | Given `--output json`, when inspect runs, then output validates against documented JSON schema (schema TBD in implementation). | FR-DX-006 |
+| AC-DX-PULL-001 | Given digest D and valid auth, when `verity pull ns/artifact@sha256:…`, then bytes match registry manifest for D. | FR-DX-012, US-PUB-003 |
+| AC-DX-PULL-002 | Given `require-signatures` and unsigned digest, when pull with `--verify`, then non-zero exit. | FR-DX-012, FR-POL-005 |
 
 ## Open questions
 

@@ -16,6 +16,7 @@ type Config struct {
 	DevToken         string // VERITY_DEV_TOKEN — bearer stub for local dev (OQ-API-002)
 	OIDCIssuer       string // VERITY_OIDC_ISSUER — e.g. https://token.actions.githubusercontent.com
 	OIDCAudience     string // VERITY_OIDC_AUDIENCE — expected JWT aud claim
+	GitHubToken      string // VERITY_GITHUB_TOKEN — optional PAT for repository-ownership API checks
 	TLSCertFile      string
 	TLSKeyFile       string
 	LogLevel         slog.Level
@@ -32,6 +33,7 @@ func Load() (Config, error) {
 		DevToken:         os.Getenv("VERITY_DEV_TOKEN"),
 		OIDCIssuer:       strings.TrimSpace(os.Getenv("VERITY_OIDC_ISSUER")),
 		OIDCAudience:     strings.TrimSpace(os.Getenv("VERITY_OIDC_AUDIENCE")),
+		GitHubToken:      strings.TrimSpace(os.Getenv("VERITY_GITHUB_TOKEN")),
 		TLSCertFile:      os.Getenv("VERITY_API_TLS_CERT"),
 		TLSKeyFile:       os.Getenv("VERITY_API_TLS_KEY"),
 		LogFormat:        envOr("VERITY_LOG_FORMAT", "json"),

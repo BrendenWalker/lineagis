@@ -35,7 +35,7 @@ func NewStorePushPolicy(store *metadata.Store) StorePushPolicy {
 }
 
 func (p StorePushPolicy) AllowSetTag(ctx context.Context, namespaceID, _, digestID int64) error {
-	result, err := evaluateActivePolicy(ctx, p.Store, namespaceID, digestID, EvalPhasePush)
+	result, err := evaluateActivePolicy(ctx, p.Store, namespaceID, digestID, EvalPhasePush, VerifyEvalOpts{})
 	if err != nil {
 		return err
 	}
@@ -46,9 +46,15 @@ func (p StorePushPolicy) AllowSetTag(ctx context.Context, namespaceID, _, digest
 	return PolicyFailure{Rule: r.Rule, Hint: r.Message}
 }
 
+// VerifyEvalOpts carries verify-time context (e.g. tag vs digest reference).
+type VerifyEvalOpts struct {
+	ByTag  bool
+	GitHub GitHubRepoChecker
+}
+
 // VerifyPolicy evaluates verify-time rules for a digest (FR-POL-004).
 type VerifyPolicy interface {
-	Evaluate(ctx context.Context, namespaceID, digestID int64) (*VerifyResult, error)
+	Evaluate(ctx context.Context, namespaceID, digestID int64, opts VerifyEvalOpts) (*VerifyResult, error)
 }
 
 // VerifyResult is the outcome of verify-time policy evaluation.
@@ -66,7 +72,8 @@ type PolicyReason struct {
 
 // StoreVerifyPolicy evaluates the namespace active policy at verify time.
 type StoreVerifyPolicy struct {
-	Store *metadata.Store
+	Store  *metadata.Store
+	GitHub GitHubRepoChecker
 }
 
 // NewStoreVerifyPolicy returns verify-time policy evaluation backed by the metadata store.
@@ -74,8 +81,9 @@ func NewStoreVerifyPolicy(store *metadata.Store) StoreVerifyPolicy {
 	return StoreVerifyPolicy{Store: store}
 }
 
-func (p StoreVerifyPolicy) Evaluate(ctx context.Context, namespaceID, digestID int64) (*VerifyResult, error) {
-	result, err := evaluateActivePolicy(ctx, p.Store, namespaceID, digestID, EvalPhaseVerify)
+func (p StoreVerifyPolicy) Evaluate(ctx context.Context, namespaceID, digestID int64, opts VerifyEvalOpts) (*VerifyResult, error) {
+	opts.GitHub = p.GitHub
+	result, err := evaluateActivePolicy(ctx, p.Store, namespaceID, digestID, EvalPhaseVerify, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +210,24 @@ func ruleRepositoryOwnership(r policyRule) bool {
 
 func ruleRequireProvenance(r policyRule) bool {
 	return ruleMatches(r, "require-provenance", "require-provenances")
+}
+
+func ruleRequireDigestOnVerify(r policyRule) bool {
+	return ruleMatches(r, "require-digest-on-verify", "require-digest")
+}
+
+type repositoryOwnershipConfig struct {
+	VerifyWithGitHubAPI bool `json:"verify_with_github_api"`
+}
+
+type policyEvalContext struct {
+	verifyByTag bool
+	github      GitHubRepoChecker
+}
+
+// GitHubRepoChecker validates that a GitHub repository exists (FR-POL-013).
+type GitHubRepoChecker interface {
+	RepositoryExists(ctx context.Context, ownerRepo string) (bool, error)
 }
 
 func ruleMatches(r policyRule, names ...string) bool {

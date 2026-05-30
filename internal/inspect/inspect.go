@@ -41,12 +41,13 @@ type ChecklistLine struct {
 
 // Report is the machine-readable inspect output (FR-DX-006, AC-DX-005).
 type Report struct {
-	Version   int           `json:"version"`
-	Namespace string        `json:"namespace"`
-	Artifact  string        `json:"artifact"`
-	Digest    string        `json:"digest"`
-	Overall   string        `json:"overall"`
-	Checks    []ReportCheck `json:"checks"`
+	Version     int           `json:"version"`
+	Namespace   string        `json:"namespace"`
+	Artifact    string        `json:"artifact"`
+	Digest      string        `json:"digest"`
+	Overall     string        `json:"overall"`
+	TagWarning  string        `json:"tag_warning,omitempty"`
+	Checks      []ReportCheck `json:"checks"`
 }
 
 // ReportCheck is one row in a JSON inspect report.
@@ -110,7 +111,7 @@ func Run(ctx context.Context, api *apiclient.Client, opts Options) (*Result, err
 
 	tagWarning := ""
 	if tag != "" {
-		tagWarning = fmt.Sprintf("⚠ Resolved semver tag %q → %s (tags are mutable; pin sha256:… in CI)", tag, digest)
+		tagWarning = fmt.Sprintf("warning: tag %q is mutable (resolved to %s); prefer @sha256:… in CI", tag, digest)
 	}
 
 	return &Result{
@@ -133,9 +134,6 @@ func HumanLines(result *Result) []string {
 		lines = append(lines, TrustHeaderLocal)
 	} else {
 		lines = append(lines, TrustHeaderAPI+" (server-side signature checks)")
-	}
-	if result.TagWarning != "" {
-		lines = append(lines, result.TagWarning)
 	}
 	for _, l := range result.MustLines {
 		lines = append(lines, l.Text)
@@ -186,12 +184,13 @@ func JSONReport(result *Result) Report {
 		digest = result.Trust.Digest
 	}
 	return Report{
-		Version:   reportVersion,
-		Namespace: result.Trust.Namespace,
-		Artifact:  result.Trust.Artifact,
-		Digest:    digest,
-		Overall:   overall,
-		Checks:    checks,
+		Version:    reportVersion,
+		Namespace:  result.Trust.Namespace,
+		Artifact:   result.Trust.Artifact,
+		Digest:     digest,
+		Overall:    overall,
+		TagWarning: result.TagWarning,
+		Checks:     checks,
 	}
 }
 

@@ -95,8 +95,8 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix). Most requirements are 
 | OQ-PROV-001 | **SLSA Build L1** for MVP | Provenance present, signed, and verified on inspect; higher levels deferred. |
 | OQ-PROV-002 | **SBOM optional** on publish | Inspect reports `⚠ SBOM not attached` when absent; operators may require via future policy. |
 | OQ-PROV-003 | **SPDX and CycloneDX accepted** | `SBOMPredicateType` detects format; guides show one SPDX example. |
-| OQ-PROV-004 | **Provenance claim + namespace match** (no GitHub API) | `repository-ownership` compares provenance URI to `gh/owner/repo`; no live repo API in v0.2. |
+| OQ-PROV-004 | **Provenance claim + namespace match** (no GitHub API) | Default in v0.2: provenance URI vs namespace. v0.3: optional `verify_with_github_api` on `repository-ownership` (`FR-POL-013`). |
 
 ## Open questions
 
-None for v0.2 Attribution scope.
+None for v0.3 Governance scope beyond deferred non-GitHub hosts (`FR-SIGN-011`).

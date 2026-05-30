@@ -19,6 +19,8 @@ type Handler struct {
 	Manifests    ManifestSource
 	Policy       PushPolicy
 	VerifyPolicy VerifyPolicy
+	Webhooks     *WebhookDispatcher
+	GitHub       GitHubRepoChecker
 	Auth         func(http.Handler) http.Handler
 }
 
@@ -282,6 +284,10 @@ func (h *Handler) putSetTag(w http.ResponseWriter, r *http.Request, ns, artifact
 		"tag":    tagRow.Name,
 		"digest": d.Digest,
 	})
+	h.emitWebhook(ctx, namespace.ID, ns, "tag.set", map[string]any{
+		"tag":    tagRow.Name,
+		"digest": d.Digest,
+	}, resID)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

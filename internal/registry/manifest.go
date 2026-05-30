@@ -239,6 +239,35 @@ func (c *Client) PushManifest(ctx context.Context, repo string, data []byte) (v1
 	return h, nil
 }
 
+// ManifestLayer is one file layer described by a release manifest.
+type ManifestLayer struct {
+	Path   string
+	Digest v1.Hash
+}
+
+// LayersFromManifest extracts layer paths and digests from release manifest JSON.
+func LayersFromManifest(manifestJSON []byte) ([]ManifestLayer, error) {
+	var m releaseManifest
+	if err := json.Unmarshal(manifestJSON, &m); err != nil {
+		return nil, fmt.Errorf("registry: parse manifest: %w", err)
+	}
+	out := make([]ManifestLayer, 0, len(m.Layers))
+	for _, layer := range m.Layers {
+		p := ""
+		if layer.Annotations != nil {
+			p = layer.Annotations[annotationVerityPath]
+		}
+		if strings.TrimSpace(p) == "" {
+			return nil, fmt.Errorf("registry: layer missing %s annotation", annotationVerityPath)
+		}
+		out = append(out, ManifestLayer{Path: p, Digest: layer.Digest})
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("registry: manifest has no layers")
+	}
+	return out, nil
+}
+
 // PullManifest downloads manifest bytes for the given digest or tag reference.
 func (c *Client) PullManifest(ctx context.Context, repo, reference string) ([]byte, v1.Hash, error) {
 	reference = strings.TrimSpace(reference)

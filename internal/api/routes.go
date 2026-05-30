@@ -36,6 +36,28 @@ func (h *Handler) routeV1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if ns, name, ok := parseNamespaceWebhookPath(rest); ok {
+		switch r.Method {
+		case http.MethodGet:
+			if name == "" {
+				h.listWebhooks(w, r, ns)
+				return
+			}
+		case http.MethodPut:
+			if name != "" {
+				h.putWebhook(w, r, ns, name)
+				return
+			}
+		case http.MethodDelete:
+			if name != "" {
+				h.deleteWebhook(w, r, ns, name)
+				return
+			}
+		}
+		WriteError(w, http.StatusNotFound, "NOT_FOUND", "unknown route", nil)
+		return
+	}
+
 	if ns, ok := parseNamespaceAuditPath(rest); ok {
 		if r.Method == http.MethodGet {
 			h.getAuditEvents(w, r, ns)
@@ -123,6 +145,27 @@ func parseNamespaceArtifactsListPath(path string) (namespace string, ok bool) {
 		return "", false
 	}
 	return ns, true
+}
+
+// parseNamespaceWebhookPath parses namespaces/{ns}/webhooks or namespaces/{ns}/webhooks/{name}.
+func parseNamespaceWebhookPath(path string) (namespace, name string, ok bool) {
+	const prefix = "namespaces/"
+	const suffix = "/webhooks"
+	if !strings.HasPrefix(path, prefix) {
+		return "", "", false
+	}
+	rest := strings.TrimPrefix(path, prefix)
+	if !strings.Contains(rest, suffix) {
+		return "", "", false
+	}
+	idx := strings.Index(rest, suffix)
+	ns := rest[:idx]
+	rest = strings.TrimPrefix(rest[idx:], suffix)
+	rest = strings.TrimPrefix(rest, "/")
+	if ns == "" {
+		return "", "", false
+	}
+	return ns, rest, true
 }
 
 // parseNamespaceAuditPath parses namespaces/{ns}/audit.

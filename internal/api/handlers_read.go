@@ -258,7 +258,8 @@ func (h *Handler) getTrustStatus(w http.ResponseWriter, r *http.Request, ns, art
 		return
 	}
 
-	resp, err := h.buildTrustStatus(ctx, namespace.ID, ns, artifact, d)
+	byTag := tagName != ""
+	resp, err := h.buildTrustStatus(ctx, namespace.ID, ns, artifact, d, byTag)
 	if err != nil {
 		if mapStoreError(w, err) {
 			return

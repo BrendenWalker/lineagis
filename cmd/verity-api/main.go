@@ -14,6 +14,7 @@ import (
 	"github.com/BrendenWalker/verity/internal/auth"
 	"github.com/BrendenWalker/verity/internal/config"
 	"github.com/BrendenWalker/verity/internal/db"
+	"github.com/BrendenWalker/verity/internal/github"
 	"github.com/BrendenWalker/verity/internal/metadata"
 	"github.com/BrendenWalker/verity/internal/registry"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -139,11 +140,20 @@ func (s *server) routes() *http.ServeMux {
 	if reg, err := registry.New(s.cfg.RegistryURL); err == nil {
 		manifests = &api.RegistryManifests{Client: reg}
 	}
+	var gh api.GitHubRepoChecker
+	if s.cfg.GitHubToken != "" {
+		gh = github.NewClient(s.cfg.GitHubToken)
+	}
+	verifyPolicy := api.NewStoreVerifyPolicy(store)
+	verifyPolicy.GitHub = gh
 	apiHandler := &api.Handler{
-		Store:     store,
-		Manifests: manifests,
-		Policy:    api.NewStorePushPolicy(store),
-		Auth:      api.AuthMiddleware(s.authn),
+		Store:        store,
+		Manifests:    manifests,
+		Policy:       api.NewStorePushPolicy(store),
+		VerifyPolicy: verifyPolicy,
+		Webhooks:     &api.WebhookDispatcher{Store: store, HTTPClient: s.client},
+		GitHub:       gh,
+		Auth:         api.AuthMiddleware(s.authn),
 	}
 	apiHandler.RegisterRoutes(mux)
 	return mux

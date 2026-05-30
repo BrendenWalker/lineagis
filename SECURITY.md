@@ -28,6 +28,32 @@ Verity provides **integrity, identity, and policy attribution** — not malware 
 | **Pin consumer references** | Use `sha256:…` digests; mutable semver tags alone are vulnerable to substitution |
 | **Run `verity inspect` in CI** | Fail the job on Must check failures (`--output json`) |
 | **Protect database backups** | Metadata tampering affects trust decisions |
+| **Encrypt PostgreSQL at rest** | Stolen disks expose tags, policies, and signature metadata |
+| **Restrict policy writes** | Only operator role may `PutPolicy` or configure webhooks |
+| **Review audit logs** | After policy, tag, or webhook changes (`GET …/audit`) |
+| **Webhook secrets** | Use HMAC secrets on HTTPS endpoints; rotate on compromise |
+| **Optional GitHub API token** | `VERITY_GITHUB_TOKEN` for `verify_with_github_api`; scope to `repo` read |
+
+## Control-plane hardening (v0.3)
+
+### Compromised operator account
+
+An operator who can change namespace policy, webhooks, or trusted publishers can weaken enforcement for future publishes. Mitigations:
+
+- Separate operator credentials from maintainer CI tokens
+- Require human review for policy changes (PR on policy JSON in git)
+- Monitor audit events and webhook `policy.updated` deliveries
+- Restore policy from versioned backups if tampering is suspected
+
+### Database and backups
+
+Treat PostgreSQL backups like signing keys: encrypt at rest, restrict access, and test restore procedures. Restoring an old backup can roll back policy or tag state.
+
+### Network
+
+- Terminate TLS at the API and registry
+- Optional mTLS between Verity API and private registry (deployment-specific)
+- Rate-limit policy mutation endpoints at the ingress when exposed publicly
 
 ## Signing and verification
 
@@ -40,7 +66,8 @@ Verity provides **integrity, identity, and policy attribution** — not malware 
 - **`require-signatures`:** Blocks semver tagging and fails inspect when no valid signature exists for the digest.
 - **`trusted-publishers`:** When the rule is in your namespace policy, only operator-configured signing identities pass at **tag time and inspect** (fail-closed). Pin `repository`, `workflow`, optional `ref` and `issuer` — avoid broad org wildcards.
 - **`require-provenance`:** When configured, fails if provenance is missing or signature verification failed.
-- **`repository-ownership`:** When configured, fails if provenance repository does not match the namespace.
+- **`repository-ownership`:** When configured, fails if provenance repository does not match the namespace. Optional `verify_with_github_api: true` requires live GitHub REST verification (fail-closed if API unavailable).
+- **`require-digest-on-verify`:** When configured, rejects verify/inspect by semver tag; use `sha256:…` in CI.
 - **Push-time enforcement:** `require-signatures` applies on `RegisterDigest` (bundle required) and `SetTag`; other rules run on `SetTag` and inspect (FR-POL-012). Use `verity verify` with a pinned digest in CI.
 
 Policy changes should be auditable (`FR-POL-010`). Review audit logs after policy or namespace configuration updates.
@@ -55,6 +82,8 @@ Policy changes should be auditable (`FR-POL-010`). Review audit logs after polic
 
 ## Related documentation
 
+- [MVP v0.3 release checklist](docs/sdlc/mvp-v0.3-release.md)
+- [Consumer getting started](docs/guides/consumer-getting-started.md)
 - [MVP v0.1 release checklist](docs/sdlc/mvp-v0.1-release.md)
 - [Specs overview](docs/specs/00-overview.md)
 - [Policy enforcement spec](docs/specs/04-policy-enforcement.md)

@@ -77,7 +77,7 @@ func (h *Handler) postEvaluatePolicy(w http.ResponseWriter, r *http.Request, ns,
 		return
 	}
 
-	result, err := evaluateActivePolicy(ctx, h.Store, namespace.ID, d.ID, phase)
+	result, err := evaluateActivePolicy(ctx, h.Store, namespace.ID, d.ID, phase, VerifyEvalOpts{})
 	if err != nil {
 		if mapStoreError(w, err) {
 			return

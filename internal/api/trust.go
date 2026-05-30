@@ -48,7 +48,7 @@ type trustSigner struct {
 	Issuer     string `json:"issuer,omitempty"`
 }
 
-func (h *Handler) buildTrustStatus(ctx context.Context, namespaceID int64, ns, artifact string, d *metadata.Digest) (*trustStatusResponse, error) {
+func (h *Handler) buildTrustStatus(ctx context.Context, namespaceID int64, ns, artifact string, d *metadata.Digest, byTag bool) (*trustStatusResponse, error) {
 	sigs, err := h.Store.ListSignatures(ctx, d.ID)
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (h *Handler) buildTrustStatus(ctx context.Context, namespaceID int64, ns, a
 	}
 
 	evaluator := h.verifyPolicy()
-	policyEval, err := evaluator.Evaluate(ctx, namespaceID, d.ID)
+	policyEval, err := evaluator.Evaluate(ctx, namespaceID, d.ID, VerifyEvalOpts{ByTag: byTag})
 	if err != nil {
 		return nil, err
 	}

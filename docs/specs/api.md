@@ -82,6 +82,18 @@ See [00-overview.md](00-overview.md), [metadata-model.md](metadata-model.md), an
 | `ListPublishers` | GET | Should | List trusted publishers for namespace. |
 | `PutPublisher` | PUT | Should | Add/update trusted publisher (operator). |
 
+### Webhooks (v0.3)
+
+| Operation | Method (informative) | Priority | Description |
+|-----------|----------------------|----------|-------------|
+| `ListWebhooks` | GET | Should | List namespace webhook endpoints (operator). |
+| `PutWebhook` | PUT | Should | Create or update a webhook endpoint (HTTPS URL, optional HMAC secret). |
+| `DeleteWebhook` | DELETE | Should | Remove a webhook endpoint. |
+
+**Events (at-least-once delivery with retry):** `tag.set`, `policy.updated`, `verify.passed`, `verify.failed`.
+
+Payloads SHALL include `event_type`, `namespace`, `correlation_id` (audit event id when available), and event-specific fields. When a secret is configured, requests SHALL include `X-Verity-Signature` (HMAC-SHA256 hex of the raw body).
+
 ## Authentication and authorization
 
 | ID | Priority | Requirement |
@@ -110,7 +122,7 @@ See [00-overview.md](00-overview.md), [metadata-model.md](metadata-model.md), an
 | FR-API-009 | Must | All mutable resources SHALL be versioned or audit-logged on change. |
 | FR-API-010 | Should | `AttachAttestation` SHALL validate envelope format (in-toto Statement) before persistence. |
 | FR-API-011 | Should | API responses SHALL include stable error codes (see taxonomy). |
-| FR-API-012 | Deferred | Webhook notifications on policy failure. |
+| FR-API-012 | Should | The API SHALL deliver webhook notifications for `tag.set`, `policy.updated`, `verify.passed`, and `verify.failed` with at-least-once semantics and optional HMAC signing. |
 
 ## Error taxonomy
 

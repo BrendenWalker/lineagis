@@ -94,11 +94,20 @@ The initial release delivers **Layer A — Integrity** (see [docs/specs/00-overv
 
 Not a global safe-project list. Per namespace, operators configure which **signing identities** (e.g. GitHub `repository` + `workflow` from the Sigstore certificate) may satisfy policy when the `trusted-publishers` rule is enabled. See [docs/specs/04-policy-enforcement.md](docs/specs/04-policy-enforcement.md#trusted-publishers).
 
-## Not in v0.1 (Deferred)
+## v0.3 (Layer C — Governance)
+
+| Area | Capabilities |
+|------|----------------|
+| **Consumer CLI** | `verity login`, `verity pull`, digest-pin warnings |
+| **Policy** | Optional `require-digest-on-verify`, GitHub API `verify_with_github_api` on repository-ownership |
+| **Integrations** | Namespace webhooks (`tag.set`, `policy.updated`, `verify.*`) |
+
+See [consumer getting started](docs/guides/consumer-getting-started.md) and [mvp-v0.3-release.md](docs/sdlc/mvp-v0.3-release.md).
+
+## Not in MVP (Deferred)
 
 * CVE / vulnerability blocking
 * Federation and transparency-log UX
-* `verity pull`, CLI OIDC token exchange
 
 ## What `verity inspect` proves (and does not)
 
@@ -131,6 +140,16 @@ In GitHub Actions (with `id-token: write`), publish typically:
 Local stack uses `VERITY_DEV_TOKEN` and often `--skip-sign` / `--skip-provenance` when Fulcio is unavailable. **Do not use dev tokens or skip flags in production.** See [docs/guides/quickstart.md](docs/guides/quickstart.md).
 
 ---
+
+## Verify and consume (v0.3)
+
+```bash
+verity login
+verity pull gh/org/app/app@sha256:<digest> -o ./out --verify
+verity inspect sha256:<digest> --namespace gh/org/app --artifact app
+```
+
+Consumer guide: [docs/guides/consumer-getting-started.md](docs/guides/consumer-getting-started.md).
 
 ## Verify
 

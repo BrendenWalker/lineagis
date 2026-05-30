@@ -83,6 +83,7 @@ Rules not in the document are not evaluated and MUST NOT fail the overall result
 | **repository-ownership** | Should (when rule configured) | Fail when provenance repository does not match namespace-linked repository. |
 | **block-critical-cves** | Deferred | Reject when SBOM/vuln scan reports critical CVEs. |
 | **require-provenance** | Should (when rule configured) | Fail when provenance attestation is missing or invalid. |
+| **require-digest-on-verify** | Should (when rule configured) | Fail verify/inspect when reference is a semver tag instead of `sha256:…`. |
 
 ## User stories
 
@@ -110,6 +111,8 @@ Rules not in the document are not evaluated and MUST NOT fail the overall result
 | FR-POL-010 | Must | Policy changes SHALL be audit-logged with operator identity and timestamp. |
 | FR-POL-011 | Must | Multiple configured rules SHALL compose; overall result fails if any configured rule fails. |
 | FR-POL-012 | Should | All configured rules SHALL be evaluated at push-time on `SetTag` (v0.2 target; v0.1 may evaluate some rules only at verify-time — see release checklist). |
+| FR-POL-013 | Should | Policy **repository-ownership** MAY set `verify_with_github_api: true` to require a live GitHub REST check that the namespace-linked repository exists; when enabled, evaluation SHALL fail closed if the API is unavailable. |
+| FR-POL-014 | Should | Policy **require-digest-on-verify**, when present, SHALL fail verify-time evaluation when the client references a semver tag instead of a digest. |
 
 ## Evaluation model
 
@@ -149,6 +152,8 @@ Rules not in the document are not evaluated and MUST NOT fail the overall result
 | AC-POL-003 | Given provenance claiming repo R1 but namespace linked to R2, when repository-ownership enabled, then evaluation fails with repository mismatch message. | FR-POL-007 |
 | AC-POL-004 | Given inspect on passing artifact, when all configured policies pass, then trust report shows policy section all pass. | FR-POL-004, FR-POL-011 |
 | AC-POL-005 | Given policy update by operator, when audit log queried, then change event includes policy version and operator id. | FR-POL-010 |
+| AC-POL-006 | Given `verify_with_github_api` enabled and GitHub API unreachable, when repository-ownership runs, then `POLICY_FAILED` (fail closed). | FR-POL-013 |
+| AC-POL-007 | Given `require-digest-on-verify` enabled, when `Verify` or `GetTrustStatus` is called with a tag (not digest), then `POLICY_FAILED`. | FR-POL-014 |
 
 ## Resolved open questions
 

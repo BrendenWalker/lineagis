@@ -207,7 +207,8 @@ Informative mapping to [overview phases](../specs/00-overview.md#phase-mapping-i
 |-------------------------|------------|
 | Phase 1 | All **Must** items in delivery matrix |
 | Phase 2 | **Should** items (provenance, GitHub Actions, policies) |
-| Phase 3 | **Deferred** items |
+| Layer C (v0.3) | Governance Should items (consumer CLI, webhooks, digest-pin) |
+| Phase 3 | **Deferred** items (CVE, federation) |
 
 Name milestones explicitly (e.g. `milestone/phase-1-must`) rather than only “Phase 1”.
 
@@ -219,7 +220,9 @@ Name milestones explicitly (e.g. `milestone/phase-1-must`) rather than only “P
 - [docs/specs/README.md](../specs/README.md) — requirement conventions
 - [docs/specs/00-overview.md](../specs/00-overview.md) — MVP boundaries
 - [layer-b-v0.2-plan.md](layer-b-v0.2-plan.md) — v0.2 Attribution milestone plan (released v0.2.0)
-- [layer-c-v0.3-plan.md](layer-c-v0.3-plan.md) — v0.3 Governance milestone plan (draft)
+- [layer-c-v0.3-plan.md](layer-c-v0.3-plan.md) — v0.3 Governance milestone plan (complete, #111)
 - [phase2-should-test-mapping.md](phase2-should-test-mapping.md) — Phase 2 Should traceability
+- [phase3-layer-c-test-mapping.md](phase3-layer-c-test-mapping.md) — Layer C test traceability
 - [mvp-v0.2-release.md](mvp-v0.2-release.md) — v0.2 release checklist
+- [mvp-v0.3-release.md](mvp-v0.3-release.md) — v0.3 release checklist
 - [docs/releases/v0.2.0.md](../releases/v0.2.0.md) — v0.2.0 release notes

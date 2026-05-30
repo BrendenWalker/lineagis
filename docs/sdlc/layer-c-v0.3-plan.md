@@ -1,7 +1,7 @@
 # Layer C (v0.3 Governance) — implementation plan
 
-**Branch:** `milestone/v0.3-governance` (proposed)  
-**Status:** Planning — **requires human sign-off before Build**  
+**Branch:** `milestone/v0.3-governance`  
+**Status:** **Complete** — merged [#111](https://github.com/BrendenWalker/verity/pull/111); release tag pending [mvp-v0.3-release.md](mvp-v0.3-release.md)  
 **Authoritative scope:** [docs/specs/00-overview.md](../specs/00-overview.md)
 
 ## Goal
@@ -151,7 +151,7 @@ flowchart LR
 
 ## Human checkpoint
 
-Per [AGENTS.md](../../AGENTS.md): **do not start Build** on C1–C4 until this plan is reviewed and prioritized. Recommended order if scope must shrink: **C5 → C7 → C6 → C2/C3 → C1 → C4**.
+**Closed.** C1–C7 implemented in #111. Pre-tag gap closure: [phase3-layer-c-test-mapping.md](phase3-layer-c-test-mapping.md) (PR `story/v0.3-test-gaps`).
 
 ## Related
 

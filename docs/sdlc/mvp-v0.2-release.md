@@ -47,6 +47,14 @@ Confirm smoke output includes `provenance_verified: true` and inspect shows Laye
 | README inspect example v0.1-only | Updated to Layer B target in [README.md](../../README.md) |
 | Attestation lines “informational until provenance verify ships” | Provenance verify on inspect is **Should-complete** for v0.2 |
 
+## Errata (v0.3 follow-up)
+
+| v0.2 statement | v0.3 correction |
+|----------------|-----------------|
+| Repository ownership: no GitHub API (OQ-PROV-004) | Optional `verify_with_github_api` on `repository-ownership` (`FR-POL-013`) |
+| `verity pull` / CLI OIDC deferred | Shipped: `verity login`, `verity pull` (`FR-DX-011`, `FR-DX-012`) |
+| Layer C out of scope for v0.2 tag | Layer C merged in #111; tag **v0.3.0** per [mvp-v0.3-release.md](mvp-v0.3-release.md) |
+
 ## Known limitations (v0.2)
 
 | Limitation | Notes |

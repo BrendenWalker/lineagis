@@ -34,8 +34,8 @@ const (
 	MaxTotalReleaseSize = 2 << 30
 
 	annotationLineagisPath        = "dev.lineagis.path"
-	annotationImageTitle        = "org.opencontainers.image.title"
-	annotationImageCreated      = "org.opencontainers.image.created"
+	annotationImageTitle          = "org.opencontainers.image.title"
+	annotationImageCreated        = "org.opencontainers.image.created"
 	annotationLineagisPublishRoot = "dev.lineagis.publish.root"
 	annotationLineagisFileCount   = "dev.lineagis.file.count"
 )
@@ -120,7 +120,7 @@ func BuildArtifactManifest(layers []FileLayer, opts ManifestOptions) ([]byte, v1
 
 		annotations := map[string]string{
 			annotationLineagisPath: layer.Path,
-			annotationImageTitle: path.Base(layer.Path),
+			annotationImageTitle:   path.Base(layer.Path),
 		}
 		if layer.Created != nil {
 			annotations[annotationImageCreated] = layer.Created.UTC().Format(time.RFC3339)

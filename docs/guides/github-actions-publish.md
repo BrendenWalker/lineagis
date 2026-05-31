@@ -1,18 +1,18 @@
 # Publish from GitHub Actions (recommended)
 
-This is the **primary onboarding path** for open-source maintainers. It uses Verity keyless signing and SLSA provenance (FR-DX-001, FR-DX-009).
+This is the **primary onboarding path** for open-source maintainers. It uses Lineagis keyless signing and SLSA provenance (FR-DX-001, FR-DX-009).
 
-For local development with `VERITY_DEV_TOKEN`, see [quickstart.md](quickstart.md) (dev-only).
+For local development with `LINEAGIS_DEV_TOKEN`, see [quickstart.md](quickstart.md) (dev-only).
 
 ## Prerequisites
 
-- Verity API reachable from the workflow runner
+- Lineagis API reachable from the workflow runner
 - Namespace `gh/<owner>/<repo>` (lowercase owner) registered on first publish
 - API accepts GitHub OIDC tokens **or** a maintainer token for development
 
 ## Workflow permissions
 
-Grant OIDC to the job so Sigstore and the Verity API can authenticate the workflow:
+Grant OIDC to the job so Sigstore and the Lineagis API can authenticate the workflow:
 
 ```yaml
 permissions:
@@ -24,11 +24,11 @@ permissions:
 
 | Variable | Description |
 |----------|-------------|
-| `VERITY_API_URL` | Verity API base URL |
-| `VERITY_TOKEN` | Bearer token (dev) **or** omit when API OIDC is configured |
-| `VERITY_REGISTRY_URL` | OCI registry URL |
-| `VERITY_OIDC_ISSUER` | API OIDC issuer (when using GitHub token to API) |
-| `VERITY_OIDC_AUDIENCE` | API OIDC audience |
+| `LINEAGIS_API_URL` | Lineagis API base URL |
+| `LINEAGIS_TOKEN` | Bearer token (dev) **or** omit when API OIDC is configured |
+| `LINEAGIS_REGISTRY_URL` | OCI registry URL |
+| `LINEAGIS_OIDC_ISSUER` | API OIDC issuer (when using GitHub token to API) |
+| `LINEAGIS_OIDC_AUDIENCE` | API OIDC audience |
 
 Sigstore uses ambient `ACTIONS_ID_TOKEN_REQUEST_TOKEN` automatically in GitHub Actions.
 
@@ -49,14 +49,14 @@ jobs:
           go-version-file: go.mod
 
       - name: Build artifacts
-        run: mkdir -p dist && go build -o dist/app ./cmd/verity
+        run: mkdir -p dist && go build -o dist/app ./cmd/lineagis
 
-      - name: Publish with Verity
+      - name: Publish with Lineagis
         env:
-          VERITY_API_URL: https://verity.example.com
-          VERITY_REGISTRY_URL: https://registry.example.com
+          LINEAGIS_API_URL: https://lineagis.example.com
+          LINEAGIS_REGISTRY_URL: https://registry.example.com
         run: |
-          go run ./cmd/verity publish dist/ \
+          go run ./cmd/lineagis publish dist/ \
             --namespace "gh/${{ github.repository_owner }}/my-app" \
             --artifact my-app \
             --tag "${{ github.ref_name }}"
@@ -65,12 +65,12 @@ jobs:
 Provenance is generated automatically in GitHub Actions. To attach an SBOM:
 
 ```bash
-verity publish dist/ --namespace gh/org/app --artifact app --sbom sbom.json
+lineagis publish dist/ --namespace gh/org/app --artifact app --sbom sbom.json
 ```
 
 ## Reusable action
 
-See [.github/actions/verity-publish/action.yml](../../.github/actions/verity-publish/action.yml) for a composite action wrapper.
+See [.github/actions/lineagis-publish/action.yml](../../.github/actions/lineagis-publish/action.yml) for a composite action wrapper.
 
 ## Inspect in CI (publishers)
 
@@ -79,10 +79,10 @@ After publish, verify trust before promoting a release:
 ```yaml
       - name: Verify release trust
         env:
-          VERITY_API_URL: https://verity.example.com
-          VERITY_TOKEN: ${{ secrets.VERITY_TOKEN }}
+          LINEAGIS_API_URL: https://lineagis.example.com
+          LINEAGIS_TOKEN: ${{ secrets.LINEAGIS_TOKEN }}
         run: |
-          verity inspect "${{ steps.publish.outputs.digest }}" \
+          lineagis inspect "${{ steps.publish.outputs.digest }}" \
             --namespace "gh/${{ github.repository_owner }}/my-app" \
             --artifact my-app \
             --output json
@@ -92,7 +92,7 @@ Exit code `1` when any **Must** check fails (`require-signatures`, invalid signa
 
 ## Trusted publishers (optional, recommended)
 
-Configure a namespace policy so only your release workflow can satisfy signing policy. The allowlist is **your** choice per Verity instance — not a global list maintained by Verity.
+Configure a namespace policy so only your release workflow can satisfy signing policy. The allowlist is **your** choice per Lineagis instance — not a global list maintained by Lineagis.
 
 ```json
 {
@@ -117,7 +117,7 @@ Configure a namespace policy so only your release workflow can satisfy signing p
 
 Apply via operator API (`PutPolicy`). Pin both `repository` and `workflow` when possible; `repository` alone allows any workflow in that repo.
 
-When this rule is present, `verity inspect` **fails** if the artifact was signed by a different workflow identity. See [04-policy-enforcement.md](../specs/04-policy-enforcement.md#trusted-publishers).
+When this rule is present, `lineagis inspect` **fails** if the artifact was signed by a different workflow identity. See [04-policy-enforcement.md](../specs/04-policy-enforcement.md#trusted-publishers).
 
 Human output includes:
 
@@ -141,15 +141,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Verity CLI
-        run: go install ./cmd/verity
+      - name: Install Lineagis CLI
+        run: go install ./cmd/lineagis
 
       - name: Inspect pinned digest
         env:
-          VERITY_API_URL: https://verity.example.com
-          VERITY_TOKEN: ${{ secrets.VERITY_TOKEN }}
+          LINEAGIS_API_URL: https://lineagis.example.com
+          LINEAGIS_TOKEN: ${{ secrets.LINEAGIS_TOKEN }}
         run: |
-          verity inspect sha256:abcdef0123456789... \
+          lineagis inspect sha256:abcdef0123456789... \
             --namespace gh/acme/widget \
             --artifact widget \
             --output json
@@ -158,8 +158,8 @@ jobs:
 **Best practices:**
 
 - Pin `sha256:…` digests in documentation and lockfiles; do not rely on mutable tags alone.
-- Treat `verity inspect` as **identity and integrity** checks, not malware scanning.
-- Local Sigstore verification is the default in `verity inspect` / `verity verify`; use `--trust-api` only when registry access is unavailable.
+- Treat `lineagis inspect` as **identity and integrity** checks, not malware scanning.
+- Local Sigstore verification is the default in `lineagis inspect` / `lineagis verify`; use `--trust-api` only when registry access is unavailable.
 
 See [SECURITY.md](../../SECURITY.md), [mvp-v0.2-release.md](../sdlc/mvp-v0.2-release.md), and [mvp-v0.1-release.md](../sdlc/mvp-v0.1-release.md).
 

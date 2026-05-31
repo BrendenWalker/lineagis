@@ -52,7 +52,7 @@ Confirm smoke output includes `provenance_verified: true` and inspect shows Laye
 | v0.2 statement | v0.3 correction |
 |----------------|-----------------|
 | Repository ownership: no GitHub API (OQ-PROV-004) | Optional `verify_with_github_api` on `repository-ownership` (`FR-POL-013`) |
-| `verity pull` / CLI OIDC deferred | Shipped: `verity login`, `verity pull` (`FR-DX-011`, `FR-DX-012`) |
+| `lineagis pull` / CLI OIDC deferred | Shipped: `lineagis login`, `lineagis pull` (`FR-DX-011`, `FR-DX-012`) |
 | Layer C out of scope for v0.2 tag | Layer C merged in #111; tag **v0.3.0** per [mvp-v0.3-release.md](mvp-v0.3-release.md) |
 
 ## Known limitations (v0.2)
@@ -62,14 +62,14 @@ Confirm smoke output includes `provenance_verified: true` and inspect shows Laye
 | SLSA level | Build **L1** only (OQ-PROV-001); reproducible builds deferred |
 | SBOM | Optional on publish (OQ-PROV-002); warn on inspect when missing |
 | Repository ownership | Provenance + namespace match only — no GitHub API (OQ-PROV-004) |
-| `verity pull` / CLI OIDC | Deferred DX items, not Attribution theme |
+| `lineagis pull` / CLI OIDC | Deferred DX items, not Attribution theme |
 | CVE / federation / transparency log | Phase 3 Deferred (#67, #68) |
 
 ## Out of scope for v0.2 tag
 
 - **Layer C (v0.3):** webhooks, deeper governance
 - **Deferred:** CVE blocking, federation, transparency-log UX
-- **DX Should:** `verity login`, `verity pull`, `verity policy` CLI
+- **DX Should:** `lineagis login`, `lineagis pull`, `lineagis policy` CLI
 
 ## Related
 

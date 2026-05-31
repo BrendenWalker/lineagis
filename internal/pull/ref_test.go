@@ -3,7 +3,7 @@ package pull_test
 import (
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/pull"
+	"github.com/BrendenWalker/lineagis/internal/pull"
 )
 
 func TestParseRef_digest(t *testing.T) {

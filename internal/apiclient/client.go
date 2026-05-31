@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Client calls the Verity control-plane API.
+// Client calls the Lineagis control-plane API.
 type Client struct {
 	baseURL    string
 	token      string

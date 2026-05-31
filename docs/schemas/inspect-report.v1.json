@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://verity.dev/schemas/inspect-report.v1.json",
-  "title": "verity inspect report",
-  "description": "Machine-readable trust report from `verity inspect --output json` (FR-DX-006, AC-DX-005).",
+  "$id": "https://lineagis.dev/schemas/inspect-report.v1.json",
+  "title": "lineagis inspect report",
+  "description": "Machine-readable trust report from `lineagis inspect --output json` (FR-DX-006, AC-DX-005).",
   "type": "object",
   "required": ["version", "namespace", "artifact", "digest", "overall", "checks"],
   "additionalProperties": false,

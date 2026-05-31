@@ -5,7 +5,7 @@
 
 This guide is for contributors running the stack locally with a dev token.
 
-This walkthrough covers the Phase 1 **Must** path: publish an artifact and inspect trust output using `VERITY_DEV_TOKEN`.
+This walkthrough covers the Phase 1 **Must** path: publish an artifact and inspect trust output using `LINEAGIS_DEV_TOKEN`.
 
 Related acceptance criteria:
 
@@ -42,10 +42,10 @@ echo "quickstart $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/release.txt
 ## 4) Publish (dev-only flags)
 
 ```bash
-export VERITY_API_URL=http://localhost:8080
-export VERITY_REGISTRY_URL=http://localhost:5000
-export VERITY_TOKEN=dev-local-token
-./bin/verity publish dist/ \
+export LINEAGIS_API_URL=http://localhost:8080
+export LINEAGIS_REGISTRY_URL=http://localhost:5000
+export LINEAGIS_TOKEN=dev-local-token
+./bin/lineagis publish dist/ \
   --namespace gh/acme/quickstart \
   --artifact quickstart \
   --tag v0.1.0 \
@@ -55,7 +55,7 @@ export VERITY_TOKEN=dev-local-token
 
 | Flag / setting | Purpose |
 |----------------|---------|
-| `VERITY_DEV_TOKEN` / `VERITY_TOKEN` | Local API bearer — **not for production** |
+| `LINEAGIS_DEV_TOKEN` / `LINEAGIS_TOKEN` | Local API bearer — **not for production** |
 | `--skip-sign` | **Local dev only** — skip Fulcio when offline; forbidden in production release CI |
 | `--skip-provenance` | **Local dev only** — skip SLSA provenance when not in CI |
 
@@ -73,12 +73,12 @@ Expected result:
 Use the digest printed by `publish`:
 
 ```bash
-./bin/verity inspect sha256:<digest> --namespace gh/acme/quickstart --artifact quickstart
+./bin/lineagis inspect sha256:<digest> --namespace gh/acme/quickstart --artifact quickstart
 ```
 
 Expected result:
 
-- header: `Trust verified by Verity API (server-side Sigstore checks)`
+- header: `Trust verified by Lineagis API (server-side Sigstore checks)`
 - signature line reflects API trust status (unsigned artifacts show `✗` when policy requires signatures)
 - Should lines may show `⚠` for missing provenance/SBOM
 

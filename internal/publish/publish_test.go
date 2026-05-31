@@ -3,7 +3,7 @@ package publish
 import (
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 func TestManifestDigest_stableOrder(t *testing.T) {

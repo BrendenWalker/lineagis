@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
 )
 
 const webhookMaxAttempts = 5
@@ -73,11 +73,11 @@ func deliverWebhook(client *http.Client, ep metadata.WebhookEndpoint, body []byt
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "verity-webhooks/1.0")
+	req.Header.Set("User-Agent", "lineagis-webhooks/1.0")
 	if ep.Secret != nil && strings.TrimSpace(*ep.Secret) != "" {
 		mac := hmac.New(sha256.New, []byte(*ep.Secret))
 		_, _ = mac.Write(body)
-		req.Header.Set("X-Verity-Signature", hex.EncodeToString(mac.Sum(nil)))
+		req.Header.Set("X-Lineagis-Signature", hex.EncodeToString(mac.Sum(nil)))
 	}
 	resp, err := client.Do(req)
 	if err != nil {

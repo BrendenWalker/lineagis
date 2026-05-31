@@ -19,7 +19,7 @@
 |---------|-------------|
 | **Maintainer** | Open-source contributor who publishes release artifacts from CI or locally. |
 | **Consumer** | Developer or pipeline that downloads and verifies artifacts before use. |
-| **Operator** | Hosts or administers a Verity deployment (namespace config, policies). |
+| **Operator** | Hosts or administers a Lineagis deployment (namespace config, policies). |
 
 ## User stories
 

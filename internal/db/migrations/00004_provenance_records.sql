@@ -29,7 +29,7 @@ CREATE INDEX provenance_records_digest_id_idx ON provenance_records (digest_id);
 CREATE INDEX provenance_records_commit_sha_idx ON provenance_records (commit_sha)
     WHERE commit_sha IS NOT NULL;
 
-INSERT INTO verity_meta (key, value)
+INSERT INTO lineagis_meta (key, value)
 VALUES ('schema_provenance', 'm04')
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
@@ -47,4 +47,4 @@ ALTER TABLE attestations
 ALTER TABLE attestations
     DROP COLUMN IF EXISTS envelope_json;
 
-DELETE FROM verity_meta WHERE key = 'schema_provenance';
+DELETE FROM lineagis_meta WHERE key = 'schema_provenance';

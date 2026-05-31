@@ -6,7 +6,7 @@ If you discover a security issue, please report it responsibly. Open a private s
 
 ## Threat model (summary)
 
-Verity separates **OCI blob storage** from **trust metadata** (PostgreSQL). The Verity API and metadata database are part of the trusted computing base (TCB):
+Lineagis separates **OCI blob storage** from **trust metadata** (PostgreSQL). The Lineagis API and metadata database are part of the trusted computing base (TCB):
 
 - Namespace and artifact records
 - Tag → digest mappings
@@ -15,24 +15,24 @@ Verity separates **OCI blob storage** from **trust metadata** (PostgreSQL). The 
 
 An attacker who can modify policy, tags, or trust state without detection may weaken enforcement even if registry blobs are intact.
 
-Verity provides **integrity, identity, and policy attribution** — not malware prevention. Compromised CI can produce valid signatures and provenance for malicious artifacts.
+Lineagis provides **integrity, identity, and policy attribution** — not malware prevention. Compromised CI can produce valid signatures and provenance for malicious artifacts.
 
 ## Production deployment guidance
 
 | Practice | Rationale |
 |----------|-----------|
-| **Disable `VERITY_DEV_TOKEN`** | Dev bearer bypasses OIDC; never expose in production |
+| **Disable `LINEAGIS_DEV_TOKEN`** | Dev bearer bypasses OIDC; never expose in production |
 | **Require TLS** for API and registry endpoints | Protect tokens and metadata in transit |
-| **Configure GitHub OIDC** | `VERITY_OIDC_ISSUER`, `VERITY_OIDC_AUDIENCE` for maintainer publish paths |
+| **Configure GitHub OIDC** | `LINEAGIS_OIDC_ISSUER`, `LINEAGIS_OIDC_AUDIENCE` for maintainer publish paths |
 | **Restrict operator APIs** | Policy and publisher configuration require operator role |
 | **Pin consumer references** | Use `sha256:…` digests; mutable semver tags alone are vulnerable to substitution |
-| **Run `verity inspect` in CI** | Fail the job on Must check failures (`--output json`) |
+| **Run `lineagis inspect` in CI** | Fail the job on Must check failures (`--output json`) |
 | **Protect database backups** | Metadata tampering affects trust decisions |
 | **Encrypt PostgreSQL at rest** | Stolen disks expose tags, policies, and signature metadata |
 | **Restrict policy writes** | Only operator role may `PutPolicy` or configure webhooks |
 | **Review audit logs** | After policy, tag, or webhook changes (`GET …/audit`) |
 | **Webhook secrets** | Use HMAC secrets on HTTPS endpoints; rotate on compromise |
-| **Optional GitHub API token** | `VERITY_GITHUB_TOKEN` for `verify_with_github_api`; scope to `repo` read |
+| **Optional GitHub API token** | `LINEAGIS_GITHUB_TOKEN` for `verify_with_github_api`; scope to `repo` read |
 
 ## Control-plane hardening (v0.3)
 
@@ -52,14 +52,14 @@ Treat PostgreSQL backups like signing keys: encrypt at rest, restrict access, an
 ### Network
 
 - Terminate TLS at the API and registry
-- Optional mTLS between Verity API and private registry (deployment-specific)
+- Optional mTLS between Lineagis API and private registry (deployment-specific)
 - Rate-limit policy mutation endpoints at the ingress when exposed publicly
 
 ## Signing and verification
 
 - Publish from **GitHub Actions** with `permissions.id-token: write` for keyless Sigstore signing.
-- `verity inspect` / `verity verify` default to **local** Sigstore verification against registry manifest bytes; use `--trust-api` to skip local crypto and rely on API trust status only.
-- Keyless certificate identity matchers are derived from namespace `trusted-publishers` policy when configured; set `VERITY_PERMISSIVE_KEYLESS_IDENTITY=1` only for local dev.
+- `lineagis inspect` / `lineagis verify` default to **local** Sigstore verification against registry manifest bytes; use `--trust-api` to skip local crypto and rely on API trust status only.
+- Keyless certificate identity matchers are derived from namespace `trusted-publishers` policy when configured; set `LINEAGIS_PERMISSIVE_KEYLESS_IDENTITY=1` only for local dev.
 
 ## Policy
 
@@ -68,17 +68,17 @@ Treat PostgreSQL backups like signing keys: encrypt at rest, restrict access, an
 - **`require-provenance`:** When configured, fails if provenance is missing or signature verification failed.
 - **`repository-ownership`:** When configured, fails if provenance repository does not match the namespace. Optional `verify_with_github_api: true` requires live GitHub REST verification (fail-closed if API unavailable).
 - **`require-digest-on-verify`:** When configured, rejects verify/inspect by semver tag; use `sha256:…` in CI.
-- **Push-time enforcement:** `require-signatures` applies on `RegisterDigest` (bundle required) and `SetTag`; other rules run on `SetTag` and inspect (FR-POL-012). Use `verity verify` with a pinned digest in CI.
+- **Push-time enforcement:** `require-signatures` applies on `RegisterDigest` (bundle required) and `SetTag`; other rules run on `SetTag` and inspect (FR-POL-012). Use `lineagis verify` with a pinned digest in CI.
 
 Policy changes should be auditable (`FR-POL-010`). Review audit logs after policy or namespace configuration updates.
 
-## What Verity does not protect against
+## What Lineagis does not protect against
 
 - Compromised build pipelines or repository write access
 - Malicious but correctly signed artifacts
 - Incomplete or dishonest SBOMs
 - Dependency vulnerabilities (CVE blocking is Deferred)
-- Consumers who skip `verity inspect` and pull only from a registry
+- Consumers who skip `lineagis inspect` and pull only from a registry
 
 ## Related documentation
 

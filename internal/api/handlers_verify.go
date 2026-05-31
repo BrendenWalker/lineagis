@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
 )
 
 type verifyRequest struct {

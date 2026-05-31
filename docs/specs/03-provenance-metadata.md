@@ -15,7 +15,7 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix). Most requirements are 
 ## Non-goals
 
 - Full SLSA Level 4 reproducible build verification (Phase 3).
-- Generating SBOMs from source (Verity accepts or stores SBOMs; generation may be CI responsibility).
+- Generating SBOMs from source (Lineagis accepts or stores SBOMs; generation may be CI responsibility).
 - Vulnerability scanning (see policy spec; CVE blocking is Deferred).
 - Custom attestation types beyond provenance and SBOM for MVP.
 
@@ -36,7 +36,7 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix). Most requirements are 
 | US-PROV-003 | Should | As a consumer, I want inspect to show CI workflow identity so that I know which pipeline published. |
 | US-PROV-004 | Should | As a maintainer, I want to attach an SBOM so that consumers know components included. |
 | US-PROV-005 | Should | As a consumer, I want provenance cryptographically verified like signatures. |
-| US-PROV-006 | Must | As the Verity API, I want to persist provenance index fields for trust aggregation. |
+| US-PROV-006 | Must | As the Lineagis API, I want to persist provenance index fields for trust aggregation. |
 
 ## Functional requirements
 
@@ -46,10 +46,10 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix). Most requirements are 
 | FR-PROV-002 | Should | Provenance SHALL include source repository URI and git commit identifier when built from git. |
 | FR-PROV-003 | Should | Provenance SHALL include CI workflow identity (name, ref, run id) for GitHub Actions publishes. |
 | FR-PROV-004 | Should | Attestations SHALL be bound to the artifact manifest digest. |
-| FR-PROV-005 | Should | `verity publish` SHALL upload provenance and register it via `AttachAttestation`. |
-| FR-PROV-006 | Should | `verity inspect` SHALL report provenance verification result (`✓ Provenance verified` or failure reason). |
+| FR-PROV-005 | Should | `lineagis publish` SHALL upload provenance and register it via `AttachAttestation`. |
+| FR-PROV-006 | Should | `lineagis inspect` SHALL report provenance verification result (`✓ Provenance verified` or failure reason). |
 | FR-PROV-007 | Should | The system SHALL support SBOM attachment as an attestation or OCI referrer with SPDX **or** CycloneDX (one format required for MVP). |
-| FR-PROV-008 | Should | `verity inspect` SHALL report `✓ SBOM attached` when an SBOM is present and valid. |
+| FR-PROV-008 | Should | `lineagis inspect` SHALL report `✓ SBOM attached` when an SBOM is present and valid. |
 | FR-PROV-009 | Should | Provenance signatures SHALL be verified using the same identity model as artifact signatures. |
 | FR-PROV-010 | Must | The metadata DB SHALL store parsed provenance fields per [metadata-model.md](metadata-model.md). |
 | FR-PROV-011 | Should | `GetTrustStatus` SHALL include provenance and SBOM presence in the trust report. |

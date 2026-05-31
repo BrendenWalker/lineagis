@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/cliconfig"
-	"github.com/BrendenWalker/verity/internal/pull"
+	"github.com/BrendenWalker/lineagis/internal/cliconfig"
+	"github.com/BrendenWalker/lineagis/internal/pull"
 )
 
 func runPull(args []string) int {
@@ -68,6 +68,6 @@ func runPull(args []string) int {
 }
 
 func printPullUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: verity pull <namespace/.../artifact@sha256:…|artifact:tag> [-o dir] [--verify]\n")
-	fmt.Fprintf(os.Stderr, "\nResolves tag via Verity API, pulls OCI manifest and layers from VERITY_REGISTRY_URL.\n")
+	fmt.Fprintf(os.Stderr, "Usage: lineagis pull <namespace/.../artifact@sha256:…|artifact:tag> [-o dir] [--verify]\n")
+	fmt.Fprintf(os.Stderr, "\nResolves tag via Lineagis API, pulls OCI manifest and layers from LINEAGIS_REGISTRY_URL.\n")
 }

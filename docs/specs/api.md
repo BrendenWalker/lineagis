@@ -1,8 +1,8 @@
-# Verity API
+# Lineagis API
 
 ## Summary
 
-The Verity API is an HTTPS JSON API that registers artifacts, indexes trust metadata, stores policies, evaluates rules, and returns aggregated trust status. It does not replace the OCI Distribution API for blob transfer; clients push/pull content directly to the registry while using the Verity API for control-plane operations.
+The Lineagis API is an HTTPS JSON API that registers artifacts, indexes trust metadata, stores policies, evaluates rules, and returns aggregated trust status. It does not replace the OCI Distribution API for blob transfer; clients push/pull content directly to the registry while using the Lineagis API for control-plane operations.
 
 See [00-overview.md](00-overview.md), [metadata-model.md](metadata-model.md), and [architecture.md](architecture.md).
 
@@ -92,7 +92,7 @@ See [00-overview.md](00-overview.md), [metadata-model.md](metadata-model.md), an
 
 **Events (at-least-once delivery with retry):** `tag.set`, `policy.updated`, `verify.passed`, `verify.failed`.
 
-Payloads SHALL include `event_type`, `namespace`, `correlation_id` (audit event id when available), and event-specific fields. When a secret is configured, requests SHALL include `X-Verity-Signature` (HMAC-SHA256 hex of the raw body).
+Payloads SHALL include `event_type`, `namespace`, `correlation_id` (audit event id when available), and event-specific fields. When a secret is configured, requests SHALL include `X-Lineagis-Signature` (HMAC-SHA256 hex of the raw body).
 
 ## Authentication and authorization
 

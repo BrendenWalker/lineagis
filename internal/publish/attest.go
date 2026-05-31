@@ -8,13 +8,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
-	"github.com/BrendenWalker/verity/internal/provenance"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/provenance"
 )
 
 // SkipProvenanceFromEnv reports whether provenance generation is disabled.
 func SkipProvenanceFromEnv() bool {
-	v := strings.ToLower(strings.TrimSpace(os.Getenv("VERITY_SKIP_PROVENANCE")))
+	v := strings.ToLower(strings.TrimSpace(os.Getenv("LINEAGIS_SKIP_PROVENANCE")))
 	return v == "1" || v == "true" || v == "yes"
 }
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 // ManifestSource loads canonical manifest bytes for signature verification (FR-SIGN-006).

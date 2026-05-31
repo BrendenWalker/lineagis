@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/BrendenWalker/verity/internal/auth"
+	"github.com/BrendenWalker/lineagis/internal/auth"
 )
 
 type putPolicyRequest struct {

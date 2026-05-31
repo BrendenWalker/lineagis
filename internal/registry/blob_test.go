@@ -14,7 +14,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/v1"
 
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 func TestPushBlobUploadsAndReturnsDigest(t *testing.T) {

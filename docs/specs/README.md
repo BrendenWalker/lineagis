@@ -1,6 +1,6 @@
-# Verity MVP Specifications
+# Lineagis MVP Specifications
 
-Requirements-focused specifications for the Verity MVP. These documents define *what* the system must do—not implementation details such as OpenAPI schemas or database migrations.
+Requirements-focused specifications for the Lineagis MVP. These documents define *what* the system must do—not implementation details such as OpenAPI schemas or database migrations.
 
 For how specs connect to milestones, stories, and pull requests (human + AI workflow), see [docs/sdlc/README.md](../sdlc/README.md) and [AGENTS.md](../../AGENTS.md).
 
@@ -9,7 +9,7 @@ For how specs connect to milestones, stories, and pull requests (human + AI work
 1. [00-overview.md](00-overview.md) — MVP boundaries, delivery matrix, glossary, end-to-end flows
 2. [architecture.md](architecture.md) — Components, trust boundaries, deployment assumptions
 3. [metadata-model.md](metadata-model.md) — Entities and storage placement
-4. [api.md](api.md) — Verity API resources, operations, and authentication
+4. [api.md](api.md) — Lineagis API resources, operations, and authentication
 5. Feature specs (in dependency order):
    - [01-artifact-publishing.md](01-artifact-publishing.md)
    - [02-signing-verification.md](02-signing-verification.md)
@@ -60,11 +60,11 @@ Requirements are tagged in the [delivery matrix](00-overview.md#mvp-delivery-mat
 | **SBOM** | Software Bill of Materials describing components in an artifact. |
 | **Tag** | A mutable human-readable label (e.g. semver `v1.2.0`) pointing to a digest. |
 | **Trust status** | Aggregated verification outcome for an artifact (signatures, provenance, policies). |
-| **Verity API** | HTTP API mediating publish, metadata, policy, and trust operations. |
+| **Lineagis API** | HTTP API mediating publish, metadata, policy, and trust operations. |
 
 ## External standards
 
-| Standard | Use in Verity |
+| Standard | Use in Lineagis |
 |----------|----------------|
 | [OCI Distribution Spec](https://github.com/opencontainers/distribution-spec) | Artifact push/pull, manifests, blobs |
 | [OCI Image Spec](https://github.com/opencontainers/image-spec) | Manifest and descriptor formats |

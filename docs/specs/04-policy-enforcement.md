@@ -18,7 +18,7 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 - Complex rule DSL (Rego/CUE full engines Deferred; MVP uses structured JSON rules).
 - Real-time CVE feed integration for MVP (critical CVE blocking is Deferred).
 - Policy simulation UI.
-- A global vendor allowlist — each Verity instance defines its own namespace policies.
+- A global vendor allowlist — each Lineagis instance defines its own namespace policies.
 
 ## Trusted publishers
 
@@ -28,7 +28,7 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 |------|---------|
 | **Signing identity** | Who signed the artifact digest, extracted from the Sigstore bundle (today: GitHub Actions `repository` + optional `workflow` from the Fulcio certificate). |
 | **Allowlist** | `publishers` array in the `trusted-publishers` rule `config` — each entry may set `repository` and/or `workflow`. |
-| **API OIDC identity** | Who called the Verity API (`issuer` + `subject`). Separate from signing identity; used for authz on metadata writes. |
+| **API OIDC identity** | Who called the Lineagis API (`issuer` + `subject`). Separate from signing identity; used for authz on metadata writes. |
 
 Example (operator-defined):
 
@@ -61,7 +61,7 @@ Example (operator-defined):
 When a policy rule appears in the active namespace policy document:
 
 1. The rule **SHALL** be evaluated whenever policy runs for that phase (push or verify).
-2. A failing rule **SHALL** produce `POLICY_FAILED`, block trust, and cause non-zero `verity inspect` exit.
+2. A failing rule **SHALL** produce `POLICY_FAILED`, block trust, and cause non-zero `lineagis inspect` exit.
 3. There is **no** warn-only mode for configured rules.
 
 Rules not in the document are not evaluated and MUST NOT fail the overall result.
@@ -166,5 +166,5 @@ Rules not in the document are not evaluated and MUST NOT fail the overall result
 
 | ID | Question | Cross-ref |
 |----|----------|-----------|
-| OQ-POL-003 | CVE data source and severity threshold when block-critical-cves is implemented? | Deferred |
+| OQ-POL-003 | CVE data source and selineagis threshold when block-critical-cves is implemented? | Deferred |
 | OQ-POL-004 | Generic OIDC signing identity matching beyond GitHub Actions workflow extensions? | [02-signing-verification.md](02-signing-verification.md) |

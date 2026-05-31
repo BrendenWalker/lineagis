@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/BrendenWalker/verity/internal/metadata"
-	"github.com/BrendenWalker/verity/internal/semver"
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/semver"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
-// Handler serves Verity control-plane HTTP routes (OQ-API-001 layout).
+// Handler serves Lineagis control-plane HTTP routes (OQ-API-001 layout).
 type Handler struct {
 	Store        *metadata.Store
 	Manifests    ManifestSource

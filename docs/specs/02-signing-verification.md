@@ -2,7 +2,7 @@
 
 ## Summary
 
-Signing and verification integrate Sigstore for keyless signing (especially from GitHub Actions) and cryptographic verification of artifact digests. Signatures are bound to manifest digests and surfaced in trust status and `verity inspect` output.
+Signing and verification integrate Sigstore for keyless signing (especially from GitHub Actions) and cryptographic verification of artifact digests. Signatures are bound to manifest digests and surfaced in trust status and `lineagis inspect` output.
 
 See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 
@@ -35,7 +35,7 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 | US-SIGN-002 | Must | As a CI workflow, I want keyless signing via GitHub OIDC so that I do not store signing keys in secrets. |
 | US-SIGN-003 | Must | As a consumer, I want signature verification on inspect so that I trust the artifact integrity. |
 | US-SIGN-004 | Should | As a consumer, I want to see which identity signed the artifact (e.g. GitHub Actions workflow). |
-| US-SIGN-005 | Should | As the Verity API, I want to verify signatures when serving trust status so clients cannot skip verification. |
+| US-SIGN-005 | Should | As the Lineagis API, I want to verify signatures when serving trust status so clients cannot skip verification. |
 
 ## Functional requirements
 
@@ -44,9 +44,9 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 | FR-SIGN-001 | Must | The system SHALL integrate with Sigstore for signing and verification. |
 | FR-SIGN-002 | Must | The system SHALL support keyless signing using OIDC identities. |
 | FR-SIGN-003 | Must | Signatures SHALL cover the artifact manifest digest. |
-| FR-SIGN-004 | Must | `verity publish` SHALL sign artifacts after upload unless signing is explicitly skipped and policy allows. |
-| FR-SIGN-005 | Must | `verity inspect` SHALL verify signatures and report valid, invalid, or missing. |
-| FR-SIGN-006 | Must | The Verity API SHALL verify signatures when computing trust status. |
+| FR-SIGN-004 | Must | `lineagis publish` SHALL sign artifacts after upload unless signing is explicitly skipped and policy allows. |
+| FR-SIGN-005 | Must | `lineagis inspect` SHALL verify signatures and report valid, invalid, or missing. |
+| FR-SIGN-006 | Must | The Lineagis API SHALL verify signatures when computing trust status. |
 | FR-SIGN-007 | Must | Unsigned artifacts SHALL fail push-time policy when require-signature is enabled. |
 | FR-SIGN-008 | Should | Verified signatures SHALL expose signer identity claims (issuer, subject, repository, workflow). |
 | FR-SIGN-009 | Should | Signature bundles SHALL be attachable via `AttachSignature` and stored per [metadata-model.md](metadata-model.md). |
@@ -88,5 +88,5 @@ See [00-overview.md](00-overview.md#mvp-delivery-matrix).
 
 | ID | Question |
 |----|----------|
-| OQ-SIGN-001 | **Resolved (MVP):** Default to Sigstore public-good endpoints and TUF trust; operators override via `VERITY_SIGSTORE_*` (or `SIGSTORE_*`) — see [signing-local.md](../signing-local.md). |
+| OQ-SIGN-001 | **Resolved (MVP):** Default to Sigstore public-good endpoints and TUF trust; operators override via `LINEAGIS_SIGSTORE_*` (or `SIGSTORE_*`) — see [signing-local.md](../signing-local.md). |
 | OQ-SIGN-002 | Allow cosign attach-signatures vs integrated sign-only in CLI? |

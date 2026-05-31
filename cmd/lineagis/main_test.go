@@ -10,7 +10,7 @@ func TestRunVersion(t *testing.T) {
 }
 
 func TestRunPublishMissingFlags(t *testing.T) {
-	t.Setenv("VERITY_TOKEN", "tok")
+	t.Setenv("LINEAGIS_TOKEN", "tok")
 	if got := run([]string{"publish", ".", "--namespace", "ns", "--artifact", "a"}); got != 1 {
 		t.Fatalf("run(publish) = %d, want 1 (empty dir)", got)
 	}

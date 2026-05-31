@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/inspect"
+	"github.com/BrendenWalker/lineagis/internal/inspect"
 )
 
 func TestRunInspect_printsMustLines(t *testing.T) {
@@ -25,8 +25,8 @@ func TestRunInspect_printsMustLines(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("VERITY_TOKEN", "tok")
-	t.Setenv("VERITY_API_URL", srv.URL)
+	t.Setenv("LINEAGIS_TOKEN", "tok")
+	t.Setenv("LINEAGIS_API_URL", srv.URL)
 
 	old := os.Stdout
 	r, w, err := os.Pipe()
@@ -67,8 +67,8 @@ func TestRunInspect_exitOnMustFailure(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("VERITY_TOKEN", "tok")
-	t.Setenv("VERITY_API_URL", srv.URL)
+	t.Setenv("LINEAGIS_TOKEN", "tok")
+	t.Setenv("LINEAGIS_API_URL", srv.URL)
 
 	if got := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app", "--trust-api"}); got != 1 {
 		t.Fatalf("exit = %d, want 1", got)
@@ -87,8 +87,8 @@ func TestRunInspect_outputJSON(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("VERITY_TOKEN", "tok")
-	t.Setenv("VERITY_API_URL", srv.URL)
+	t.Setenv("LINEAGIS_TOKEN", "tok")
+	t.Setenv("LINEAGIS_API_URL", srv.URL)
 
 	old := os.Stdout
 	r, w, err := os.Pipe()
@@ -146,8 +146,8 @@ func TestRunInspect_shouldWarningExitZero(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("VERITY_TOKEN", "tok")
-	t.Setenv("VERITY_API_URL", srv.URL)
+	t.Setenv("LINEAGIS_TOKEN", "tok")
+	t.Setenv("LINEAGIS_API_URL", srv.URL)
 
 	if got := run([]string{"inspect", "sha256:abc", "--namespace", "ns", "--artifact", "app", "--trust-api"}); got != 0 {
 		t.Fatalf("exit = %d, want 0 when only Should lines warn", got)
@@ -171,8 +171,8 @@ func TestRunInspect_outputJSONMustFailureExit(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("VERITY_TOKEN", "tok")
-	t.Setenv("VERITY_API_URL", srv.URL)
+	t.Setenv("LINEAGIS_TOKEN", "tok")
+	t.Setenv("LINEAGIS_API_URL", srv.URL)
 
 	old := os.Stdout
 	r, w, err := os.Pipe()

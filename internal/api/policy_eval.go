@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/BrendenWalker/verity/internal/auth"
-	"github.com/BrendenWalker/verity/internal/metadata"
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/auth"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 // EvalPhase selects push-time vs verify-time rule sets (FR-POL-004).
@@ -317,7 +317,7 @@ func checkRepositoryOwnership(ctx context.Context, store *metadata.Store, ns str
 	if github == nil {
 		return PolicyFailure{
 			Rule: "repository-ownership",
-			Hint: "GitHub API verification is required but VERITY_GITHUB_TOKEN is not configured on the server",
+			Hint: "GitHub API verification is required but LINEAGIS_GITHUB_TOKEN is not configured on the server",
 		}
 	}
 	exists, err := github.RepositoryExists(ctx, expectedRepo)

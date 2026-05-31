@@ -12,8 +12,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/BrendenWalker/verity/internal/db"
-	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/db"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
 )
 
 var (
@@ -22,7 +22,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	url := os.Getenv("VERITY_TEST_DATABASE_URL")
+	url := os.Getenv("LINEAGIS_TEST_DATABASE_URL")
 	if url != "" {
 		testDBOnce.Do(func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -44,9 +44,9 @@ func TestMain(m *testing.M) {
 func testStore(t *testing.T) (*metadata.Store, *pgxpool.Pool) {
 	t.Helper()
 
-	url := os.Getenv("VERITY_TEST_DATABASE_URL")
+	url := os.Getenv("LINEAGIS_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("VERITY_TEST_DATABASE_URL not set")
+		t.Skip("LINEAGIS_TEST_DATABASE_URL not set")
 	}
 	if testDBErr != nil {
 		t.Fatalf("test database migrate: %v", testDBErr)
@@ -81,7 +81,7 @@ func truncateMetadata(ctx context.Context, pool *pgxpool.Pool) error {
 			digests,
 			artifacts,
 			namespaces,
-			verity_meta
+			lineagis_meta
 		RESTART IDENTITY CASCADE
 	`)
 	return err

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_URL="${API_URL:-http://localhost:${VERITY_API_PORT:-8080}}"
+API_URL="${API_URL:-http://localhost:${LINEAGIS_API_PORT:-8080}}"
 REGISTRY_URL="${REGISTRY_URL:-http://localhost:5000}"
 MINIO_URL="${MINIO_URL:-http://localhost:9000}"
 POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
-POSTGRES_USER="${POSTGRES_USER:-verity}"
-POSTGRES_DB="${POSTGRES_DB:-verity}"
+POSTGRES_USER="${POSTGRES_USER:-lineagis}"
+POSTGRES_DB="${POSTGRES_DB:-lineagis}"
 
 pass() { echo "PASS: $*" >&2; }
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -21,7 +21,7 @@ curl_ok() {
   printf '%s' "$body"
 }
 
-echo "=== Verity operator stack smoke (AC-ARCH-001) ==="
+echo "=== Lineagis operator stack smoke (AC-ARCH-001) ==="
 
 health_body="$(curl_ok "$API_URL/healthz" "host -> api /healthz")"
 [ "$health_body" = "ok" ] || fail "unexpected /healthz body: $health_body"
@@ -46,17 +46,17 @@ else
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=lib/verity-bin.sh
-source "$SCRIPT_DIR/lib/verity-bin.sh"
+# shellcheck source=lib/lineagis-bin.sh
+source "$SCRIPT_DIR/lib/lineagis-bin.sh"
 REGISTRY_URL="$REGISTRY_URL" bash "$SCRIPT_DIR/smoke-registry.sh"
 pass "registry -> s3 (push/pull via crane)"
 
-if verity_bin="$(verity_bin_path 2>/dev/null)"; then
-  chmod +x "$verity_bin" 2>/dev/null || true
-  "$verity_bin" --version >/dev/null || fail "verity cli --version failed"
-  pass "cli available ($verity_bin --version)"
+if lineagis_bin="$(lineagis_bin_path 2>/dev/null)"; then
+  chmod +x "$lineagis_bin" 2>/dev/null || true
+  "$lineagis_bin" --version >/dev/null || fail "lineagis cli --version failed"
+  pass "cli available ($lineagis_bin --version)"
 else
-  echo "SKIP: bin/verity not built; download verity-binaries-linux-amd64 or verity-binaries-windows-amd64 from CI (see docs/guides/operator-validation.md)"
+  echo "SKIP: bin/lineagis not built; download lineagis-binaries-linux-amd64 or lineagis-binaries-windows-amd64 from CI (see docs/guides/operator-validation.md)"
 fi
 
 echo "=== all smoke checks passed ==="

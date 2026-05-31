@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/github"
+	"github.com/BrendenWalker/lineagis/internal/github"
 )
 
 func TestRepositoryExists(t *testing.T) {

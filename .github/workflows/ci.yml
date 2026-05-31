@@ -33,13 +33,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: verity
-          POSTGRES_PASSWORD: verity
-          POSTGRES_DB: verity
+          POSTGRES_USER: lineagis
+          POSTGRES_PASSWORD: lineagis
+          POSTGRES_DB: lineagis
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U verity -d verity"
+          --health-cmd "pg_isready -U lineagis -d lineagis"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
@@ -48,8 +48,8 @@ jobs:
         ports:
           - 5000:5000
     env:
-      VERITY_TEST_DATABASE_URL: postgres://verity:verity@localhost:5432/verity?sslmode=disable
-      VERITY_TEST_REGISTRY_URL: http://localhost:5000
+      LINEAGIS_TEST_DATABASE_URL: postgres://lineagis:lineagis@localhost:5432/lineagis?sslmode=disable
+      LINEAGIS_TEST_REGISTRY_URL: http://localhost:5000
     steps:
       - uses: actions/checkout@v4
 
@@ -99,25 +99,25 @@ jobs:
 
       - name: Build Windows binaries
         run: |
-          GOOS=windows GOARCH=amd64 go build -o bin/verity.exe ./cmd/verity
-          GOOS=windows GOARCH=amd64 go build -o bin/verity-api.exe ./cmd/verity-api
+          GOOS=windows GOARCH=amd64 go build -o bin/lineagis.exe ./cmd/lineagis
+          GOOS=windows GOARCH=amd64 go build -o bin/lineagis-api.exe ./cmd/lineagis-api
 
       - name: Upload Linux binaries
         uses: actions/upload-artifact@v4
         with:
-          name: verity-binaries-linux-amd64
+          name: lineagis-binaries-linux-amd64
           path: |
-            bin/verity
-            bin/verity-api
+            bin/lineagis
+            bin/lineagis-api
           if-no-files-found: error
 
       - name: Upload Windows binaries
         uses: actions/upload-artifact@v4
         with:
-          name: verity-binaries-windows-amd64
+          name: lineagis-binaries-windows-amd64
           path: |
-            bin/verity.exe
-            bin/verity-api.exe
+            bin/lineagis.exe
+            bin/lineagis-api.exe
           if-no-files-found: error
 
   operator-stack:
@@ -135,7 +135,7 @@ jobs:
       - name: Download workflow-built binaries
         uses: actions/download-artifact@v4
         with:
-          name: verity-binaries-linux-amd64
+          name: lineagis-binaries-linux-amd64
           path: bin
 
       - name: Install crane

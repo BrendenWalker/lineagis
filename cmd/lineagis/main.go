@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/BrendenWalker/verity/internal/version"
+	"github.com/BrendenWalker/lineagis/internal/version"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func run(args []string) int {
 		return runPull(args[1:])
 	}
 
-	fs := flag.NewFlagSet("verity", flag.ContinueOnError)
+	fs := flag.NewFlagSet("lineagis", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	showVersion := fs.Bool("version", false, "print version and exit")
 	if err := fs.Parse(args); err != nil {
@@ -37,9 +37,9 @@ func run(args []string) int {
 		return 0
 	}
 	if fs.NArg() > 0 {
-		fmt.Fprintf(os.Stderr, "verity: unknown command %q\n", fs.Arg(0))
+		fmt.Fprintf(os.Stderr, "lineagis: unknown command %q\n", fs.Arg(0))
 		return 1
 	}
-	fmt.Fprintf(os.Stderr, "Usage: verity publish <path> | verity inspect <ref> | verity verify <digest> | verity login | verity pull <ref> | verity [--version]\n")
+	fmt.Fprintf(os.Stderr, "Usage: lineagis publish <path> | lineagis inspect <ref> | lineagis verify <digest> | lineagis login | lineagis pull <ref> | lineagis [--version]\n")
 	return 1
 }

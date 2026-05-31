@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/BrendenWalker/verity/internal/cliauth"
+	"github.com/BrendenWalker/lineagis/internal/cliauth"
 )
 
 // Config holds CLI defaults for API and registry endpoints (FR-DX-004).
@@ -15,15 +15,15 @@ type Config struct {
 	Token       string
 }
 
-// Load reads configuration from environment variables and optional ~/.verity/config (FR-DX-004, FR-DX-011).
+// Load reads configuration from environment variables and optional ~/.lineagis/config (FR-DX-004, FR-DX-011).
 func Load() (Config, error) {
 	cfg := Config{
-		APIURL:      strings.TrimSpace(os.Getenv("VERITY_API_URL")),
-		RegistryURL: strings.TrimSpace(os.Getenv("VERITY_REGISTRY_URL")),
-		Token:       strings.TrimSpace(os.Getenv("VERITY_TOKEN")),
+		APIURL:      strings.TrimSpace(os.Getenv("LINEAGIS_API_URL")),
+		RegistryURL: strings.TrimSpace(os.Getenv("LINEAGIS_REGISTRY_URL")),
+		Token:       strings.TrimSpace(os.Getenv("LINEAGIS_TOKEN")),
 	}
 	if cfg.Token == "" {
-		if dev := strings.TrimSpace(os.Getenv("VERITY_DEV_TOKEN")); dev != "" {
+		if dev := strings.TrimSpace(os.Getenv("LINEAGIS_DEV_TOKEN")); dev != "" {
 			cfg.Token = dev
 		}
 	}
@@ -44,7 +44,7 @@ func Load() (Config, error) {
 		cfg.RegistryURL = "http://localhost:5000"
 	}
 	if cfg.Token == "" {
-		return Config{}, fmt.Errorf("VERITY_TOKEN (or VERITY_DEV_TOKEN) is required; run verity login")
+		return Config{}, fmt.Errorf("LINEAGIS_TOKEN (or LINEAGIS_DEV_TOKEN) is required; run lineagis login")
 	}
 	return cfg, nil
 }

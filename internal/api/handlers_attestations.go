@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/provenance"
+	"github.com/BrendenWalker/lineagis/internal/provenance"
 )
 
 type attachAttestationRequest struct {

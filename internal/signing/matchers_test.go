@@ -32,7 +32,7 @@ func TestCertIdentityRegexp_refWildcard(t *testing.T) {
 }
 
 func TestKeylessVerifyOptions_trustedPublishers(t *testing.T) {
-	t.Setenv("VERITY_PERMISSIVE_KEYLESS_IDENTITY", "")
+	t.Setenv("LINEAGIS_PERMISSIVE_KEYLESS_IDENTITY", "")
 	doc := json.RawMessage(`{"rules":[{"id":"trusted-publishers","config":{"publishers":[{"repository":"acme/widget","workflow":"release.yml"}]}}]}`)
 	opts := KeylessVerifyOptions(doc)
 	if opts.CertOidcIssuer != githubActionsIssuer {

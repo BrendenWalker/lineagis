@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 func TestBuildArtifactManifestDigestStability(t *testing.T) {
@@ -56,9 +56,9 @@ func TestBuildArtifactManifestDigestStability(t *testing.T) {
 	}
 	wantOrder := []string{"SHA256SUMS", "widget-1.2.0-py3-none-any.whl", "widget-1.2.0.tar.gz"}
 	for i, want := range wantOrder {
-		got := parsed.Layers[i].Annotations["dev.verity.path"]
+		got := parsed.Layers[i].Annotations["dev.lineagis.path"]
 		if got != want {
-			t.Fatalf("layer[%d].dev.verity.path = %q, want %q", i, got, want)
+			t.Fatalf("layer[%d].dev.lineagis.path = %q, want %q", i, got, want)
 		}
 	}
 }
@@ -129,8 +129,8 @@ func TestBuildArtifactManifestEmptyConfigDescriptor(t *testing.T) {
 	if err := json.Unmarshal(data, &parsed); err != nil {
 		t.Fatalf("Unmarshal: %v", err)
 	}
-	if parsed.ArtifactType != registry.VerityReleaseArtifactType {
-		t.Fatalf("artifactType = %q, want %q", parsed.ArtifactType, registry.VerityReleaseArtifactType)
+	if parsed.ArtifactType != registry.LineagisReleaseArtifactType {
+		t.Fatalf("artifactType = %q, want %q", parsed.ArtifactType, registry.LineagisReleaseArtifactType)
 	}
 	if parsed.Config.MediaType != "application/vnd.oci.empty.v1+json" {
 		t.Fatalf("config mediaType = %q, want empty config", parsed.Config.MediaType)

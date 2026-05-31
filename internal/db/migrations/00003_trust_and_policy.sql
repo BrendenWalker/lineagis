@@ -65,7 +65,7 @@ CREATE TABLE audit_events (
 
 CREATE INDEX audit_events_namespace_created_idx ON audit_events (namespace_id, created_at DESC);
 
-INSERT INTO verity_meta (key, value)
+INSERT INTO lineagis_meta (key, value)
 VALUES ('schema_trust', 'm03')
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
@@ -76,4 +76,4 @@ DROP TABLE IF EXISTS policies;
 DROP TABLE IF EXISTS attestations;
 DROP TABLE IF EXISTS signatures;
 
-DELETE FROM verity_meta WHERE key = 'schema_trust';
+DELETE FROM lineagis_meta WHERE key = 'schema_trust';

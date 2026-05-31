@@ -20,7 +20,7 @@ func SignManifest(ctx context.Context, cfg Config, manifestJSON []byte) (bundle 
 		return nil, Identity{}, fmt.Errorf("signing: manifest is empty")
 	}
 
-	tmpDir, err := os.MkdirTemp("", "verity-sign-*")
+	tmpDir, err := os.MkdirTemp("", "lineagis-sign-*")
 	if err != nil {
 		return nil, Identity{}, fmt.Errorf("signing: temp dir: %w", err)
 	}

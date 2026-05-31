@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/auth"
+	"github.com/BrendenWalker/lineagis/internal/auth"
 )
 
 func TestExpectedRepository(t *testing.T) {

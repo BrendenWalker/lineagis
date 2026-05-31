@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/BrendenWalker/verity/internal/auth"
+	"github.com/BrendenWalker/lineagis/internal/auth"
 )
 
 // ActorFromContext returns the authenticated actor subject when present.

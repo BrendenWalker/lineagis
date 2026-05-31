@@ -14,10 +14,10 @@ import (
 
 // ResolveToken returns an API bearer token from env or GitHub Actions OIDC (FR-DX-011).
 func ResolveToken(ctx context.Context) (string, error) {
-	if t := strings.TrimSpace(os.Getenv("VERITY_TOKEN")); t != "" {
+	if t := strings.TrimSpace(os.Getenv("LINEAGIS_TOKEN")); t != "" {
 		return t, nil
 	}
-	if t := strings.TrimSpace(os.Getenv("VERITY_DEV_TOKEN")); t != "" {
+	if t := strings.TrimSpace(os.Getenv("LINEAGIS_DEV_TOKEN")); t != "" {
 		return t, nil
 	}
 	if t, err := fetchGitHubActionsIDToken(ctx, apiAudience()); err == nil && t != "" {
@@ -32,14 +32,14 @@ func ResolveToken(ctx context.Context) (string, error) {
 	if t := strings.TrimSpace(f.Token); t != "" {
 		return t, nil
 	}
-	return "", fmt.Errorf("no API token: set VERITY_TOKEN, run in GitHub Actions with id-token: write, or run verity login after setting VERITY_TOKEN")
+	return "", fmt.Errorf("no API token: set LINEAGIS_TOKEN, run in GitHub Actions with id-token: write, or run lineagis login after setting LINEAGIS_TOKEN")
 }
 
 func apiAudience() string {
-	if a := strings.TrimSpace(os.Getenv("VERITY_OIDC_AUDIENCE")); a != "" {
+	if a := strings.TrimSpace(os.Getenv("LINEAGIS_OIDC_AUDIENCE")); a != "" {
 		return a
 	}
-	return "verity-api"
+	return "lineagis-api"
 }
 
 func isActionsNotConfigured(err error) bool {
@@ -97,8 +97,8 @@ func Login(ctx context.Context) (File, error) {
 		return File{}, err
 	}
 	f := File{
-		APIURL:      strings.TrimSpace(os.Getenv("VERITY_API_URL")),
-		RegistryURL: strings.TrimSpace(os.Getenv("VERITY_REGISTRY_URL")),
+		APIURL:      strings.TrimSpace(os.Getenv("LINEAGIS_API_URL")),
+		RegistryURL: strings.TrimSpace(os.Getenv("LINEAGIS_REGISTRY_URL")),
 		Token:       token,
 	}
 	if f.APIURL == "" {

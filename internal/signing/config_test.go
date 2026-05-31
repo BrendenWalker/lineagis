@@ -6,11 +6,11 @@ import (
 
 	cosignoptions "github.com/sigstore/cosign/v2/cmd/cosign/cli/options"
 
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 func TestSkipSignFromEnv(t *testing.T) {
-	t.Setenv("VERITY_SKIP_SIGN", "1")
+	t.Setenv("LINEAGIS_SKIP_SIGN", "1")
 	if !signing.SkipSignFromEnv() {
 		t.Fatal("expected skip sign true")
 	}
@@ -18,8 +18,8 @@ func TestSkipSignFromEnv(t *testing.T) {
 
 func TestLoadConfig_defaultsPublicGood(t *testing.T) {
 	for _, k := range []string{
-		"VERITY_SIGSTORE_FULCIO_URL",
-		"VERITY_SIGSTORE_REKOR_URL",
+		"LINEAGIS_SIGSTORE_FULCIO_URL",
+		"LINEAGIS_SIGSTORE_REKOR_URL",
 		"SIGSTORE_FULCIO_URL",
 		"SIGSTORE_REKOR_URL",
 	} {
@@ -34,10 +34,10 @@ func TestLoadConfig_defaultsPublicGood(t *testing.T) {
 	}
 }
 
-func TestLoadConfig_verityOverridesSigstore(t *testing.T) {
-	t.Setenv("VERITY_SIGSTORE_FULCIO_URL", "https://fulcio.example")
+func TestLoadConfig_lineagisOverridesSigstore(t *testing.T) {
+	t.Setenv("LINEAGIS_SIGSTORE_FULCIO_URL", "https://fulcio.example")
 	t.Setenv("SIGSTORE_FULCIO_URL", "https://fulcio.other")
-	t.Setenv("VERITY_SIGSTORE_REKOR_URL", "https://rekor.example")
+	t.Setenv("LINEAGIS_SIGSTORE_REKOR_URL", "https://rekor.example")
 	t.Setenv("SIGSTORE_REKOR_URL", "https://rekor.other")
 
 	cfg := signing.LoadConfig()
@@ -50,8 +50,8 @@ func TestLoadConfig_verityOverridesSigstore(t *testing.T) {
 }
 
 func TestLoadConfig_sigstoreFallback(t *testing.T) {
-	t.Setenv("VERITY_SIGSTORE_FULCIO_URL", "")
-	t.Setenv("VERITY_SIGSTORE_REKOR_URL", "")
+	t.Setenv("LINEAGIS_SIGSTORE_FULCIO_URL", "")
+	t.Setenv("LINEAGIS_SIGSTORE_REKOR_URL", "")
 	t.Setenv("SIGSTORE_FULCIO_URL", "https://fulcio.fallback")
 	t.Setenv("SIGSTORE_REKOR_URL", "https://rekor.fallback")
 
@@ -65,19 +65,19 @@ func TestLoadConfig_sigstoreFallback(t *testing.T) {
 }
 
 func TestLoadConfig_trustMaterial(t *testing.T) {
-	t.Setenv("VERITY_SIGSTORE_TRUSTED_ROOT", "/etc/verity/trustedroot.json")
-	t.Setenv("VERITY_SIGSTORE_CA_ROOTS", "/etc/verity/ca-roots.pem")
-	t.Setenv("VERITY_SIGSTORE_ROOT_FILE", "/etc/verity/fulcio-root.pem")
+	t.Setenv("LINEAGIS_SIGSTORE_TRUSTED_ROOT", "/etc/lineagis/trustedroot.json")
+	t.Setenv("LINEAGIS_SIGSTORE_CA_ROOTS", "/etc/lineagis/ca-roots.pem")
+	t.Setenv("LINEAGIS_SIGSTORE_ROOT_FILE", "/etc/lineagis/fulcio-root.pem")
 	t.Setenv("SIGSTORE_ROOT_FILE", "")
 
 	cfg := signing.LoadConfig()
-	if cfg.TrustedRootPath != "/etc/verity/trustedroot.json" {
+	if cfg.TrustedRootPath != "/etc/lineagis/trustedroot.json" {
 		t.Fatalf("trusted root: %q", cfg.TrustedRootPath)
 	}
-	if cfg.CARoots != "/etc/verity/ca-roots.pem" {
+	if cfg.CARoots != "/etc/lineagis/ca-roots.pem" {
 		t.Fatalf("ca roots: %q", cfg.CARoots)
 	}
-	if cfg.RootCAFile != "/etc/verity/fulcio-root.pem" {
+	if cfg.RootCAFile != "/etc/lineagis/fulcio-root.pem" {
 		t.Fatalf("root file: %q", cfg.RootCAFile)
 	}
 }
@@ -108,7 +108,7 @@ func TestApplyTrustEnv_setsSigstoreWhenUnset(t *testing.T) {
 func TestApplyTrustEnv_doesNotOverrideExisting(t *testing.T) {
 	t.Setenv("SIGSTORE_ROOT_FILE", "/existing.pem")
 
-	cfg := signing.Config{RootCAFile: "/verity.pem"}
+	cfg := signing.Config{RootCAFile: "/lineagis.pem"}
 	cfg.ApplyTrustEnv()
 
 	if got := os.Getenv("SIGSTORE_ROOT_FILE"); got != "/existing.pem" {

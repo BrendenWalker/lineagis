@@ -14,7 +14,7 @@ type File struct {
 	Token       string `json:"token,omitempty"`
 }
 
-// ConfigPath returns the default config file path (~/.verity/config).
+// ConfigPath returns the default config file path (~/.lineagis/config).
 func ConfigPath() (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
@@ -22,9 +22,9 @@ func ConfigPath() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		dir = filepath.Join(home, ".verity")
+		dir = filepath.Join(home, ".lineagis")
 	} else {
-		dir = filepath.Join(dir, "verity")
+		dir = filepath.Join(dir, "lineagis")
 	}
 	return filepath.Join(dir, "config"), nil
 }

@@ -1,4 +1,4 @@
-module github.com/BrendenWalker/verity
+module github.com/BrendenWalker/lineagis
 
 go 1.25.7
 

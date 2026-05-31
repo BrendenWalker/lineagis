@@ -7,15 +7,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
-	"github.com/BrendenWalker/verity/internal/publish"
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/publish"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 const reportVersion = 1
 
 // TrustHeaderAPI notes server-side policy evaluation.
-const TrustHeaderAPI = "Policy evaluated by Verity API"
+const TrustHeaderAPI = "Policy evaluated by Lineagis API"
 
 // TrustHeaderLocal notes local Sigstore verification.
 const TrustHeaderLocal = "Signature verified locally (Sigstore/Rekor)"
@@ -558,7 +558,7 @@ func signatureLine(status string, policyReasons []apiclient.PolicyReason, signer
 				fmt.Sprintf("Signature status unknown (%s)", status),
 				"FR-SIGN-005",
 				ruleID,
-				"confirm trust status with the Verity API or re-publish",
+				"confirm trust status with the Lineagis API or re-publish",
 			),
 			Must:          true,
 			Pass:          false,

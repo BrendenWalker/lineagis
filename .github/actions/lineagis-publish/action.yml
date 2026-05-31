@@ -1,11 +1,11 @@
-name: Verity publish
-description: Publish artifacts with Verity keyless signing and provenance
+name: Lineagis publish
+description: Publish artifacts with Lineagis keyless signing and provenance
 inputs:
   path:
     description: Directory or file to publish
     required: true
   namespace:
-    description: Verity namespace (e.g. gh/owner/repo)
+    description: Lineagis namespace (e.g. gh/owner/repo)
     required: true
   artifact:
     description: Artifact name within the namespace
@@ -26,35 +26,35 @@ inputs:
     description: Skip provenance attestation
     required: false
     default: "false"
-  verity-api-url:
-    description: Verity API URL (defaults to VERITY_API_URL)
+  lineagis-api-url:
+    description: Lineagis API URL (defaults to LINEAGIS_API_URL)
     required: false
     default: ""
-  verity-registry-url:
-    description: OCI registry URL (defaults to VERITY_REGISTRY_URL)
+  lineagis-registry-url:
+    description: OCI registry URL (defaults to LINEAGIS_REGISTRY_URL)
     required: false
     default: ""
-  verity-token:
-    description: API bearer token (defaults to VERITY_TOKEN)
+  lineagis-token:
+    description: API bearer token (defaults to LINEAGIS_TOKEN)
     required: false
     default: ""
 runs:
   using: composite
   steps:
-    - name: Build verity CLI
+    - name: Build lineagis CLI
       shell: bash
-      run: go build -o "${{ runner.temp }}/verity" ./cmd/verity
+      run: go build -o "${{ runner.temp }}/lineagis" ./cmd/lineagis
 
     - name: Publish
       shell: bash
       env:
-        VERITY_API_URL: ${{ inputs.verity-api-url != '' && inputs.verity-api-url || env.VERITY_API_URL }}
-        VERITY_REGISTRY_URL: ${{ inputs.verity-registry-url != '' && inputs.verity-registry-url || env.VERITY_REGISTRY_URL }}
-        VERITY_TOKEN: ${{ inputs.verity-token != '' && inputs.verity-token || env.VERITY_TOKEN }}
+        LINEAGIS_API_URL: ${{ inputs.lineagis-api-url != '' && inputs.lineagis-api-url || env.LINEAGIS_API_URL }}
+        LINEAGIS_REGISTRY_URL: ${{ inputs.lineagis-registry-url != '' && inputs.lineagis-registry-url || env.LINEAGIS_REGISTRY_URL }}
+        LINEAGIS_TOKEN: ${{ inputs.lineagis-token != '' && inputs.lineagis-token || env.LINEAGIS_TOKEN }}
       run: |
         set -euo pipefail
         args=(
-          "${{ runner.temp }}/verity" publish "${{ inputs.path }}"
+          "${{ runner.temp }}/lineagis" publish "${{ inputs.path }}"
           --namespace "${{ inputs.namespace }}"
           --artifact "${{ inputs.artifact }}"
         )

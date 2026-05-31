@@ -15,7 +15,7 @@ Authoritative scope: [00-overview.md](../specs/00-overview.md), [layer-c-v0.3-pl
   - Coverage:
     - `internal/pull/pull_test.go` (`TestPull_byDigest_writesLayers`, `TestPull_resolveTag_thenPull`, `TestPull_withVerify_failsWithoutSignatures`)
     - `internal/pull/ref_test.go`
-    - `cmd/verity/pull_test.go` (`TestRunPull_verifyFailsWithoutSignatures`)
+    - `cmd/lineagis/pull_test.go` (`TestRunPull_verifyFailsWithoutSignatures`)
 
 - **Digest-pin UX**
   - `FR-POL-014`, `AC-POL-007`, C5
@@ -41,13 +41,13 @@ Authoritative scope: [00-overview.md](../specs/00-overview.md), [layer-c-v0.3-pl
 ## How to run
 
 ```bash
-go test ./internal/api/... ./internal/pull/... ./cmd/verity/... ./internal/cliauth/...
+go test ./internal/api/... ./internal/pull/... ./cmd/lineagis/... ./internal/cliauth/...
 ```
 
-Database-backed policy tests require `VERITY_TEST_DATABASE_URL`:
+Database-backed policy tests require `LINEAGIS_TEST_DATABASE_URL`:
 
 ```bash
-export VERITY_TEST_DATABASE_URL=postgres://verity:verity@localhost:5432/verity?sslmode=disable
+export LINEAGIS_TEST_DATABASE_URL=postgres://lineagis:lineagis@localhost:5432/lineagis?sslmode=disable
 go test ./internal/api/... -run 'Verify_repositoryOwnership|Verify_requireDigest'
 ```
 

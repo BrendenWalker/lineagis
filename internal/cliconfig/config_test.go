@@ -3,8 +3,8 @@ package cliconfig
 import "testing"
 
 func TestLoad_requiresToken(t *testing.T) {
-	t.Setenv("VERITY_TOKEN", "")
-	t.Setenv("VERITY_DEV_TOKEN", "")
+	t.Setenv("LINEAGIS_TOKEN", "")
+	t.Setenv("LINEAGIS_DEV_TOKEN", "")
 	_, err := Load()
 	if err == nil {
 		t.Fatal("expected error without token")
@@ -12,9 +12,9 @@ func TestLoad_requiresToken(t *testing.T) {
 }
 
 func TestLoad_defaults(t *testing.T) {
-	t.Setenv("VERITY_TOKEN", "tok")
-	t.Setenv("VERITY_API_URL", "")
-	t.Setenv("VERITY_REGISTRY_URL", "")
+	t.Setenv("LINEAGIS_TOKEN", "tok")
+	t.Setenv("LINEAGIS_API_URL", "")
+	t.Setenv("LINEAGIS_REGISTRY_URL", "")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatal(err)
@@ -28,8 +28,8 @@ func TestLoad_defaults(t *testing.T) {
 }
 
 func TestLoad_devTokenFallback(t *testing.T) {
-	t.Setenv("VERITY_TOKEN", "")
-	t.Setenv("VERITY_DEV_TOKEN", "dev-secret")
+	t.Setenv("LINEAGIS_TOKEN", "")
+	t.Setenv("LINEAGIS_DEV_TOKEN", "dev-secret")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatal(err)

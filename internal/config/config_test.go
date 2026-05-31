@@ -6,8 +6,8 @@ import (
 )
 
 func TestLoadRequiresDatabaseURL(t *testing.T) {
-	t.Setenv("VERITY_DATABASE_URL", "")
-	t.Setenv("VERITY_DEV_TOKEN", "x")
+	t.Setenv("LINEAGIS_DATABASE_URL", "")
+	t.Setenv("LINEAGIS_DEV_TOKEN", "x")
 
 	_, err := Load()
 	if err == nil {
@@ -16,17 +16,17 @@ func TestLoadRequiresDatabaseURL(t *testing.T) {
 }
 
 func TestLoadDefaults(t *testing.T) {
-	t.Setenv("VERITY_DATABASE_URL", "postgres://verity:verity@localhost:5432/verity?sslmode=disable")
-	t.Setenv("VERITY_API_ADDR", "")
-	t.Setenv("VERITY_REGISTRY_URL", "")
-	t.Setenv("VERITY_LOG_LEVEL", "")
-	t.Setenv("VERITY_LOG_FORMAT", "")
-	t.Setenv("VERITY_MIGRATE_ON_STARTUP", "")
-	t.Setenv("VERITY_API_TLS_CERT", "")
-	t.Setenv("VERITY_API_TLS_KEY", "")
-	t.Setenv("VERITY_DEV_TOKEN", "test-dev-token")
-	t.Setenv("VERITY_OIDC_ISSUER", "")
-	t.Setenv("VERITY_OIDC_AUDIENCE", "")
+	t.Setenv("LINEAGIS_DATABASE_URL", "postgres://lineagis:lineagis@localhost:5432/lineagis?sslmode=disable")
+	t.Setenv("LINEAGIS_API_ADDR", "")
+	t.Setenv("LINEAGIS_REGISTRY_URL", "")
+	t.Setenv("LINEAGIS_LOG_LEVEL", "")
+	t.Setenv("LINEAGIS_LOG_FORMAT", "")
+	t.Setenv("LINEAGIS_MIGRATE_ON_STARTUP", "")
+	t.Setenv("LINEAGIS_API_TLS_CERT", "")
+	t.Setenv("LINEAGIS_API_TLS_KEY", "")
+	t.Setenv("LINEAGIS_DEV_TOKEN", "test-dev-token")
+	t.Setenv("LINEAGIS_OIDC_ISSUER", "")
+	t.Setenv("LINEAGIS_OIDC_AUDIENCE", "")
 
 	cfg, err := Load()
 	if err != nil {
@@ -51,10 +51,10 @@ func TestLoadDefaults(t *testing.T) {
 }
 
 func TestLoadTLSRequiresBothCertAndKey(t *testing.T) {
-	t.Setenv("VERITY_DATABASE_URL", "postgres://localhost/verity")
-	t.Setenv("VERITY_DEV_TOKEN", "x")
-	t.Setenv("VERITY_API_TLS_CERT", "/tmp/cert.pem")
-	t.Setenv("VERITY_API_TLS_KEY", "")
+	t.Setenv("LINEAGIS_DATABASE_URL", "postgres://localhost/lineagis")
+	t.Setenv("LINEAGIS_DEV_TOKEN", "x")
+	t.Setenv("LINEAGIS_API_TLS_CERT", "/tmp/cert.pem")
+	t.Setenv("LINEAGIS_API_TLS_KEY", "")
 
 	_, err := Load()
 	if err == nil {

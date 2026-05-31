@@ -2,13 +2,13 @@
 
 ## Summary
 
-Verity comprises a CLI, HTTP API, OCI-compatible registry, PostgreSQL metadata store, and S3-compatible object storage. The API orchestrates trust operations (registration, attestations, policy, trust status) while the registry stores immutable artifact content. This spec defines logical components, trust boundaries, and deployment assumptions for the MVP.
+Lineagis comprises a CLI, HTTP API, OCI-compatible registry, PostgreSQL metadata store, and S3-compatible object storage. The API orchestrates trust operations (registration, attestations, policy, trust status) while the registry stores immutable artifact content. This spec defines logical components, trust boundaries, and deployment assumptions for the MVP.
 
 See [00-overview.md](00-overview.md) for MVP scope and delivery matrix.
 
 ## Goals
 
-- Clearly separate content distribution (OCI) from trust metadata and policy (Verity API + DB).
+- Clearly separate content distribution (OCI) from trust metadata and policy (Lineagis API + DB).
 - Define where verification runs (client, API, or both) for MVP.
 - Document trust boundaries for keys, identities, and untrusted inputs.
 - Support single-region OSS operator deployments without multi-tenancy complexity.
@@ -32,13 +32,13 @@ See [00-overview.md](00-overview.md) for MVP scope and delivery matrix.
 
 ```text
                 +-------------------+
-                | Verity CLI        |
+                | Lineagis CLI        |
                 +-------------------+
                          |
                          | HTTPS (OIDC bearer)
                          v
                 +-------------------+
-                | Verity API        |
+                | Lineagis API        |
                 +-------------------+
                     |          |
          OCI push/pull         | SQL
@@ -58,8 +58,8 @@ See [00-overview.md](00-overview.md) for MVP scope and delivery matrix.
 
 ```mermaid
 flowchart TB
-  CLI[VerityCLI]
-  API[VerityAPI]
+  CLI[LineagisCLI]
+  API[LineagisAPI]
   Reg[OCIRegistry]
   DB[(PostgreSQL)]
   S3[ObjectStorage]
@@ -75,8 +75,8 @@ flowchart TB
 
 | Component | Responsibility |
 |-----------|----------------|
-| **Verity CLI** | User-facing publish, inspect, and auth; OCI push/pull; invokes signing; calls Verity API for metadata and trust. |
-| **Verity API** | Artifact and tag registration; attestation and signature indexing; policy storage and evaluation; trust status aggregation; audit events. |
+| **Lineagis CLI** | User-facing publish, inspect, and auth; OCI push/pull; invokes signing; calls Lineagis API for metadata and trust. |
+| **Lineagis API** | Artifact and tag registration; attestation and signature indexing; policy storage and evaluation; trust status aggregation; audit events. |
 | **OCI Registry** | Content-addressed blob and manifest storage per OCI Distribution Spec. |
 | **Metadata DB** | Queryable trust and release metadata, policies, publisher allowlists, tag-to-digest mappings. |
 | **Object Storage** | Durable blob backend for registry (when not using local filesystem). |
@@ -86,7 +86,7 @@ flowchart TB
 | Boundary | Trusted side | Untrusted / verified side |
 |----------|--------------|---------------------------|
 | Registry content | Digest integrity via hash | Manifest claims without signature |
-| Verity API | Authenticated operators for policy writes | Anonymous writes; all publish paths require auth |
+| Lineagis API | Authenticated operators for policy writes | Anonymous writes; all publish paths require auth |
 | CLI ↔ API | TLS + OIDC token validation | Client-supplied provenance JSON (must be validated and signed) |
 | Sigstore | Fulcio/Rekor as trust roots (configurable) | Signatures without valid certificate chain |
 | Consumer | Local verify after fetching public roots | Inspect output alone without re-verification option |
@@ -108,12 +108,12 @@ flowchart TB
 
 | ID | Priority | Requirement |
 |----|----------|-------------|
-| FR-ARCH-001 | Must | The Verity API SHALL be the only component that mutates policy and publisher configuration in the metadata DB. |
+| FR-ARCH-001 | Must | The Lineagis API SHALL be the only component that mutates policy and publisher configuration in the metadata DB. |
 | FR-ARCH-002 | Must | Artifact blobs and manifests SHALL be stored in an OCI Distribution-compatible registry backed by durable object storage or equivalent. |
-| FR-ARCH-003 | Must | The CLI SHALL communicate with the Verity API over HTTPS with OIDC bearer authentication for protected operations. |
+| FR-ARCH-003 | Must | The CLI SHALL communicate with the Lineagis API over HTTPS with OIDC bearer authentication for protected operations. |
 | FR-ARCH-004 | Must | The system SHALL NOT require consumers to trust registry operators alone; signature verification SHALL be available on inspect. |
-| FR-ARCH-005 | Should | The Verity API SHALL emit audit events for publish, policy change, and failed policy evaluations. |
-| FR-ARCH-006 | Should | GitHub Actions workflows SHALL obtain OIDC tokens from GitHub and present them to the Verity API and Sigstore. |
+| FR-ARCH-005 | Should | The Lineagis API SHALL emit audit events for publish, policy change, and failed policy evaluations. |
+| FR-ARCH-006 | Should | GitHub Actions workflows SHALL obtain OIDC tokens from GitHub and present them to the Lineagis API and Sigstore. |
 
 ## Non-functional requirements
 
@@ -129,7 +129,7 @@ flowchart TB
 | Assumption | Detail |
 |------------|--------|
 | Tenancy | Single-tenant or few namespaces per instance; no billing isolation. |
-| Registry | Embedded OCI Distribution or managed registry with Verity as control plane (see OQ-OV-005). |
+| Registry | Embedded OCI Distribution or managed registry with Lineagis as control plane (see OQ-OV-005). |
 | Database | PostgreSQL with backups left to operator. |
 | Identity | GitHub OIDC for CI; other OIDC providers Deferred unless needed for local dev. |
 | Availability | Best-effort HA not required for MVP; recovery via DB and registry backup. |
@@ -158,5 +158,5 @@ flowchart TB
 
 | ID | Question |
 |----|----------|
-| OQ-ARCH-001 | Embed OCI Distribution in Verity API process vs separate registry service? (see OQ-OV-005) |
+| OQ-ARCH-001 | Embed OCI Distribution in Lineagis API process vs separate registry service? (see OQ-OV-005) |
 | OQ-ARCH-002 | Should CLI verify signatures locally always, or trust API trust-status by default? |

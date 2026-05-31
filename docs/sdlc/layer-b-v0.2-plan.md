@@ -63,7 +63,7 @@ Track progress on this branch (or child story branches). Suggested PR order at t
 | Trust status fields | Done | `internal/api/trust.go` |
 | Inspect Should lines | Done | `internal/inspect/inspect.go` |
 | Should policies | Done | `internal/api/policy_eval.go` |
-| GHA golden path | Done | `docs/guides/github-actions-publish.md`, `.github/actions/verity-publish/` |
+| GHA golden path | Done | `docs/guides/github-actions-publish.md`, `.github/actions/lineagis-publish/` |
 | Phase 2 CI proof | **Partial** | Smoke checks `provenance` but not `provenance_verified`, SBOM, or README example lines |
 | AC-PROV-003 tamper test | **Missing** | No attestation tests; #60 DoD unchecked |
 | AC-PROV-004 query by commit | **Missing** | DB has `commit_sha`; no API route |
@@ -107,7 +107,7 @@ Add **`docs/sdlc/mvp-v0.2-release.md`** parallel to [mvp-v0.1-release.md](mvp-v0
 - AC table: `AC-OV-003`, `AC-PROV-001`–`004`, Should policy ACs
 - Required CI checks
 - Errata for v0.1 doc (e.g. FR-POL-012 implemented)
-- Out of scope: Deferred items, `verity pull`/`login`, Layer C
+- Out of scope: Deferred items, `lineagis pull`/`login`, Layer C
 
 ### 4. Documentation
 
@@ -134,7 +134,7 @@ Add **`docs/sdlc/mvp-v0.2-release.md`** parallel to [mvp-v0.1-release.md](mvp-v0
 
 - **Deferred / Phase 3** (#18, #67, #68): CVE blocking, federation, transparency-log UX
 - **Layer C (v0.3):** webhooks, deeper governance
-- **DX Should (not Attribution theme):** `verity login`, `verity pull`, `verity policy` CLI
+- **DX Should (not Attribution theme):** `lineagis login`, `lineagis pull`, `lineagis policy` CLI
 
 ## Success criteria (v0.2 done)
 

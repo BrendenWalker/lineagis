@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/BrendenWalker/verity/internal/metadata"
-	"github.com/BrendenWalker/verity/internal/provenance"
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/provenance"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 type attestationEnvelope struct {

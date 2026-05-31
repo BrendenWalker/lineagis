@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/v1"
 
-	"github.com/BrendenWalker/verity/internal/metadata"
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 // evaluateSignatures returns valid, invalid, or missing (FR-SIGN-006, AC-SIGN-004).

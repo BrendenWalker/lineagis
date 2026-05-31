@@ -1,4 +1,4 @@
-# AI agent instructions — Verity
+# AI agent instructions — Lineagis
 
 Instructions for humans and AI assistants working on this repository. Tool-agnostic: apply in Cursor, Claude Code, Copilot, Codex, or any agent that can read repo docs.
 

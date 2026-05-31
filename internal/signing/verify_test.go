@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 func TestVerifyManifestBundle_validAndInvalid(t *testing.T) {

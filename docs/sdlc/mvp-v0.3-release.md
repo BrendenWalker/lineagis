@@ -8,12 +8,12 @@ Authoritative scope: [docs/specs/00-overview.md](../specs/00-overview.md), [laye
 
 | ID | Requirement | Proof |
 |----|-------------|-------|
-| AC-DX-PULL-001 | Pull by digest matches registry content | `internal/pull/pull_test.go`; manual `verity pull` |
-| AC-DX-PULL-002 | Pull `--verify` fails on unsigned when policy requires signatures | `internal/pull/pull_test.go` (`TestPull_withVerify_failsWithoutSignatures`); `cmd/verity/pull_test.go` |
+| AC-DX-PULL-001 | Pull by digest matches registry content | `internal/pull/pull_test.go`; manual `lineagis pull` |
+| AC-DX-PULL-002 | Pull `--verify` fails on unsigned when policy requires signatures | `internal/pull/pull_test.go` (`TestPull_withVerify_failsWithoutSignatures`); `cmd/lineagis/pull_test.go` |
 | AC-POL-006 | GitHub API ownership fail-closed when API unavailable | `internal/api/policy_eval_github_test.go`; `internal/api/policy_eval_v03_test.go` (`TestVerify_repositoryOwnership_*`) |
 | AC-POL-007 | `require-digest-on-verify` blocks tag-only verify | `internal/api/policy_eval_v03_test.go` (`TestVerify_requireDigestOnVerify_rejectsTag`); `policy_eval_github_test.go` |
 | FR-API-012 | Webhook delivery with HMAC | `internal/api/webhooks_test.go` |
-| FR-DX-011 | `verity login` caches token | `internal/cliauth` tests |
+| FR-DX-011 | `lineagis login` caches token | `internal/cliauth` tests |
 | C5/C7 | Digest stderr warning + consumer guide | [consumer-getting-started.md](../guides/consumer-getting-started.md) |
 
 ## Required CI (branch protection)
@@ -31,9 +31,9 @@ On `main`, require (unchanged from v0.2):
 
 ```bash
 make test
-verity login   # or export VERITY_TOKEN
-verity pull gh/acme/widget/app@sha256:... -o ./out
-verity verify sha256:... --namespace gh/acme/widget --artifact app
+lineagis login   # or export LINEAGIS_TOKEN
+lineagis pull gh/acme/widget/app@sha256:... -o ./out
+lineagis verify sha256:... --namespace gh/acme/widget --artifact app
 ```
 
 ## Known limitations (v0.3)

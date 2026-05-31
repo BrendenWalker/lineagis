@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 func TestIdentityFromCertificate_githubOIDC(t *testing.T) {

@@ -6,13 +6,13 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -o /verity-api ./cmd/verity-api
+RUN CGO_ENABLED=0 go build -o /lineagis-api ./cmd/lineagis-api
 
 FROM alpine:3.20
 
 RUN apk add --no-cache ca-certificates wget
-COPY --from=build /verity-api /usr/local/bin/verity-api
+COPY --from=build /lineagis-api /usr/local/bin/lineagis-api
 
 EXPOSE 8080
 USER nobody
-ENTRYPOINT ["verity-api"]
+ENTRYPOINT ["lineagis-api"]

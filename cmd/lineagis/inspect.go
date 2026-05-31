@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
-	"github.com/BrendenWalker/verity/internal/cliconfig"
-	"github.com/BrendenWalker/verity/internal/inspect"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/cliconfig"
+	"github.com/BrendenWalker/lineagis/internal/inspect"
 )
 
 func runVerify(args []string) int {
@@ -25,7 +25,7 @@ func runVerify(args []string) int {
 }
 
 func printVerifyUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: verity verify <sha256:digest> --namespace <ns> --artifact <name> [--local-verify] [--output json]\n")
+	fmt.Fprintf(os.Stderr, "Usage: lineagis verify <sha256:digest> --namespace <ns> --artifact <name> [--local-verify] [--output json]\n")
 	fmt.Fprintf(os.Stderr, "\nAlias for inspect with --require-digest enabled. Pin sha256:… digests in CI.\n")
 }
 
@@ -154,7 +154,7 @@ func runInspect(args []string) int {
 }
 
 func printInspectUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: verity inspect <ref> --namespace <ns> --artifact <name> [--output text|json] [--local-verify] [--trust-api] [--require-digest]\n")
+	fmt.Fprintf(os.Stderr, "Usage: lineagis inspect <ref> --namespace <ns> --artifact <name> [--output text|json] [--local-verify] [--trust-api] [--require-digest]\n")
 	fmt.Fprintf(os.Stderr, "\n<ref> is a local file or directory, sha256:… digest, or semver tag.\n")
 	fmt.Fprintf(os.Stderr, "Default: local Sigstore verify + API policy checks. Use --trust-api to skip local crypto.\n")
 	fmt.Fprintf(os.Stderr, "Exits non-zero when any Must check fails (FR-DX-005).\n")

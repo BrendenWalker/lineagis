@@ -9,11 +9,11 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/cliauth"
+	"github.com/BrendenWalker/lineagis/internal/cliauth"
 )
 
 func TestResolveToken_env(t *testing.T) {
-	t.Setenv("VERITY_TOKEN", "abc")
+	t.Setenv("LINEAGIS_TOKEN", "abc")
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	got, err := cliauth.ResolveToken(context.Background())
 	if err != nil || got != "abc" {
@@ -31,11 +31,11 @@ func TestResolveToken_githubActions(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("VERITY_TOKEN", "")
-	t.Setenv("VERITY_DEV_TOKEN", "")
+	t.Setenv("LINEAGIS_TOKEN", "")
+	t.Setenv("LINEAGIS_DEV_TOKEN", "")
 	t.Setenv("ACTIONS_ID_TOKEN_REQUEST_URL", srv.URL)
 	t.Setenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN", "req-tok")
-	t.Setenv("VERITY_OIDC_AUDIENCE", "verity-api")
+	t.Setenv("LINEAGIS_OIDC_AUDIENCE", "lineagis-api")
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 
 	got, err := cliauth.ResolveToken(context.Background())

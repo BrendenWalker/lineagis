@@ -53,7 +53,7 @@ CREATE TABLE tag_events (
 CREATE INDEX tag_events_tag_id_idx ON tag_events (tag_id);
 CREATE INDEX tag_events_created_at_idx ON tag_events (created_at);
 
-INSERT INTO verity_meta (key, value)
+INSERT INTO lineagis_meta (key, value)
 VALUES ('schema_core', 'm03')
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
@@ -64,4 +64,4 @@ DROP TABLE IF EXISTS digests;
 DROP TABLE IF EXISTS artifacts;
 DROP TABLE IF EXISTS namespaces;
 
-DELETE FROM verity_meta WHERE key = 'schema_core';
+DELETE FROM lineagis_meta WHERE key = 'schema_core';

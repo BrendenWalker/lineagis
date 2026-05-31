@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
 )
 
 // ErrorBody is the JSON error envelope per api.md.

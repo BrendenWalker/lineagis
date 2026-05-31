@@ -137,7 +137,7 @@ func BuildSLSAStatement(ctx BuildContext) (Statement, error) {
 		}},
 		Predicate: Predicate{
 			BuildDefinition: BuildDefinition{
-				BuildType: "https://verity.dev/slsa/v1/github-actions",
+				BuildType: "https://lineagis.dev/slsa/v1/github-actions",
 				ExternalParameters: map[string]any{
 					"workflow": map[string]string{
 						"name": ctx.WorkflowName,
@@ -235,7 +235,7 @@ func BuildSBOMStatement(manifestDigest, predicateType string, sbomName string, s
 		}},
 		Predicate: Predicate{
 			BuildDefinition: BuildDefinition{
-				BuildType: "https://verity.dev/sbom/v1",
+				BuildType: "https://lineagis.dev/sbom/v1",
 				ExternalParameters: map[string]any{
 					"sbom": map[string]any{
 						"name":   sbomName,
@@ -244,7 +244,7 @@ func BuildSBOMStatement(manifestDigest, predicateType string, sbomName string, s
 				},
 			},
 			RunDetails: RunDetails{
-				Builder: BuilderInfo{ID: "https://verity.dev/cli"},
+				Builder: BuilderInfo{ID: "https://lineagis.dev/cli"},
 			},
 		},
 	}

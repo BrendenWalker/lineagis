@@ -31,7 +31,7 @@ func New(ctx context.Context, cfg Config) (*Authenticator, error) {
 		return a, nil
 	}
 	if audience == "" {
-		return nil, fmt.Errorf("VERITY_OIDC_AUDIENCE is required when VERITY_OIDC_ISSUER is set")
+		return nil, fmt.Errorf("LINEAGIS_OIDC_AUDIENCE is required when LINEAGIS_OIDC_ISSUER is set")
 	}
 	provider, err := oidc.NewProvider(ctx, issuer)
 	if err != nil {

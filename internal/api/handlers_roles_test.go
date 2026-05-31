@@ -8,11 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/api"
-	"github.com/BrendenWalker/verity/internal/auth"
-	"github.com/BrendenWalker/verity/internal/metadata"
-	"github.com/BrendenWalker/verity/internal/registry"
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/api"
+	"github.com/BrendenWalker/lineagis/internal/auth"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 func testHandlerWithActor(t *testing.T, actor auth.Actor) (*api.Handler, *metadata.Store) {

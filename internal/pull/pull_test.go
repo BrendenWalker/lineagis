@@ -14,8 +14,8 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/v1"
 
-	"github.com/BrendenWalker/verity/internal/pull"
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/pull"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 func TestPull_byDigest_writesLayers(t *testing.T) {

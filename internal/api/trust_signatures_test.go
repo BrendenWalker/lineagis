@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/metadata"
-	"github.com/BrendenWalker/verity/internal/registry"
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 func TestEvaluateSignatures_validInvalidMissing(t *testing.T) {

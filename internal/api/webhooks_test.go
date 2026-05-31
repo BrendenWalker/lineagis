@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
 )
 
 func TestDeliverWebhook_hmac(t *testing.T) {
@@ -21,7 +21,7 @@ func TestDeliverWebhook_hmac(t *testing.T) {
 		body, _ := io.ReadAll(r.Body)
 		mu.Lock()
 		gotBody = body
-		gotSig = r.Header.Get("X-Verity-Signature")
+		gotSig = r.Header.Get("X-Lineagis-Signature")
 		mu.Unlock()
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -43,6 +43,6 @@ func TestDeliverWebhook_hmac(t *testing.T) {
 		t.Fatalf("body %q", gotBody)
 	}
 	if gotSig == "" {
-		t.Fatal("expected X-Verity-Signature")
+		t.Fatal("expected X-Lineagis-Signature")
 	}
 }

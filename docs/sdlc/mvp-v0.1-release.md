@@ -9,7 +9,7 @@ Authoritative scope: [docs/specs/00-overview.md](../specs/00-overview.md).
 | ID | Requirement | Proof |
 |----|-------------|-------|
 | AC-OV-001 | Publish stores OCI digest + semver tag | `publish-keyless-smoke` keyless publish step; `internal/publish/publish_test.go` |
-| AC-OV-002 | Inspect reports signature validity; unsigned fails under `require-signatures` | `publish-keyless-smoke` inspect + unsigned steps; `cmd/verity/inspect_test.go` |
+| AC-OV-002 | Inspect reports signature validity; unsigned fails under `require-signatures` | `publish-keyless-smoke` inspect + unsigned steps; `cmd/lineagis/inspect_test.go` |
 | AC-OV-004 | README Phase 1 bullets traced to passing tests | [phase1-must-test-mapping.md](phase1-must-test-mapping.md); **`keyless-publish` required on `main`** |
 | AC-DX-001 | Quickstart path documented | [docs/guides/quickstart.md](../guides/quickstart.md) (local dev); [github-actions-publish.md](../guides/github-actions-publish.md) (production) |
 
@@ -39,10 +39,10 @@ gh run list --workflow=publish-keyless-smoke.yml --limit 3   # confirm keyless-p
 Optional operator-stack validation on your machine (download CI binaries, do not build from source):
 
 ```bash
-# Windows: verity-binaries-windows-amd64
-# Linux/WSL: verity-binaries-linux-amd64
+# Windows: lineagis-binaries-windows-amd64
+# Linux/WSL: lineagis-binaries-linux-amd64
 # See docs/guides/operator-validation.md
-gh run download --name verity-binaries-windows-amd64 --dir bin
+gh run download --name lineagis-binaries-windows-amd64 --dir bin
 bash scripts/operator-stack-ci.sh
 ```
 
@@ -50,18 +50,18 @@ bash scripts/operator-stack-ci.sh
 
 | Limitation | Notes |
 |------------|-------|
-| No `verity pull` | Consumers resolve by digest/tag via API + registry out-of-band |
+| No `lineagis pull` | Consumers resolve by digest/tag via API + registry out-of-band |
 | Configured policies on `SetTag` | All configured rules (`require-signatures`, `trusted-publishers`, `require-provenance`, `repository-ownership`) evaluated at tag time (FR-POL-012) |
-| Local verify | `verity inspect` / `verity verify` default to local cosign verify; `--trust-api` opts out (FR-SIGN-005) |
+| Local verify | `lineagis inspect` / `lineagis verify` default to local cosign verify; `--trust-api` opts out (FR-SIGN-005) |
 | Trusted publishers | Fail-closed when rule is in policy; operator defines allowlist per namespace |
 | RegisterDigest + signatures | When `require-signatures` is active, `RegisterDigest` requires a valid bundle in the same request |
-| Dev token | `VERITY_DEV_TOKEN` for local compose only — disable in production |
+| Dev token | `LINEAGIS_DEV_TOKEN` for local compose only — disable in production |
 | CVE / federation | Deferred per delivery matrix (#67, #68) |
 
 ## Operator minimums
 
 - Serve API over **TLS** in production
-- Configure **OIDC** (`VERITY_OIDC_ISSUER`, `VERITY_OIDC_AUDIENCE`); do not rely on `VERITY_DEV_TOKEN`
+- Configure **OIDC** (`LINEAGIS_OIDC_ISSUER`, `LINEAGIS_OIDC_AUDIENCE`); do not rely on `LINEAGIS_DEV_TOKEN`
 - Restrict policy and trusted-publisher writes to **operator** role
 - Protect PostgreSQL and object storage credentials; metadata DB is in the trusted computing base
 - Enable audit logging review for policy changes (`FR-POL-010`)

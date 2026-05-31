@@ -15,7 +15,7 @@ type Client struct {
 	httpClient *http.Client
 }
 
-// NewClient creates a GitHub API client using VERITY_GITHUB_TOKEN.
+// NewClient creates a GitHub API client using LINEAGIS_GITHUB_TOKEN.
 func NewClient(token string) *Client {
 	return &Client{
 		token:   strings.TrimSpace(token),

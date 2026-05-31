@@ -6,27 +6,27 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=lib/verity-bin.sh
-source "$SCRIPT_DIR/lib/verity-bin.sh"
+# shellcheck source=lib/lineagis-bin.sh
+source "$SCRIPT_DIR/lib/lineagis-bin.sh"
 
-VERITY_BIN="$(verity_bin_path)"
-VERITY_API_BIN="$(verity_api_bin_path)"
-chmod +x "$VERITY_BIN" "$VERITY_API_BIN" 2>/dev/null || true
+LINEAGIS_BIN="$(lineagis_bin_path)"
+LINEAGIS_API_BIN="$(lineagis_api_bin_path)"
+chmod +x "$LINEAGIS_BIN" "$LINEAGIS_API_BIN" 2>/dev/null || true
 
 test -f .env || cp .env.example .env
 
 echo "=== Starting infra (postgres, minio, registry) ==="
 docker compose up -d postgres minio minio-init registry --wait
 
-export VERITY_DATABASE_URL="${VERITY_DATABASE_URL:-postgres://verity:verity@localhost:5432/verity?sslmode=disable}"
-export VERITY_REGISTRY_URL="${VERITY_REGISTRY_URL:-http://localhost:5000}"
-export VERITY_API_ADDR="${VERITY_API_ADDR:-:8080}"
-export VERITY_MIGRATE_ON_STARTUP="${VERITY_MIGRATE_ON_STARTUP:-true}"
-export VERITY_DEV_TOKEN="${VERITY_DEV_TOKEN:-dev-local-token}"
-export VERITY_LOG_LEVEL="${VERITY_LOG_LEVEL:-info}"
-export VERITY_LOG_FORMAT="${VERITY_LOG_FORMAT:-text}"
+export LINEAGIS_DATABASE_URL="${LINEAGIS_DATABASE_URL:-postgres://lineagis:lineagis@localhost:5432/lineagis?sslmode=disable}"
+export LINEAGIS_REGISTRY_URL="${LINEAGIS_REGISTRY_URL:-http://localhost:5000}"
+export LINEAGIS_API_ADDR="${LINEAGIS_API_ADDR:-:8080}"
+export LINEAGIS_MIGRATE_ON_STARTUP="${LINEAGIS_MIGRATE_ON_STARTUP:-true}"
+export LINEAGIS_DEV_TOKEN="${LINEAGIS_DEV_TOKEN:-dev-local-token}"
+export LINEAGIS_LOG_LEVEL="${LINEAGIS_LOG_LEVEL:-info}"
+export LINEAGIS_LOG_FORMAT="${LINEAGIS_LOG_FORMAT:-text}"
 
-API_PORT="${VERITY_API_PORT:-8080}"
+API_PORT="${LINEAGIS_API_PORT:-8080}"
 api_pid=""
 cleanup() {
   if [ -n "$api_pid" ]; then
@@ -37,8 +37,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "=== Starting verity-api from ${VERITY_API_BIN} ==="
-"$VERITY_API_BIN" &
+echo "=== Starting lineagis-api from ${LINEAGIS_API_BIN} ==="
+"$LINEAGIS_API_BIN" &
 api_pid=$!
 
 for i in $(seq 1 60); do
@@ -46,7 +46,7 @@ for i in $(seq 1 60); do
     break
   fi
   if [ "$i" -eq 60 ]; then
-    echo "FAIL: verity-api not ready on port ${API_PORT}" >&2
+    echo "FAIL: lineagis-api not ready on port ${API_PORT}" >&2
     exit 1
   fi
   sleep 2

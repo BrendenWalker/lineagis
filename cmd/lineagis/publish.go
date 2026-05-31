@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
-	"github.com/BrendenWalker/verity/internal/cliconfig"
-	"github.com/BrendenWalker/verity/internal/publish"
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/cliconfig"
+	"github.com/BrendenWalker/lineagis/internal/publish"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 func runPublish(args []string) int {
@@ -108,13 +108,13 @@ func runPublish(args []string) int {
 
 	fmt.Println(digest)
 	fmt.Fprintf(os.Stderr, "Published digest: %s\n", digest)
-	fmt.Fprintf(os.Stderr, "Pin this sha256 digest in consumers and CI (verity verify %s ...).\n", digest)
+	fmt.Fprintf(os.Stderr, "Pin this sha256 digest in consumers and CI (lineagis verify %s ...).\n", digest)
 	return 0
 }
 
 func printPublishUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: verity publish <path> --namespace <ns> --artifact <name> [--tag <tag>] [--sbom <file>] [--skip-sign] [--skip-provenance]\n")
-	fmt.Fprintf(os.Stderr, "\nSigning uses Sigstore public-good (Fulcio/Rekor) by default. Local dev without Fulcio: --skip-sign or VERITY_SKIP_SIGN=1.\n")
-	fmt.Fprintf(os.Stderr, "CI keyless: VERITY_SIGSTORE_ID_TOKEN / SIGSTORE_ID_TOKEN, or GitHub Actions ambient OIDC (id-token: write).\n")
-	fmt.Fprintf(os.Stderr, "Operator trust roots: VERITY_SIGSTORE_* (see docs/signing-local.md).\n")
+	fmt.Fprintf(os.Stderr, "Usage: lineagis publish <path> --namespace <ns> --artifact <name> [--tag <tag>] [--sbom <file>] [--skip-sign] [--skip-provenance]\n")
+	fmt.Fprintf(os.Stderr, "\nSigning uses Sigstore public-good (Fulcio/Rekor) by default. Local dev without Fulcio: --skip-sign or LINEAGIS_SKIP_SIGN=1.\n")
+	fmt.Fprintf(os.Stderr, "CI keyless: LINEAGIS_SIGSTORE_ID_TOKEN / SIGSTORE_ID_TOKEN, or GitHub Actions ambient OIDC (id-token: write).\n")
+	fmt.Fprintf(os.Stderr, "Operator trust roots: LINEAGIS_SIGSTORE_* (see docs/signing-local.md).\n")
 }

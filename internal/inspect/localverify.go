@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
-	"github.com/BrendenWalker/verity/internal/registry"
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 // LocalVerifyResult holds client-side Sigstore verification outcome (FR-SIGN-005).

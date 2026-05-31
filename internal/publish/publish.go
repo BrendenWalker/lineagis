@@ -8,9 +8,9 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/v1"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
-	"github.com/BrendenWalker/verity/internal/registry"
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 // ManifestSigner signs manifest bytes and returns a Sigstore bundle (FR-SIGN-001–003).

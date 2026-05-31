@@ -27,31 +27,31 @@ type Config struct {
 
 // LoadConfig reads signing configuration from the environment.
 //
-// Verity-prefixed variables take precedence over cosign-standard SIGSTORE_* names.
-// Local dev without Fulcio: VERITY_SKIP_SIGN=1 or --skip-sign on publish.
-// CI / keyless: VERITY_SIGSTORE_ID_TOKEN or SIGSTORE_ID_TOKEN, or GitHub Actions ambient OIDC.
+// Lineagis-prefixed variables take precedence over cosign-standard SIGSTORE_* names.
+// Local dev without Fulcio: LINEAGIS_SKIP_SIGN=1 or --skip-sign on publish.
+// CI / keyless: LINEAGIS_SIGSTORE_ID_TOKEN or SIGSTORE_ID_TOKEN, or GitHub Actions ambient OIDC.
 //
 // Endpoints (default public-good when unset):
 //
-//	VERITY_SIGSTORE_FULCIO_URL, VERITY_SIGSTORE_REKOR_URL
+//	LINEAGIS_SIGSTORE_FULCIO_URL, LINEAGIS_SIGSTORE_REKOR_URL
 //
 // Trust material for verification (optional; see docs/signing-local.md):
 //
-//	VERITY_SIGSTORE_TRUSTED_ROOT — Sigstore trusted root JSON (v0.3 bundles)
-//	VERITY_SIGSTORE_CA_ROOTS, VERITY_SIGSTORE_CA_INTERMEDIATES — PEM paths (legacy bundles)
-//	VERITY_SIGSTORE_ROOT_FILE, VERITY_SIGSTORE_REKOR_PUBLIC_KEY, VERITY_SIGSTORE_CT_LOG_PUBLIC_KEY_FILE
+//	LINEAGIS_SIGSTORE_TRUSTED_ROOT — Sigstore trusted root JSON (v0.3 bundles)
+//	LINEAGIS_SIGSTORE_CA_ROOTS, LINEAGIS_SIGSTORE_CA_INTERMEDIATES — PEM paths (legacy bundles)
+//	LINEAGIS_SIGSTORE_ROOT_FILE, LINEAGIS_SIGSTORE_REKOR_PUBLIC_KEY, LINEAGIS_SIGSTORE_CT_LOG_PUBLIC_KEY_FILE
 //	(each falls back to the matching SIGSTORE_* variable)
 func LoadConfig() Config {
 	cfg := Config{
-		FulcioURL:       envFirst("VERITY_SIGSTORE_FULCIO_URL", "SIGSTORE_FULCIO_URL"),
-		RekorURL:        envFirst("VERITY_SIGSTORE_REKOR_URL", "SIGSTORE_REKOR_URL"),
-		IDToken:         envFirst("VERITY_SIGSTORE_ID_TOKEN", "SIGSTORE_ID_TOKEN"),
-		TrustedRootPath: envFirst("VERITY_SIGSTORE_TRUSTED_ROOT", "SIGSTORE_TRUSTED_ROOT"),
-		CARoots:         envFirst("VERITY_SIGSTORE_CA_ROOTS", "SIGSTORE_CA_ROOTS"),
-		CAIntermediates: envFirst("VERITY_SIGSTORE_CA_INTERMEDIATES", "SIGSTORE_CA_INTERMEDIATES"),
-		RootCAFile:      envFirst("VERITY_SIGSTORE_ROOT_FILE", "SIGSTORE_ROOT_FILE"),
-		RekorPublicKey:  envFirst("VERITY_SIGSTORE_REKOR_PUBLIC_KEY", "SIGSTORE_REKOR_PUBLIC_KEY"),
-		CTLogPublicKey:  envFirst("VERITY_SIGSTORE_CT_LOG_PUBLIC_KEY_FILE", "SIGSTORE_CT_LOG_PUBLIC_KEY_FILE"),
+		FulcioURL:       envFirst("LINEAGIS_SIGSTORE_FULCIO_URL", "SIGSTORE_FULCIO_URL"),
+		RekorURL:        envFirst("LINEAGIS_SIGSTORE_REKOR_URL", "SIGSTORE_REKOR_URL"),
+		IDToken:         envFirst("LINEAGIS_SIGSTORE_ID_TOKEN", "SIGSTORE_ID_TOKEN"),
+		TrustedRootPath: envFirst("LINEAGIS_SIGSTORE_TRUSTED_ROOT", "SIGSTORE_TRUSTED_ROOT"),
+		CARoots:         envFirst("LINEAGIS_SIGSTORE_CA_ROOTS", "SIGSTORE_CA_ROOTS"),
+		CAIntermediates: envFirst("LINEAGIS_SIGSTORE_CA_INTERMEDIATES", "SIGSTORE_CA_INTERMEDIATES"),
+		RootCAFile:      envFirst("LINEAGIS_SIGSTORE_ROOT_FILE", "SIGSTORE_ROOT_FILE"),
+		RekorPublicKey:  envFirst("LINEAGIS_SIGSTORE_REKOR_PUBLIC_KEY", "SIGSTORE_REKOR_PUBLIC_KEY"),
+		CTLogPublicKey:  envFirst("LINEAGIS_SIGSTORE_CT_LOG_PUBLIC_KEY_FILE", "SIGSTORE_CT_LOG_PUBLIC_KEY_FILE"),
 		Timeout:         cosignoptions.DefaultTimeout,
 	}
 	if cfg.FulcioURL == "" {
@@ -91,6 +91,6 @@ func setIfEmpty(key, value string) {
 
 // SkipSignFromEnv reports whether publish should skip signing (local dev).
 func SkipSignFromEnv() bool {
-	v := strings.ToLower(strings.TrimSpace(os.Getenv("VERITY_SKIP_SIGN")))
+	v := strings.ToLower(strings.TrimSpace(os.Getenv("LINEAGIS_SKIP_SIGN")))
 	return v == "1" || v == "true" || v == "yes"
 }

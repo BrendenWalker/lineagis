@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
 )
 
 func TestAttachSignature_postsBundle(t *testing.T) {

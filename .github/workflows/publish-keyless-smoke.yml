@@ -21,13 +21,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: verity
-          POSTGRES_PASSWORD: verity
-          POSTGRES_DB: verity
+          POSTGRES_USER: lineagis
+          POSTGRES_PASSWORD: lineagis
+          POSTGRES_DB: lineagis
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U verity -d verity"
+          --health-cmd "pg_isready -U lineagis -d lineagis"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
@@ -37,11 +37,11 @@ jobs:
           - 5000:5000
 
     env:
-      VERITY_DATABASE_URL: postgres://verity:verity@localhost:5432/verity?sslmode=disable
-      VERITY_REGISTRY_URL: http://localhost:5000
-      VERITY_DEV_TOKEN: dev-local-token
-      VERITY_API_URL: http://localhost:8080
-      VERITY_TOKEN: dev-local-token
+      LINEAGIS_DATABASE_URL: postgres://lineagis:lineagis@localhost:5432/lineagis?sslmode=disable
+      LINEAGIS_REGISTRY_URL: http://localhost:5000
+      LINEAGIS_DEV_TOKEN: dev-local-token
+      LINEAGIS_API_URL: http://localhost:8080
+      LINEAGIS_TOKEN: dev-local-token
 
     steps:
       - uses: actions/checkout@v4
@@ -61,15 +61,15 @@ jobs:
 
       - name: Build CLI and API
         run: |
-          go build -o bin/verity ./cmd/verity
-          go build -o bin/verity-api ./cmd/verity-api
+          go build -o bin/lineagis ./cmd/lineagis
+          go build -o bin/lineagis-api ./cmd/lineagis-api
 
-      - name: Start Verity API
+      - name: Start Lineagis API
         env:
-          VERITY_API_ADDR: :8080
-          VERITY_MIGRATE_ON_STARTUP: "true"
+          LINEAGIS_API_ADDR: :8080
+          LINEAGIS_MIGRATE_ON_STARTUP: "true"
         run: |
-          ./bin/verity-api &
+          ./bin/lineagis-api &
           for i in $(seq 1 60); do
             curl -sf http://localhost:8080/readyz | grep -qx ok && exit 0
             sleep 2
@@ -86,9 +86,9 @@ jobs:
       - name: Keyless publish (no --skip-sign)
         run: |
           OWNER_LC="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
-          NS="gh/${OWNER_LC}/verity-smoke"
+          NS="gh/${OWNER_LC}/lineagis-smoke"
           echo "namespace=${NS}" >> "$GITHUB_ENV"
-          OUTPUT="$(./bin/verity publish dist/ \
+          OUTPUT="$(./bin/lineagis publish dist/ \
             --namespace "${NS}" \
             --artifact smoke \
             --tag "0.0.0+gha.${{ github.run_id }}" \
@@ -104,15 +104,15 @@ jobs:
 
       - name: Verify signature attached
         run: |
-          curl -sf -H "Authorization: Bearer ${VERITY_TOKEN}" \
-            "${VERITY_API_URL}/v1/namespaces/${namespace}/artifacts/smoke/signatures?digest=${digest}" \
+          curl -sf -H "Authorization: Bearer ${LINEAGIS_TOKEN}" \
+            "${LINEAGIS_API_URL}/v1/namespaces/${namespace}/artifacts/smoke/signatures?digest=${digest}" \
             | tee signatures.json
           test "$(jq '.signatures | length' signatures.json)" -gt 0
 
       - name: Verify trust status
         run: |
-          curl -sf -H "Authorization: Bearer ${VERITY_TOKEN}" \
-            "${VERITY_API_URL}/v1/namespaces/${namespace}/artifacts/smoke/trust?digest=${digest}" \
+          curl -sf -H "Authorization: Bearer ${LINEAGIS_TOKEN}" \
+            "${LINEAGIS_API_URL}/v1/namespaces/${namespace}/artifacts/smoke/trust?digest=${digest}" \
             | tee trust.json
           jq -e '.signatures.status == "valid"' trust.json
           jq -e '.attestations.provenance == true' trust.json
@@ -125,27 +125,27 @@ jobs:
 
       - name: Query artifacts by commit (AC-PROV-004)
         run: |
-          curl -sf -H "Authorization: Bearer ${VERITY_TOKEN}" \
-            "${VERITY_API_URL}/v1/namespaces/${namespace}/artifacts?commit=${{ github.sha }}" \
+          curl -sf -H "Authorization: Bearer ${LINEAGIS_TOKEN}" \
+            "${LINEAGIS_API_URL}/v1/namespaces/${namespace}/artifacts?commit=${{ github.sha }}" \
             | tee by-commit.json
           jq -e --arg digest "${digest}" \
             '[.results[] | select(.digest == $digest and .name == "smoke")] | length == 1' by-commit.json
 
       - name: Inspect Layer B attestations (AC-PROV-001, AC-PROV-002)
         run: |
-          ./bin/verity inspect dist/ \
+          ./bin/lineagis inspect dist/ \
             --namespace "${namespace}" \
             --artifact smoke \
             --output json > inspect-layer-b.json
           jq -e '[.checks[]] | any(.message | contains("Provenance verified"))' inspect-layer-b.json
           jq -e '[.checks[]] | any(.message | contains("SBOM attached"))' inspect-layer-b.json
-          HUMAN="$(./bin/verity inspect dist/ --namespace "${namespace}" --artifact smoke)"
+          HUMAN="$(./bin/lineagis inspect dist/ --namespace "${namespace}" --artifact smoke)"
           echo "${HUMAN}" | grep -F 'Provenance verified'
           echo "${HUMAN}" | grep -F 'SBOM attached'
           echo "${HUMAN}" | grep -F 'repository-ownership not configured'
 
-      - name: Verify with verity verify action
-        uses: ./.github/actions/verity-verify
+      - name: Verify with lineagis verify action
+        uses: ./.github/actions/lineagis-verify
         with:
           digest: ${{ env.digest }}
           namespace: ${{ env.namespace }}
@@ -153,19 +153,19 @@ jobs:
 
       - name: Inspect signed artifact (JSON, AC-DX-005)
         run: |
-          ./bin/verity inspect dist/ \
+          ./bin/lineagis inspect dist/ \
             --namespace "${namespace}" \
             --artifact smoke \
             --output json > inspect-dist.json
           jq -e '.version == 1 and .overall == "pass"' inspect-dist.json
           jq -e '[.checks[]] | any(.requirement_id == "FR-SIGN-005" and .status == "pass")' inspect-dist.json
-          HUMAN="$(./bin/verity inspect dist/ --namespace "${namespace}" --artifact smoke)"
+          HUMAN="$(./bin/lineagis inspect dist/ --namespace "${namespace}" --artifact smoke)"
           echo "${HUMAN}" | grep -F 'Signature verified locally'
           jq -e '[.checks[].message] | any(contains("workflow"))' inspect-dist.json
 
       - name: Inspect signed artifact by digest (exit 0, AC-DX-003)
         run: |
-          ./bin/verity verify "${digest}" \
+          ./bin/lineagis verify "${digest}" \
             --namespace "${namespace}" \
             --artifact smoke \
             --output json > inspect-digest.json
@@ -176,7 +176,7 @@ jobs:
         run: |
           mkdir -p dist-unsigned
           echo "unsigned smoke $(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist-unsigned/release.txt
-          OUTPUT="$(./bin/verity publish dist-unsigned/ \
+          OUTPUT="$(./bin/lineagis publish dist-unsigned/ \
             --namespace "${namespace}" \
             --artifact smoke-unsigned \
             --skip-sign 2>&1)" || {
@@ -194,18 +194,18 @@ jobs:
             '.document.rules[1].config.publishers[0].repository = $repo' \
             docs/examples/policies/strict-release.json)"
           curl -sf -X PUT \
-            -H "Authorization: Bearer ${VERITY_TOKEN}" \
+            -H "Authorization: Bearer ${LINEAGIS_TOKEN}" \
             -H "Content-Type: application/json" \
             -d "$POLICY" \
-            "${VERITY_API_URL}/v1/namespaces/${namespace}/policy"
-          curl -sf -H "Authorization: Bearer ${VERITY_TOKEN}" \
-            "${VERITY_API_URL}/v1/namespaces/${namespace}/policy" \
+            "${LINEAGIS_API_URL}/v1/namespaces/${namespace}/policy"
+          curl -sf -H "Authorization: Bearer ${LINEAGIS_TOKEN}" \
+            "${LINEAGIS_API_URL}/v1/namespaces/${namespace}/policy" \
             | jq -e '.document.rules | map(.type // .id) | index("trusted-publishers") != null'
 
       - name: Push-time block for wrong workflow (strict-release)
         run: |
           set +e
-          OUTPUT="$(./bin/verity publish dist/ \
+          OUTPUT="$(./bin/lineagis publish dist/ \
             --namespace "${namespace}" \
             --artifact smoke \
             --tag "0.0.0+wrong-workflow.${{ github.run_id }}" 2>&1)"
@@ -218,7 +218,7 @@ jobs:
       - name: Verify fails under strict-release wrong workflow (AC-OV-005)
         run: |
           set +e
-          ./bin/verity verify "${digest}" \
+          ./bin/lineagis verify "${digest}" \
             --namespace "${namespace}" \
             --artifact smoke \
             --output json > verify-strict-fail.json
@@ -231,18 +231,18 @@ jobs:
       - name: Enable require-signatures policy
         run: |
           curl -sf -X PUT \
-            -H "Authorization: Bearer ${VERITY_TOKEN}" \
+            -H "Authorization: Bearer ${LINEAGIS_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"document":{"rules":[{"id":"require-signatures"}]}}' \
-            "${VERITY_API_URL}/v1/namespaces/${namespace}/policy"
-          curl -sf -H "Authorization: Bearer ${VERITY_TOKEN}" \
-            "${VERITY_API_URL}/v1/namespaces/${namespace}/policy" \
+            "${LINEAGIS_API_URL}/v1/namespaces/${namespace}/policy"
+          curl -sf -H "Authorization: Bearer ${LINEAGIS_TOKEN}" \
+            "${LINEAGIS_API_URL}/v1/namespaces/${namespace}/policy" \
             | jq -e '.document.rules[0].id == "require-signatures"'
 
       - name: Unsigned RegisterDigest fails after policy (FR-SIGN-007)
         run: |
           set +e
-          OUTPUT="$(./bin/verity publish dist-unsigned/ \
+          OUTPUT="$(./bin/lineagis publish dist-unsigned/ \
             --namespace "${namespace}" \
             --artifact smoke-unsigned-new \
             --skip-sign 2>&1)"
@@ -255,7 +255,7 @@ jobs:
       - name: Unsigned publish with tag fails (FR-SIGN-007)
         run: |
           set +e
-          OUTPUT="$(./bin/verity publish dist-unsigned/ \
+          OUTPUT="$(./bin/lineagis publish dist-unsigned/ \
             --namespace "${namespace}" \
             --artifact smoke-unsigned \
             --skip-sign \
@@ -268,8 +268,8 @@ jobs:
 
       - name: Verify trust reports policy failure with reasons
         run: |
-          curl -sf -H "Authorization: Bearer ${VERITY_TOKEN}" \
-            "${VERITY_API_URL}/v1/namespaces/${namespace}/artifacts/smoke-unsigned/trust?digest=${unsigned_digest}" \
+          curl -sf -H "Authorization: Bearer ${LINEAGIS_TOKEN}" \
+            "${LINEAGIS_API_URL}/v1/namespaces/${namespace}/artifacts/smoke-unsigned/trust?digest=${unsigned_digest}" \
             | tee trust-unsigned.json
           jq -e '.signatures.status == "missing"' trust-unsigned.json
           jq -e '.policy.status == "fail"' trust-unsigned.json
@@ -278,7 +278,7 @@ jobs:
       - name: Inspect unsigned artifact fails with rule ids (AC-DX-003, FR-DX-007)
         run: |
           set +e
-          INSPECT_OUT="$(./bin/verity inspect dist-unsigned/ \
+          INSPECT_OUT="$(./bin/lineagis inspect dist-unsigned/ \
             --namespace "${namespace}" \
             --artifact smoke-unsigned 2>&1)"
           INSPECT_RC=$?
@@ -289,7 +289,7 @@ jobs:
           echo "${INSPECT_OUT}" | grep -F 'rule require-signatures'
 
           set +e
-          ./bin/verity inspect dist-unsigned/ \
+          ./bin/lineagis inspect dist-unsigned/ \
             --namespace "${namespace}" \
             --artifact smoke-unsigned \
             --output json > inspect-unsigned.json
@@ -303,7 +303,7 @@ jobs:
 
       - name: Signed artifact still passes inspect after policy enabled
         run: |
-          ./bin/verity inspect dist/ \
+          ./bin/lineagis inspect dist/ \
             --namespace "${namespace}" \
             --artifact smoke \
             --output json > inspect-signed-after-policy.json

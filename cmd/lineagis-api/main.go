@@ -10,13 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/api"
-	"github.com/BrendenWalker/verity/internal/auth"
-	"github.com/BrendenWalker/verity/internal/config"
-	"github.com/BrendenWalker/verity/internal/db"
-	"github.com/BrendenWalker/verity/internal/github"
-	"github.com/BrendenWalker/verity/internal/metadata"
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/api"
+	"github.com/BrendenWalker/lineagis/internal/auth"
+	"github.com/BrendenWalker/lineagis/internal/config"
+	"github.com/BrendenWalker/lineagis/internal/db"
+	"github.com/BrendenWalker/lineagis/internal/github"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -73,9 +73,9 @@ func run() int {
 	}
 
 	if cfg.DevToken != "" && cfg.OIDCIssuer != "" {
-		log.Warn("VERITY_DEV_TOKEN is set alongside OIDC; disable dev token in production deployments")
+		log.Warn("LINEAGIS_DEV_TOKEN is set alongside OIDC; disable dev token in production deployments")
 	} else if cfg.DevToken != "" && cfg.TLSCertFile != "" {
-		log.Warn("VERITY_DEV_TOKEN is set with TLS enabled; ensure dev token is disabled in production")
+		log.Warn("LINEAGIS_DEV_TOKEN is set with TLS enabled; ensure dev token is disabled in production")
 	}
 
 	srv := &server{

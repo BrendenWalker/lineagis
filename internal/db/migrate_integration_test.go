@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/db"
+	"github.com/BrendenWalker/lineagis/internal/db"
 )
 
 func TestMigrateUpDown(t *testing.T) {
-	url := os.Getenv("VERITY_TEST_DATABASE_URL")
+	url := os.Getenv("LINEAGIS_TEST_DATABASE_URL")
 	if url == "" {
-		t.Skip("VERITY_TEST_DATABASE_URL not set")
+		t.Skip("LINEAGIS_TEST_DATABASE_URL not set")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)

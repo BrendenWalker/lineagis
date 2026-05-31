@@ -8,7 +8,7 @@ See [00-overview.md](00-overview.md) and [architecture.md](architecture.md).
 
 ## Goals
 
-- Provide a stable entity model for the Verity API and feature specs.
+- Provide a stable entity model for the Lineagis API and feature specs.
 - Clarify registry vs database vs blob responsibilities.
 - Enforce digest immutability and explicit tag semantics.
 

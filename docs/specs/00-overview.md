@@ -2,7 +2,7 @@
 
 ## Summary
 
-Verity is an open-source trust platform for publishing, verifying, and governing software artifacts. The MVP is delivered in **layers** so each release makes honest security claims:
+Lineagis is an open-source trust platform for publishing, verifying, and governing software artifacts. The MVP is delivered in **layers** so each release makes honest security claims:
 
 | Layer | Theme | Focus |
 |-------|--------|--------|
@@ -39,8 +39,8 @@ The MVP intentionally excludes (see also [README non-goals](../../README.md#non-
 | Persona | Description |
 |---------|-------------|
 | **Maintainer** | Publishes release artifacts from GitHub Actions or locally; cares that signing and provenance are automatic. |
-| **Consumer** | Downloads artifacts and runs `verity inspect` (or CI verify) before trusting an artifact. |
-| **Operator** | Deploys Verity API, registry, and database; configures namespace-level policies and trusted publishers. |
+| **Consumer** | Downloads artifacts and runs `lineagis inspect` (or CI verify) before trusting an artifact. |
+| **Operator** | Deploys Lineagis API, registry, and database; configures namespace-level policies and trusted publishers. |
 
 ## MVP delivery matrix
 
@@ -52,7 +52,7 @@ The [README MVP scope](../../README.md#mvp-scope) lists features that the [roadm
 | Immutable content digests | ✓ | | |
 | Semantic version tagging | ✓ | | |
 | Metadata persistence (PostgreSQL) | ✓ | | |
-| Verity API (core resources) | ✓ | | |
+| Lineagis API (core resources) | ✓ | | |
 | Sigstore keyless signing | ✓ | | |
 | Signature verification | ✓ | | |
 | CLI `publish` and `inspect` | ✓ | | |
@@ -90,12 +90,12 @@ Feature specs tag each functional requirement with **Must**, **Should**, or **De
 ```mermaid
 sequenceDiagram
   participant Maintainer
-  participant CLI as VerityCLI
-  participant API as VerityAPI
+  participant CLI as LineagisCLI
+  participant API as LineagisAPI
   participant Registry as OCIRegistry
   participant DB as MetadataDB
 
-  Maintainer->>CLI: verity publish dist/*
+  Maintainer->>CLI: lineagis publish dist/*
   CLI->>API: Authenticate OIDC
   CLI->>Registry: Push blobs and manifest
   CLI->>API: Register artifact and tag
@@ -114,11 +114,11 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   participant Consumer
-  participant CLI as VerityCLI
-  participant API as VerityAPI
+  participant CLI as LineagisCLI
+  participant API as LineagisAPI
   participant Registry as OCIRegistry
 
-  Consumer->>CLI: verity inspect package.whl
+  Consumer->>CLI: lineagis inspect package.whl
   CLI->>Registry: Resolve artifact by file digest or reference
   CLI->>API: Get trust status
   API->>API: Verify signatures and attestations
@@ -158,7 +158,7 @@ Use `—` or omit lines for checks that were not configured. Do not show `✓` f
 | FR-OV-002 | Must | The system SHALL address artifacts by immutable digest. |
 | FR-OV-003 | Must | The system SHALL support semantic version tags that resolve to a digest at inspect/pull time. |
 | FR-OV-004 | Must | The system SHALL verify cryptographic signatures using Sigstore-compatible tooling. |
-| FR-OV-005 | Must | The system SHALL expose a Verity API for artifact registration, trust status, and policy evaluation. |
+| FR-OV-005 | Must | The system SHALL expose a Lineagis API for artifact registration, trust status, and policy evaluation. |
 | FR-OV-006 | Must | The system SHALL provide a CLI with `publish` and `inspect` commands. |
 | FR-OV-007 | Should | The system SHALL generate or accept SLSA-style provenance attestations bound to artifact digests. |
 | FR-OV-008 | Should | The system SHALL support GitHub Actions as a first-class publish and sign path. |
@@ -174,7 +174,7 @@ Use `—` or omit lines for checks that were not configured. Do not show `✓` f
 | NFR-OV-003 | The platform SHALL build on open standards (OCI, Sigstore, SLSA, in-toto) rather than proprietary formats. |
 | NFR-OV-004 | Long-lived signing keys SHALL NOT be required for the primary GitHub Actions workflow (keyless preferred). |
 | NFR-OV-005 | Trust reports SHALL distinguish **verified**, **failed**, and **not configured** for each line; SHALL NOT show `✓` for checks that were not evaluated. |
-| NFR-OV-006 | `--skip-sign`, `--skip-provenance`, and `VERITY_DEV_TOKEN` SHALL be documented and supported for **local development only**; production release workflows SHALL NOT use them. |
+| NFR-OV-006 | `--skip-sign`, `--skip-provenance`, and `LINEAGIS_DEV_TOKEN` SHALL be documented and supported for **local development only**; production release workflows SHALL NOT use them. |
 
 ## Standards and references
 
@@ -196,8 +196,8 @@ Foundation and feature specs:
 
 | ID | Criterion | Maps to |
 |----|-----------|---------|
-| AC-OV-001 | Given a configured Verity instance, when a maintainer runs `verity publish` on build outputs, then artifacts are stored in OCI with a stable digest and semver tag. | FR-OV-001, FR-OV-002, FR-OV-003, FR-OV-006 |
-| AC-OV-002 | Given a published signed artifact, when a consumer runs `verity inspect`, then signature validity is reported and unsigned artifacts fail when require-signature policy is enabled. | FR-OV-004, FR-OV-006 |
+| AC-OV-001 | Given a configured Lineagis instance, when a maintainer runs `lineagis publish` on build outputs, then artifacts are stored in OCI with a stable digest and semver tag. | FR-OV-001, FR-OV-002, FR-OV-003, FR-OV-006 |
+| AC-OV-002 | Given a published signed artifact, when a consumer runs `lineagis inspect`, then signature validity is reported and unsigned artifacts fail when require-signature policy is enabled. | FR-OV-004, FR-OV-006 |
 | AC-OV-003 | Given Phase 2 capabilities enabled, when inspecting a fully attested artifact, then inspect output includes provenance and SBOM lines per README example. | FR-OV-007, FR-OV-009 |
 | AC-OV-004 | Given all Must requirements implemented, when tracing README Phase 1 roadmap items, then each Phase 1 bullet has corresponding passing acceptance tests. | Delivery matrix |
 | AC-OV-005 | Given `trusted-publishers` configured with a non-empty allowlist, when inspect runs on a digest signed by a non-allowlisted workflow, then evaluation fails with `POLICY_FAILED` and non-zero CLI exit. | FR-POL-006, US-OV-005 |
@@ -211,7 +211,7 @@ Foundation and feature specs:
 | OQ-OV-002 | Minimum SLSA build level targeted for MVP provenance? | [03-provenance-metadata.md](03-provenance-metadata.md) (OQ-PROV-001) |
 | OQ-OV-003 | Is SBOM required on publish or optional with warn-on-missing? | [03-provenance-metadata.md](03-provenance-metadata.md) (OQ-PROV-002) |
 | OQ-OV-004 | SPDX vs CycloneDX as the MVP SBOM format (or support both)? | [03-provenance-metadata.md](03-provenance-metadata.md) (OQ-PROV-003) |
-| OQ-OV-005 | Does Verity wrap an existing registry or embed OCI Distribution? | [architecture.md](architecture.md) (OQ-ARCH-001), [api.md](api.md) |
+| OQ-OV-005 | Does Lineagis wrap an existing registry or embed OCI Distribution? | [architecture.md](architecture.md) (OQ-ARCH-001), [api.md](api.md) |
 | OQ-ARCH-002 | Should CLI verify signatures locally always, or trust API trust-status by default? | [architecture.md](architecture.md), [02-signing-verification.md](02-signing-verification.md) |
 | OQ-META-001 | Use OCI referrers API vs custom attestation attachment layout? | [metadata-model.md](metadata-model.md) |
 | OQ-META-002 | Store Sigstore bundle only in DB vs also as OCI artifact layer? | [metadata-model.md](metadata-model.md), [02-signing-verification.md](02-signing-verification.md) |
@@ -221,7 +221,7 @@ Foundation and feature specs:
 | OQ-SIGN-001 | Pin Sigstore public good vs self-hosted? | [02-signing-verification.md](02-signing-verification.md) |
 | OQ-SIGN-002 | Allow cosign attach-signatures vs integrated sign-only? | [02-signing-verification.md](02-signing-verification.md) |
 | OQ-PROV-004 | Repository ownership via GitHub API vs provenance claim only? | [03-provenance-metadata.md](03-provenance-metadata.md), [04-policy-enforcement.md](04-policy-enforcement.md) |
-| OQ-DX-001 | Monolithic `verity` binary vs separate CLI and server? | [05-developer-experience.md](05-developer-experience.md) |
+| OQ-DX-001 | Monolithic `lineagis` binary vs separate CLI and server? | [05-developer-experience.md](05-developer-experience.md) |
 | OQ-DX-002 | Default config file path? | [05-developer-experience.md](05-developer-experience.md) |
 
 ## Resolved open questions

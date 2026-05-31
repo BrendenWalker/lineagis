@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
-	"github.com/BrendenWalker/verity/internal/inspect"
-	"github.com/BrendenWalker/verity/internal/registry"
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/inspect"
+	"github.com/BrendenWalker/lineagis/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 func TestVerifyLocally_missingSignatures(t *testing.T) {

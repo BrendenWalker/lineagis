@@ -6,11 +6,11 @@ TEST_FLAGS ?=
 
 # Release version (default dev). Set VERSION=v0.2.0 for release builds.
 VERSION ?= dev
-LDFLAGS := -X github.com/BrendenWalker/verity/internal/version.Version=$(VERSION)
+LDFLAGS := -X github.com/BrendenWalker/lineagis/internal/version.Version=$(VERSION)
 
 build:
-	go build -ldflags "$(LDFLAGS)" -o bin/verity ./cmd/verity
-	go build -ldflags "$(LDFLAGS)" -o bin/verity-api ./cmd/verity-api
+	go build -ldflags "$(LDFLAGS)" -o bin/lineagis ./cmd/lineagis
+	go build -ldflags "$(LDFLAGS)" -o bin/lineagis-api ./cmd/lineagis-api
 test:
 	go test $(TEST_FLAGS) -coverprofile=coverage.out ./...
 test-integration:

@@ -35,7 +35,7 @@ func VerifyManifestBundle(ctx context.Context, cfg Config, manifestJSON, bundleJ
 		return fmt.Errorf("signing: bundle is empty")
 	}
 
-	tmpDir, err := os.MkdirTemp("", "verity-verify-*")
+	tmpDir, err := os.MkdirTemp("", "lineagis-verify-*")
 	if err != nil {
 		return fmt.Errorf("signing: temp dir: %w", err)
 	}

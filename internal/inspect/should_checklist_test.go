@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
 )
 
 func TestShouldChecklist_provenanceVerified(t *testing.T) {

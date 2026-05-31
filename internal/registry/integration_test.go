@@ -10,15 +10,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 func testRegistryClient(t *testing.T) *registry.Client {
 	t.Helper()
 
-	url := os.Getenv("VERITY_TEST_REGISTRY_URL")
+	url := os.Getenv("LINEAGIS_TEST_REGISTRY_URL")
 	if url == "" {
-		t.Skip("VERITY_TEST_REGISTRY_URL not set")
+		t.Skip("LINEAGIS_TEST_REGISTRY_URL not set")
 	}
 
 	client, err := registry.New(url)
@@ -30,7 +30,7 @@ func testRegistryClient(t *testing.T) *registry.Client {
 
 func testRepo(t *testing.T) string {
 	t.Helper()
-	return fmt.Sprintf("verity-test/blob-%d", time.Now().UnixNano())
+	return fmt.Sprintf("lineagis-test/blob-%d", time.Now().UnixNano())
 }
 
 func TestIntegrationPushPullBlob(t *testing.T) {

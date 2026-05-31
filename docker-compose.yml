@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-verity}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-verity}
-      POSTGRES_DB: ${POSTGRES_DB:-verity}
+      POSTGRES_USER: ${POSTGRES_USER:-lineagis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lineagis}
+      POSTGRES_DB: ${POSTGRES_DB:-lineagis}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-verity} -d ${POSTGRES_DB:-verity}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lineagis} -d ${POSTGRES_DB:-lineagis}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -71,15 +71,15 @@ services:
       registry:
         condition: service_started
     environment:
-      VERITY_API_ADDR: ${VERITY_API_ADDR:-:8080}
-      VERITY_DATABASE_URL: postgres://${POSTGRES_USER:-verity}:${POSTGRES_PASSWORD:-verity}@postgres:5432/${POSTGRES_DB:-verity}?sslmode=disable
-      VERITY_REGISTRY_URL: http://registry:5000
-      VERITY_LOG_LEVEL: ${VERITY_LOG_LEVEL:-info}
-      VERITY_LOG_FORMAT: ${VERITY_LOG_FORMAT:-json}
-      VERITY_MIGRATE_ON_STARTUP: ${VERITY_MIGRATE_ON_STARTUP:-true}
-      VERITY_DEV_TOKEN: ${VERITY_DEV_TOKEN:-dev-local-token}
+      LINEAGIS_API_ADDR: ${LINEAGIS_API_ADDR:-:8080}
+      LINEAGIS_DATABASE_URL: postgres://${POSTGRES_USER:-lineagis}:${POSTGRES_PASSWORD:-lineagis}@postgres:5432/${POSTGRES_DB:-lineagis}?sslmode=disable
+      LINEAGIS_REGISTRY_URL: http://registry:5000
+      LINEAGIS_LOG_LEVEL: ${LINEAGIS_LOG_LEVEL:-info}
+      LINEAGIS_LOG_FORMAT: ${LINEAGIS_LOG_FORMAT:-json}
+      LINEAGIS_MIGRATE_ON_STARTUP: ${LINEAGIS_MIGRATE_ON_STARTUP:-true}
+      LINEAGIS_DEV_TOKEN: ${LINEAGIS_DEV_TOKEN:-dev-local-token}
     ports:
-      - "${VERITY_API_PORT:-8080}:8080"
+      - "${LINEAGIS_API_PORT:-8080}:8080"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/readyz | grep -qx ok"]
       interval: 5s

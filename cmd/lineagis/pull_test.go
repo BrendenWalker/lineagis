@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/v1"
 
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 func TestRunPull_verifyFailsWithoutSignatures(t *testing.T) {
@@ -39,9 +39,9 @@ func TestRunPull_verifyFailsWithoutSignatures(t *testing.T) {
 	}))
 	defer apiSrv.Close()
 
-	t.Setenv("VERITY_TOKEN", "tok")
-	t.Setenv("VERITY_API_URL", apiSrv.URL)
-	t.Setenv("VERITY_REGISTRY_URL", regSrv.URL)
+	t.Setenv("LINEAGIS_TOKEN", "tok")
+	t.Setenv("LINEAGIS_API_URL", apiSrv.URL)
+	t.Setenv("LINEAGIS_REGISTRY_URL", regSrv.URL)
 
 	if got := run([]string{"pull", "gh/acme/widget/widget@" + manifestHash.String(), "--verify"}); got != 1 {
 		t.Fatalf("exit = %d, want 1", got)

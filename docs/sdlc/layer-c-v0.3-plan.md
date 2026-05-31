@@ -1,12 +1,12 @@
 # Layer C (v0.3 Governance) — implementation plan
 
 **Branch:** `milestone/v0.3-governance`  
-**Status:** **Complete** — merged [#111](https://github.com/BrendenWalker/verity/pull/111); release tag pending [mvp-v0.3-release.md](mvp-v0.3-release.md)  
+**Status:** **Complete** — merged [#111](https://github.com/BrendenWalker/lineagis/pull/111); release tag pending [mvp-v0.3-release.md](mvp-v0.3-release.md)  
 **Authoritative scope:** [docs/specs/00-overview.md](../specs/00-overview.md)
 
 ## Goal
 
-Deliver **Layer C — Governance (v0.3+)**: deepen operator and consumer trust controls, close adoption gaps from the [#106](https://github.com/BrendenWalker/verity/issues/106) security review, and extend the control plane—**without** starting Deferred Phase 3 items (CVE, federation, ecosystem adapters).
+Deliver **Layer C — Governance (v0.3+)**: deepen operator and consumer trust controls, close adoption gaps from the [#106](https://github.com/BrendenWalker/lineagis/issues/106) security review, and extend the control plane—**without** starting Deferred Phase 3 items (CVE, federation, ecosystem adapters).
 
 ## Context
 
@@ -17,7 +17,7 @@ Deliver **Layer C — Governance (v0.3+)**: deepen operator and consumer trust c
 **Already shipped (do not re-implement in v0.3):**
 
 - Push-time evaluation for all configured policy rules (`FR-POL-012`) — `internal/api/policy_eval.go`, `publish-keyless-smoke.yml`
-- Local Sigstore verify, `verity verify`, audit API — PR #107
+- Local Sigstore verify, `lineagis verify`, audit API — PR #107
 - Layer B attribution — v0.2.0 ([mvp-v0.2-release.md](mvp-v0.2-release.md))
 
 **Re-scope note:** The [00-overview.md](../specs/00-overview.md) Layer C row originally listed “push-time for all rules.” That is complete as of v0.2. v0.3 focuses on **depth, DX, and operator hardening** listed below.
@@ -31,7 +31,7 @@ flowchart LR
   end
   subgraph v03 [v0.3 proposed]
     Own[GitHub ownership API]
-    Pull[verity pull + login]
+    Pull[lineagis pull + login]
     Hook[Webhooks]
     Pin[Digest-pin UX]
     Sec[Control-plane hardening]
@@ -44,8 +44,8 @@ flowchart LR
 | ID | Task | Spec / refs | Priority |
 |----|------|-------------|----------|
 | C1 | GitHub API repository ownership validation | OQ-PROV-004 follow-up, `FR-POL-007` depth | Should |
-| C2 | `verity login` + CLI OIDC token acquisition | `FR-DX-*`, consumer path | Should |
-| C3 | `verity pull` by digest or tag | `US-PUB-003`, `US-PUB-004` | Should |
+| C2 | `lineagis login` + CLI OIDC token acquisition | `FR-DX-*`, consumer path | Should |
+| C3 | `lineagis pull` by digest or tag | `US-PUB-003`, `US-PUB-004` | Should |
 | C4 | Webhooks on tag, policy, verify events | New spec section | Should |
 | C5 | Digest-pin UX: warn on tag-only inspect/verify | #106 mutable tags | Should |
 | C6 | Operator control-plane hardening checklist | #106 metadata TCB, `SECURITY.md` | Should |
@@ -73,14 +73,14 @@ flowchart LR
 
 **Approach:**
 
-- `verity login` — OIDC device flow or token from env (mirror publish auth patterns)
-- `verity pull REF` — resolve tag/digest via API, pull from configured registry, optional verify gate before write
+- `lineagis login` — OIDC device flow or token from env (mirror publish auth patterns)
+- `lineagis pull REF` — resolve tag/digest via API, pull from configured registry, optional verify gate before write
 
 **Spec touch:** [01-artifact-publishing.md](../specs/01-artifact-publishing.md), DX specs
 
 **Acceptance sketch:**
 
-- AC-DX-PULL-001: Given digest D and valid auth, when `verity pull ns/artifact@sha256:…`, then bytes match registry manifest for D
+- AC-DX-PULL-001: Given digest D and valid auth, when `lineagis pull ns/artifact@sha256:…`, then bytes match registry manifest for D
 - AC-DX-PULL-002: Given `require-signatures` and unsigned digest, when pull with `--verify`, then non-zero exit
 
 ### 3. Webhooks (C4)
@@ -97,11 +97,11 @@ flowchart LR
 
 ### 4. Digest-pin UX (C5)
 
-**Problem:** Mutable tags remain dangerous (#106). Verity should encourage digest-pinned consumption.
+**Problem:** Mutable tags remain dangerous (#106). Lineagis should encourage digest-pinned consumption.
 
 **Approach:**
 
-- `verity inspect` / `verity verify` on tag reference: emit warning to stderr (“tag is mutable; prefer @sha256:…”)
+- `lineagis inspect` / `lineagis verify` on tag reference: emit warning to stderr (“tag is mutable; prefer @sha256:…”)
 - `--require-digest` already exists on verify; document in consumer guide
 - Optional namespace policy: `require-digest-on-verify` (fail tag-only verify in CI)
 
@@ -119,7 +119,7 @@ flowchart LR
 
 ### 6. Adoption docs (C7)
 
-- **Getting started for consumers:** `verity verify` + `verity-verify` action + digest-pinned deploy
+- **Getting started for consumers:** `lineagis verify` + `lineagis-verify` action + digest-pinned deploy
 - Promote [docs/examples/policies/strict-release.json](../examples/policies/strict-release.json) as default operator template
 - Link from [README.md](../../README.md) example workflow
 
@@ -129,14 +129,14 @@ flowchart LR
 |----|--------|---------|
 | 1 | Digest-pin warnings + consumer guide (C5, C7) | — |
 | 2 | SECURITY.md operator hardening (C6) | — |
-| 3 | `verity login` scaffold + OIDC (C2) | Spec approval |
-| 4 | `verity pull` (C3) | C2 |
+| 3 | `lineagis login` scaffold + OIDC (C2) | Spec approval |
+| 4 | `lineagis pull` (C3) | C2 |
 | 5 | GitHub ownership API (C1) | Operator creds design |
 | 6 | Webhooks MVP (C4) | API design |
 
 ## Out of scope (v0.3)
 
-- **Deferred / Phase 3** ([#18](https://github.com/BrendenWalker/verity/issues/18), [#67](https://github.com/BrendenWalker/verity/issues/67), [#68](https://github.com/BrendenWalker/verity/issues/68)): CVE blocking, federation, transparency-log UI, ecosystem adapters
+- **Deferred / Phase 3** ([#18](https://github.com/BrendenWalker/lineagis/issues/18), [#67](https://github.com/BrendenWalker/lineagis/issues/67), [#68](https://github.com/BrendenWalker/lineagis/issues/68)): CVE blocking, federation, transparency-log UI, ecosystem adapters
 - Reproducible / hermetic builds
 - Kyverno, GitLab CI, admission-controller integrations (post-MVP epic under #18)
 - Non-GitHub OIDC issuers (`FR-SIGN-011`)
@@ -158,4 +158,4 @@ flowchart LR
 - [layer-b-v0.2-plan.md](layer-b-v0.2-plan.md) — completed v0.2
 - [mvp-v0.2-release.md](mvp-v0.2-release.md) — v0.2 release bar
 - [docs/releases/v0.2.0.md](../releases/v0.2.0.md) — release notes
-- [#106 AI Review](https://github.com/BrendenWalker/verity/issues/106) — strategic input
+- [#106 AI Review](https://github.com/BrendenWalker/lineagis/issues/106) — strategic input

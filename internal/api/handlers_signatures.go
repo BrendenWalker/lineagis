@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
 )
 
 type attachSignatureRequest struct {

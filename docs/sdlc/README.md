@@ -1,6 +1,6 @@
 # Software development lifecycle (SDLC)
 
-How Verity work is planned, specified, built, and reviewed—written for humans and AI assistants using any tooling (issues, chat, IDE agents, CI).
+How Lineagis work is planned, specified, built, and reviewed—written for humans and AI assistants using any tooling (issues, chat, IDE agents, CI).
 
 **Entry point for agents:** [AGENTS.md](../../AGENTS.md)
 
@@ -199,7 +199,7 @@ Maintain this in the issue body or milestone doc table.
 
 ---
 
-## Phase alignment (Verity MVP)
+## Phase alignment (Lineagis MVP)
 
 Informative mapping to [overview phases](../specs/00-overview.md#phase-mapping-informative):
 

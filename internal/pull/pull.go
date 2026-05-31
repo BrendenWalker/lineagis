@@ -6,10 +6,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
-	"github.com/BrendenWalker/verity/internal/inspect"
-	"github.com/BrendenWalker/verity/internal/publish"
-	"github.com/BrendenWalker/verity/internal/registry"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/inspect"
+	"github.com/BrendenWalker/lineagis/internal/publish"
+	"github.com/BrendenWalker/lineagis/internal/registry"
 )
 
 // Options configures a pull run (FR-DX-012).

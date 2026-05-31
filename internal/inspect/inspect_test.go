@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
-	"github.com/BrendenWalker/verity/internal/inspect"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/inspect"
 )
 
 func TestRun_digestValid(t *testing.T) {

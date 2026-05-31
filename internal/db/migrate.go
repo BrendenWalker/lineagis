@@ -15,7 +15,7 @@ import (
 var migrations embed.FS
 
 // migrateAdvisoryLockKey serializes migration across concurrent integration test packages.
-const migrateAdvisoryLockKey int64 = 0x766572697479 // "verity"
+const migrateAdvisoryLockKey int64 = 0x766572697479 // "lineagis"
 
 func withMigrateLock(ctx context.Context, pool *pgxpool.Pool, fn func() error) error {
 	if _, err := pool.Exec(ctx, `SELECT pg_advisory_lock($1)`, migrateAdvisoryLockKey); err != nil {

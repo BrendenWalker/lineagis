@@ -39,7 +39,7 @@ Traceability for Layer B (v0.2 Attribution): each **Should** attribution row in 
   - `AC-OV-003`, `FR-OV-008`, `FR-DX-001`–`004`
   - Coverage:
     - `docs/guides/github-actions-publish.md`
-    - `.github/actions/verity-publish/`, `publish-keyless-smoke.yml`
+    - `.github/actions/lineagis-publish/`, `publish-keyless-smoke.yml`
 
 - **Policy: trusted-publishers, repository-ownership, require-provenance**
   - `AC-POL-002b`, `AC-POL-003`, `FR-POL-007`, `FR-POL-012`

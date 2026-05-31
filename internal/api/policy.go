@@ -9,7 +9,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
 )
 
 // PushPolicy evaluates push-time rules before SetTag (FR-API-007).

@@ -18,7 +18,7 @@ func signManifestWithKey(pass cosign.PassFunc, manifestJSON []byte) (bundle json
 		return nil, nil, nil, fmt.Errorf("signing: generate key: %w", err)
 	}
 
-	tmpDir, err := os.MkdirTemp("", "verity-test-sign-*")
+	tmpDir, err := os.MkdirTemp("", "lineagis-test-sign-*")
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("signing: temp dir: %w", err)
 	}

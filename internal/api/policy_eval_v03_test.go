@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/api"
-	"github.com/BrendenWalker/verity/internal/metadata"
+	"github.com/BrendenWalker/lineagis/internal/api"
+	"github.com/BrendenWalker/lineagis/internal/metadata"
 )
 
 type stubGitHubChecker struct {
@@ -87,7 +87,7 @@ func TestVerify_repositoryOwnership_githubNotConfigured(t *testing.T) {
 	if len(resp.Policy.Reasons) == 0 || resp.Policy.Reasons[0].Rule != "repository-ownership" {
 		t.Fatalf("reasons = %+v", resp.Policy.Reasons)
 	}
-	if !strings.Contains(resp.Policy.Reasons[0].Message, "VERITY_GITHUB_TOKEN") {
+	if !strings.Contains(resp.Policy.Reasons[0].Message, "LINEAGIS_GITHUB_TOKEN") {
 		t.Fatalf("message = %q", resp.Policy.Reasons[0].Message)
 	}
 }

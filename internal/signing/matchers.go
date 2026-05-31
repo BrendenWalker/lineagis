@@ -22,7 +22,7 @@ type PublisherMatcher struct {
 
 // PermissiveKeylessIdentity reports whether dev-only permissive matchers are enabled.
 func PermissiveKeylessIdentity() bool {
-	v := strings.TrimSpace(os.Getenv("VERITY_PERMISSIVE_KEYLESS_IDENTITY"))
+	v := strings.TrimSpace(os.Getenv("LINEAGIS_PERMISSIVE_KEYLESS_IDENTITY"))
 	return v == "1" || strings.EqualFold(v, "true")
 }
 

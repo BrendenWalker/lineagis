@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/BrendenWalker/verity/internal/apiclient"
+	"github.com/BrendenWalker/lineagis/internal/apiclient"
 )
 
 func policyDocument(ctx context.Context, api *apiclient.Client, namespace string) json.RawMessage {

@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/cliauth"
+	"github.com/BrendenWalker/lineagis/internal/cliauth"
 )
 
 func runLogin(args []string) int {
@@ -33,6 +33,6 @@ func runLogin(args []string) int {
 }
 
 func printLoginUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: verity login\n")
-	fmt.Fprintf(os.Stderr, "\nSaves API token from VERITY_TOKEN, VERITY_DEV_TOKEN, or GitHub Actions OIDC to ~/.verity/config.\n")
+	fmt.Fprintf(os.Stderr, "Usage: lineagis login\n")
+	fmt.Fprintf(os.Stderr, "\nSaves API token from LINEAGIS_TOKEN, LINEAGIS_DEV_TOKEN, or GitHub Actions OIDC to ~/.lineagis/config.\n")
 }

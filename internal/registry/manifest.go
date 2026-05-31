@@ -22,8 +22,8 @@ const (
 	// and an empty config descriptor instead of application/vnd.oci.artifact.manifest.v1+json.
 	ArtifactManifestMediaType = "application/vnd.oci.image.manifest.v1+json"
 
-	// VerityReleaseArtifactType identifies generic/multi-file releases (ADR-0001 layout).
-	VerityReleaseArtifactType = "application/vnd.verity.release.v1+json"
+	// LineagisReleaseArtifactType identifies generic/multi-file releases (ADR-0001 layout).
+	LineagisReleaseArtifactType = "application/vnd.lineagis.release.v1+json"
 
 	emptyConfigMediaType = "application/vnd.oci.empty.v1+json"
 
@@ -33,11 +33,11 @@ const (
 	// MaxTotalReleaseSize is the maximum sum of layer sizes per release (ADR-0001).
 	MaxTotalReleaseSize = 2 << 30
 
-	annotationVerityPath        = "dev.verity.path"
+	annotationLineagisPath        = "dev.lineagis.path"
 	annotationImageTitle        = "org.opencontainers.image.title"
 	annotationImageCreated      = "org.opencontainers.image.created"
-	annotationVerityPublishRoot = "dev.verity.publish.root"
-	annotationVerityFileCount   = "dev.verity.file.count"
+	annotationLineagisPublishRoot = "dev.lineagis.publish.root"
+	annotationLineagisFileCount   = "dev.lineagis.file.count"
 )
 
 // FileLayer is one file represented as an OCI manifest layer (ADR-0001).
@@ -79,7 +79,7 @@ type releaseManifest struct {
 }
 
 // BuildArtifactManifest constructs canonical OCI Artifact manifest JSON per ADR-0001.
-// Layers are sorted by dev.verity.path before serialization so identical file sets
+// Layers are sorted by dev.lineagis.path before serialization so identical file sets
 // produce identical manifest digests (FR-PUB-007, AC-PUB-002).
 func BuildArtifactManifest(layers []FileLayer, opts ManifestOptions) ([]byte, v1.Hash, error) {
 	if len(layers) == 0 {
@@ -119,7 +119,7 @@ func BuildArtifactManifest(layers []FileLayer, opts ManifestOptions) ([]byte, v1
 		}
 
 		annotations := map[string]string{
-			annotationVerityPath: layer.Path,
+			annotationLineagisPath: layer.Path,
 			annotationImageTitle: path.Base(layer.Path),
 		}
 		if layer.Created != nil {
@@ -137,19 +137,19 @@ func BuildArtifactManifest(layers []FileLayer, opts ManifestOptions) ([]byte, v1
 	manifest := releaseManifest{
 		SchemaVersion: 2,
 		MediaType:     ArtifactManifestMediaType,
-		ArtifactType:  VerityReleaseArtifactType,
+		ArtifactType:  LineagisReleaseArtifactType,
 		Config:        emptyConfigDescriptor,
 		Layers:        manifestLayers,
 	}
 
 	if opts.PublishRoot != "" {
 		manifest.Annotations = map[string]string{
-			annotationVerityPublishRoot: opts.PublishRoot,
-			annotationVerityFileCount:   fmt.Sprintf("%d", len(manifestLayers)),
+			annotationLineagisPublishRoot: opts.PublishRoot,
+			annotationLineagisFileCount:   fmt.Sprintf("%d", len(manifestLayers)),
 		}
 	} else {
 		manifest.Annotations = map[string]string{
-			annotationVerityFileCount: fmt.Sprintf("%d", len(manifestLayers)),
+			annotationLineagisFileCount: fmt.Sprintf("%d", len(manifestLayers)),
 		}
 	}
 
@@ -255,10 +255,10 @@ func LayersFromManifest(manifestJSON []byte) ([]ManifestLayer, error) {
 	for _, layer := range m.Layers {
 		p := ""
 		if layer.Annotations != nil {
-			p = layer.Annotations[annotationVerityPath]
+			p = layer.Annotations[annotationLineagisPath]
 		}
 		if strings.TrimSpace(p) == "" {
-			return nil, fmt.Errorf("registry: layer missing %s annotation", annotationVerityPath)
+			return nil, fmt.Errorf("registry: layer missing %s annotation", annotationLineagisPath)
 		}
 		out = append(out, ManifestLayer{Path: p, Digest: layer.Digest})
 	}

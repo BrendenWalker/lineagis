@@ -3,7 +3,7 @@ package api
 import (
 	"testing"
 
-	"github.com/BrendenWalker/verity/internal/signing"
+	"github.com/BrendenWalker/lineagis/internal/signing"
 )
 
 func TestMatchPublisher(t *testing.T) {

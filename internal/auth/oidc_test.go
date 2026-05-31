@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/BrendenWalker/verity/internal/auth"
+	"github.com/BrendenWalker/lineagis/internal/auth"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -52,7 +52,7 @@ func TestAuthenticate_oidcGitHubClaims(t *testing.T) {
 	claims := jwt.MapClaims{
 		"iss":        issuer,
 		"sub":        "repo:acme/widget:environment:prod",
-		"aud":        "verity-api",
+		"aud":        "lineagis-api",
 		"exp":        now.Add(time.Hour).Unix(),
 		"iat":        now.Unix(),
 		"repository": "acme/widget",
@@ -66,7 +66,7 @@ func TestAuthenticate_oidcGitHubClaims(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	a, err := auth.New(ctx, auth.Config{Issuer: issuer, Audience: "verity-api"})
+	a, err := auth.New(ctx, auth.Config{Issuer: issuer, Audience: "lineagis-api"})
 	if err != nil {
 		t.Fatal(err)
 	}

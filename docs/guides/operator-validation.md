@@ -22,8 +22,8 @@ The CI **`build`** job publishes two artifacts:
 
 | Artifact | Platform | Use on |
 |----------|----------|--------|
-| `verity-binaries-linux-amd64` | Linux amd64 | Linux, WSL, CI |
-| `verity-binaries-windows-amd64` | Windows amd64 | Windows (native) |
+| `lineagis-binaries-linux-amd64` | Linux amd64 | Linux, WSL, CI |
+| `lineagis-binaries-windows-amd64` | Windows amd64 | Windows (native) |
 
 ### Windows (Git Bash or PowerShell)
 
@@ -31,7 +31,7 @@ The CI **`build`** job publishes two artifacts:
 
 ```bash
 gh run download --repo "$(gh repo view --json nameWithOwner -q .nameWithOwner)" \
-  --name verity-binaries-windows-amd64 \
+  --name lineagis-binaries-windows-amd64 \
   --dir bin
 ```
 
@@ -39,25 +39,25 @@ gh run download --repo "$(gh repo view --json nameWithOwner -q .nameWithOwner)" 
 
 ```powershell
 gh run download --repo (gh repo view --json nameWithOwner -q .nameWithOwner) `
-  --name verity-binaries-windows-amd64 --dir bin
+  --name lineagis-binaries-windows-amd64 --dir bin
 ```
 
-Expected files: `bin/verity.exe`, `bin/verity-api.exe`.
+Expected files: `bin/lineagis.exe`, `bin/lineagis-api.exe`.
 
 ### Linux / WSL
 
 ```bash
 gh run download --repo "$(gh repo view --json nameWithOwner -q .nameWithOwner)" \
-  --name verity-binaries-linux-amd64 \
+  --name lineagis-binaries-linux-amd64 \
   --dir bin
-chmod +x bin/verity bin/verity-api
+chmod +x bin/lineagis bin/lineagis-api
 ```
 
 Pin a specific run when validating a release candidate:
 
 ```bash
 gh run download --repo OWNER/REPO --run RUN_ID \
-  --name verity-binaries-windows-amd64 --dir bin
+  --name lineagis-binaries-windows-amd64 --dir bin
 ```
 
 ## 2) Start stack and run smoke
@@ -69,7 +69,7 @@ cp .env.example .env   # if needed
 bash scripts/operator-stack-ci.sh
 ```
 
-This starts Postgres, MinIO, and Zot from Compose, runs the workflow-built **`verity-api`** binary on your host (not the Dockerfile API image), then `scripts/smoke-stack.sh`.
+This starts Postgres, MinIO, and Zot from Compose, runs the workflow-built **`lineagis-api`** binary on your host (not the Dockerfile API image), then `scripts/smoke-stack.sh`.
 
 **Success:** `=== all smoke checks passed ===`
 
@@ -84,7 +84,7 @@ gh run watch
 
 That workflow covers:
 
-- `verity verify sha256:…` on a keyless-signed digest
+- `lineagis verify sha256:…` on a keyless-signed digest
 - `docs/examples/policies/strict-release.json` with wrong-workflow push-time block
 - `require-signatures` unsigned tag rejection
 

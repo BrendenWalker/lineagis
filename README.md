@@ -1,6 +1,6 @@
-# Verity
+# Lineagis
 
-> Verity is an open-source trust platform for publishing, verifying, and governing software artifacts with built-in supply chain security.
+> Lineagis is an open-source trust platform for publishing, verifying, and governing software artifacts with built-in supply chain security.
 
 ---
 
@@ -8,9 +8,9 @@
 
 Modern software supply chains are fragmented, opaque, and increasingly vulnerable to compromise.
 
-Verity aims to provide a secure, open, and verifiable foundation for software artifact distribution using OCI-native infrastructure, cryptographic signing, provenance attestations, and policy enforcement.
+Lineagis aims to provide a secure, open, and verifiable foundation for software artifact distribution using OCI-native infrastructure, cryptographic signing, provenance attestations, and policy enforcement.
 
-Rather than acting as “another package repository,” Verity is designed as a trust layer for software releases.
+Rather than acting as “another package repository,” Lineagis is designed as a trust layer for software releases.
 
 ## Goals
 
@@ -26,7 +26,7 @@ Rather than acting as “another package repository,” Verity is designed as a 
 
 ## OCI-Native Distribution
 
-Verity uses OCI registries as the underlying distribution and storage layer for artifacts.
+Lineagis uses OCI registries as the underlying distribution and storage layer for artifacts.
 
 This enables:
 
@@ -50,7 +50,7 @@ Artifacts may include:
 
 ## Supply Chain Trust
 
-Verity is built around software trust primitives:
+Lineagis is built around software trust primitives:
 
 * cryptographic signing
 * provenance verification
@@ -78,7 +78,7 @@ The initial release delivers **Layer A — Integrity** (see [docs/specs/00-overv
 |------|----------------|
 | **Publishing** | OCI artifact push, immutable `sha256:` digests, semver tags |
 | **Signing** | Sigstore keyless signing (GitHub Actions), server-side signature verification on trust status |
-| **CLI** | `verity publish`, `verity inspect` (text + JSON), non-zero exit on Must / configured-policy failures |
+| **CLI** | `lineagis publish`, `lineagis inspect` (text + JSON), non-zero exit on Must / configured-policy failures |
 | **Policy** | `require-signatures` at tag time and inspect |
 | **Policy** | `trusted-publishers` **fail-closed when you add the rule** (operator-defined allowlist; verify-time in v0.1) |
 | **Honesty** | Inspect does not show `✓` for checks that were not evaluated |
@@ -88,7 +88,7 @@ The initial release delivers **Layer A — Integrity** (see [docs/specs/00-overv
 * SLSA-style provenance and SBOM attachment
 * Repository ownership policy (fail-closed when rule configured)
 * Push-time enforcement for all configured policies on `SetTag` (v0.2 — today `trusted-publishers` may not block tag)
-* [GitHub Actions publish guide](docs/guides/github-actions-publish.md) and [composite action](.github/actions/verity-publish/action.yml) — **production golden path**
+* [GitHub Actions publish guide](docs/guides/github-actions-publish.md) and [composite action](.github/actions/lineagis-publish/action.yml) — **production golden path**
 
 ## Trusted publishers (operator-defined)
 
@@ -98,7 +98,7 @@ Not a global safe-project list. Per namespace, operators configure which **signi
 
 | Area | Capabilities |
 |------|----------------|
-| **Consumer CLI** | `verity login`, `verity pull`, digest-pin warnings |
+| **Consumer CLI** | `lineagis login`, `lineagis pull`, digest-pin warnings |
 | **Policy** | Optional `require-digest-on-verify`, GitHub API `verify_with_github_api` on repository-ownership |
 | **Integrations** | Namespace webhooks (`tag.set`, `policy.updated`, `verify.*`) |
 
@@ -109,7 +109,7 @@ See [consumer getting started](docs/guides/consumer-getting-started.md) and [mvp
 * CVE / vulnerability blocking
 * Federation and transparency-log UX
 
-## What `verity inspect` proves (and does not)
+## What `lineagis inspect` proves (and does not)
 
 **Proves:** cryptographic signature validity (local cosign verify by default, plus API policy), tamper evidence for the registered digest, and active namespace policy results.
 
@@ -126,7 +126,7 @@ Pin releases by digest (`sha256:…`), not mutable tags alone.
 Use keyless signing from CI. See [docs/guides/github-actions-publish.md](docs/guides/github-actions-publish.md).
 
 ```bash
-verity publish dist/* --namespace gh/org/app --artifact app --tag v1.0.0
+lineagis publish dist/* --namespace gh/org/app --artifact app --tag v1.0.0
 ```
 
 In GitHub Actions (with `id-token: write`), publish typically:
@@ -137,16 +137,16 @@ In GitHub Actions (with `id-token: write`), publish typically:
 
 ## Publish (local development only)
 
-Local stack uses `VERITY_DEV_TOKEN` and often `--skip-sign` / `--skip-provenance` when Fulcio is unavailable. **Do not use dev tokens or skip flags in production.** See [docs/guides/quickstart.md](docs/guides/quickstart.md).
+Local stack uses `LINEAGIS_DEV_TOKEN` and often `--skip-sign` / `--skip-provenance` when Fulcio is unavailable. **Do not use dev tokens or skip flags in production.** See [docs/guides/quickstart.md](docs/guides/quickstart.md).
 
 ---
 
 ## Verify and consume (v0.3)
 
 ```bash
-verity login
-verity pull gh/org/app/app@sha256:<digest> -o ./out --verify
-verity inspect sha256:<digest> --namespace gh/org/app --artifact app
+lineagis login
+lineagis pull gh/org/app/app@sha256:<digest> -o ./out --verify
+lineagis inspect sha256:<digest> --namespace gh/org/app --artifact app
 ```
 
 Consumer guide: [docs/guides/consumer-getting-started.md](docs/guides/consumer-getting-started.md).
@@ -154,7 +154,7 @@ Consumer guide: [docs/guides/consumer-getting-started.md](docs/guides/consumer-g
 ## Verify
 
 ```bash
-verity inspect sha256:<digest> --namespace gh/org/app --artifact app
+lineagis inspect sha256:<digest> --namespace gh/org/app --artifact app
 ```
 
 Example output (Layer B / v0.2):
@@ -177,12 +177,12 @@ Must checks and any **configured** policy rules must pass for exit code `0`. Unc
 
 ```text
                 +-------------------+
-                | Verity CLI        |
+                | Lineagis CLI        |
                 +-------------------+
                          |
                          v
                 +-------------------+
-                | Verity API        |
+                | Lineagis API        |
                 +-------------------+
                     |          |
                     v          v
@@ -241,7 +241,7 @@ The focus is trust, provenance, and verification.
 
 # Development
 
-[![CI](https://github.com/BrendenWalker/verity/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/BrendenWalker/verity/actions/workflows/ci.yml)
+[![CI](https://github.com/BrendenWalker/lineagis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/BrendenWalker/lineagis/actions/workflows/ci.yml)
 
 ## Prerequisites
 
@@ -284,12 +284,12 @@ mingw32-make test; mingw32-make build
 
 On Windows, run tests without the race detector (requires CGO). CI on Linux passes `TEST_FLAGS=-race`.
 
-Run the CLI on Windows as `.\bin\verity.exe --version` (Git Bash: `./bin/verity.exe --version`).
+Run the CLI on Windows as `.\bin\lineagis.exe --version` (Git Bash: `./bin/lineagis.exe --version`).
 
 ## Build and test
 
 ```bash
-make build    # produces bin/verity and bin/verity-api
+make build    # produces bin/lineagis and bin/lineagis-api
 make test     # race detector + coverage.out
 make lint     # golangci-lint
 ```
@@ -297,16 +297,16 @@ make lint     # golangci-lint
 Run the CLI:
 
 ```bash
-./bin/verity --version
+./bin/lineagis --version
 ```
 
 Publish a release directory (requires stack up and tokens from `.env.example`):
 
 ```bash
-export VERITY_API_URL=http://localhost:8080
-export VERITY_REGISTRY_URL=http://localhost:5000
-export VERITY_TOKEN=dev-local-token
-./bin/verity publish dist/ --namespace gh/acme/widget --artifact widget --tag v1.0.0
+export LINEAGIS_API_URL=http://localhost:8080
+export LINEAGIS_REGISTRY_URL=http://localhost:5000
+export LINEAGIS_TOKEN=dev-local-token
+./bin/lineagis publish dist/ --namespace gh/acme/widget --artifact widget --tag v1.0.0
 ```
 
 On success the command prints the manifest digest (`sha256:…`, AC-PUB-001). Registry repository is `{namespace}/{artifact}` (e.g. `gh/acme/widget/widget`).
@@ -315,7 +315,7 @@ CI runs on every pull request and on pushes to `main`. Required status checks: `
 
 ## Local development stack
 
-Start Postgres, MinIO (S3-compatible storage), a [Zot](https://zotregistry.dev/) OCI registry (artifact manifest support per ADR-0001), and the Verity API:
+Start Postgres, MinIO (S3-compatible storage), a [Zot](https://zotregistry.dev/) OCI registry (artifact manifest support per ADR-0001), and the Lineagis API:
 
 ```bash
 cp .env.example .env   # optional; defaults match .env.example
@@ -324,7 +324,7 @@ make compose-up
 
 | Service | URL | Purpose |
 |---------|-----|---------|
-| Verity API | http://localhost:8080 (or `$VERITY_API_PORT`) | API (`GET /healthz`, `GET /readyz`, `/v1/...` control plane) |
+| Lineagis API | http://localhost:8080 (or `$LINEAGIS_API_PORT`) | API (`GET /healthz`, `GET /readyz`, `/v1/...` control plane) |
 | OCI Registry | http://localhost:5000 | Zot registry (S3 backend via MinIO; OCI Artifact manifests) |
 | PostgreSQL | localhost:5432 | Metadata database |
 | MinIO API | http://localhost:9000 | S3-compatible object storage |
@@ -334,26 +334,26 @@ Environment variables (see [`.env.example`](.env.example)):
 
 | Variable | Default | Used by |
 |----------|---------|---------|
-| `POSTGRES_USER` | `verity` | PostgreSQL |
-| `POSTGRES_PASSWORD` | `verity` | PostgreSQL |
-| `POSTGRES_DB` | `verity` | PostgreSQL |
+| `POSTGRES_USER` | `lineagis` | PostgreSQL |
+| `POSTGRES_PASSWORD` | `lineagis` | PostgreSQL |
+| `POSTGRES_DB` | `lineagis` | PostgreSQL |
 | `MINIO_ROOT_USER` | `minioadmin` | MinIO, registry S3 backend |
 | `MINIO_ROOT_PASSWORD` | `minioadmin` | MinIO, registry S3 backend |
 | `MINIO_REGISTRY_BUCKET` | `registry` | MinIO init (registry blob bucket) |
-| `VERITY_API_ADDR` | `:8080` | Verity API listen address |
-| `VERITY_API_PORT` | `8080` | Host port mapped to the API container |
-| `VERITY_DATABASE_URL` | `postgres://verity:verity@localhost:5432/verity?sslmode=disable` | Verity API (local); compose sets internal URL |
-| `VERITY_REGISTRY_URL` | `http://localhost:5000` | Verity API registry connectivity check |
-| `VERITY_LOG_LEVEL` | `info` | Verity API structured logging |
-| `VERITY_LOG_FORMAT` | `text` (local), `json` (compose) | Verity API log format |
-| `VERITY_MIGRATE_ON_STARTUP` | `true` | Run goose migrations on API startup |
-| `VERITY_DEV_TOKEN` | `dev-local-token` (compose) | Local dev bearer for API writes (OQ-API-002) |
-| `VERITY_OIDC_ISSUER` | (none) | GitHub Actions OIDC issuer (e.g. `https://token.actions.githubusercontent.com`) |
-| `VERITY_OIDC_AUDIENCE` | (none) | Expected JWT `aud` when OIDC is enabled |
-| `VERITY_API_URL` | `http://localhost:8080` | Verity CLI API base URL |
-| `VERITY_TOKEN` | (none) | Verity CLI bearer token (`VERITY_DEV_TOKEN` fallback) |
+| `LINEAGIS_API_ADDR` | `:8080` | Lineagis API listen address |
+| `LINEAGIS_API_PORT` | `8080` | Host port mapped to the API container |
+| `LINEAGIS_DATABASE_URL` | `postgres://lineagis:lineagis@localhost:5432/lineagis?sslmode=disable` | Lineagis API (local); compose sets internal URL |
+| `LINEAGIS_REGISTRY_URL` | `http://localhost:5000` | Lineagis API registry connectivity check |
+| `LINEAGIS_LOG_LEVEL` | `info` | Lineagis API structured logging |
+| `LINEAGIS_LOG_FORMAT` | `text` (local), `json` (compose) | Lineagis API log format |
+| `LINEAGIS_MIGRATE_ON_STARTUP` | `true` | Run goose migrations on API startup |
+| `LINEAGIS_DEV_TOKEN` | `dev-local-token` (compose) | Local dev bearer for API writes (OQ-API-002) |
+| `LINEAGIS_OIDC_ISSUER` | (none) | GitHub Actions OIDC issuer (e.g. `https://token.actions.githubusercontent.com`) |
+| `LINEAGIS_OIDC_AUDIENCE` | (none) | Expected JWT `aud` when OIDC is enabled |
+| `LINEAGIS_API_URL` | `http://localhost:8080` | Lineagis CLI API base URL |
+| `LINEAGIS_TOKEN` | (none) | Lineagis CLI bearer token (`LINEAGIS_DEV_TOKEN` fallback) |
 
-If port 8080 is already in use, set `VERITY_API_PORT=18080` in `.env` before `make compose-up`.
+If port 8080 is already in use, set `LINEAGIS_API_PORT=18080` in `.env` before `make compose-up`.
 
 Verify health endpoints:
 
@@ -377,15 +377,15 @@ make smoke          # compose-up + scripts/smoke-stack.sh (API built via Dockerf
 Windows (Git Bash):
 
 ```bash
-gh run download --name verity-binaries-windows-amd64 --dir bin
+gh run download --name lineagis-binaries-windows-amd64 --dir bin
 bash scripts/operator-stack-ci.sh
 ```
 
 Linux / WSL:
 
 ```bash
-gh run download --name verity-binaries-linux-amd64 --dir bin
-chmod +x bin/verity bin/verity-api
+gh run download --name lineagis-binaries-linux-amd64 --dir bin
+chmod +x bin/lineagis bin/lineagis-api
 bash scripts/operator-stack-ci.sh
 ```
 
@@ -406,7 +406,7 @@ make compose-down
 
 ### Registry migration (Distribution → Zot)
 
-If you previously ran the stack with Docker Distribution (`registry:2`), reset registry storage before using Zot: `docker compose down -v` (clears MinIO/Postgres volumes) or delete objects under the MinIO `registry` bucket. Distribution and Zot use incompatible S3 key layouts. After reset, `make compose-up` and re-run integration tests with `VERITY_TEST_REGISTRY_URL=http://localhost:5000`.
+If you previously ran the stack with Docker Distribution (`registry:2`), reset registry storage before using Zot: `docker compose down -v` (clears MinIO/Postgres volumes) or delete objects under the MinIO `registry` bucket. Distribution and Zot use incompatible S3 key layouts. After reset, `make compose-up` and re-run integration tests with `LINEAGIS_TEST_REGISTRY_URL=http://localhost:5000`.
 
 ---
 
@@ -457,7 +457,7 @@ Licensed under the Apache License 2.0.
 
 # Vision
 
-Verity aims to become open trust infrastructure for software distribution:
+Lineagis aims to become open trust infrastructure for software distribution:
 
 * open standards
 * open governance

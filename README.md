@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/logo2.png" alt="Lineagis logo" width="240">
+</p>
+
 # Lineagis
 
 > Lineagis is an open-source **software supply-chain lineage and provenance engine**. It builds a unified directed graph across pipelines, artifacts, and dependencies so teams can trace, reason about, and secure their software supply chain.

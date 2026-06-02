@@ -16,7 +16,7 @@
 
 **Authoritative design inputs:** [lineagis_design.md](../lineagis_design.md), [lineagis_architecture_overview.md](../lineagis_architecture_overview.md).
 
-**Relationship to v0.3:** The shipped trust platform (OCI publish, Sigstore, policy) remains documented in [00-overview.md](00-overview.md). v1.0 lineage engine is a **new CLI-first graph layer** that can later ingest v0.3 metadata as a source (v1.1+). Do not conflate the two products in one implementation task.
+**Product scope:** This repository implements the v1.0 lineage graph engine only. Registry/API/Sigstore ingestion may be added in v1.1+ per [lineagis_design.md](../lineagis_design.md).
 
 ---
 
@@ -47,7 +47,7 @@ Build the **v1.0 lineage graph MVP**: a deterministic, in-memory directed acycli
 | Unit tests                                                    | `make test`                                                                                |
 | Integration tests                                             | `make test-integration`                                                                    |
 | Lint                                                          | `make lint`                                                                                |
-| Local stack (v0.3 API; not required for v1.0 graph-only work) | `make compose-up`                                                                          |
+| Lineage smoke test                                          | `make smoke-lineage`                                                                       |
 | Run lineage CLI (after implementation)                        | `./bin/lineagis ingest <file>` · `./bin/lineagis trace <ref>` · `./bin/lineagis why <ref>` |
 | Graph-only tests (target)                                     | `go test ./internal/core/... ./internal/ingest/... ./internal/normalize/...`               |
 
@@ -67,7 +67,7 @@ Build the **v1.0 lineage graph MVP**: a deterministic, in-memory directed acycli
 
 ### Project structure
 
-**Target layout for v1.0** (may coexist with existing v0.3 packages):
+**Target layout for v1.0:**
 
 ```text
 cmd/lineagis/                  # CLI entrypoint (extend with ingest/trace/why subcommands)
@@ -162,9 +162,7 @@ func (g *Graph) AddEdge(from, to string, edgeType EdgeType) error {
 
 - Adding new third-party dependencies (SBOM parsers, graph libraries).
 - Changing canonical ID format (breaks fixture compatibility).
-- Modifying v0.3 publish/inspect behavior to feed the graph.
 - Database or persistent storage schema (v1.1 scope).
-- Renaming or removing existing CLI commands (`publish`, `inspect`, etc.).
 
 **Never**
 
@@ -199,7 +197,7 @@ v1.0 explicitly excludes:
 - Container registry polling — v1.1
 - `impact`, `upstream`, `downstream` commands — v1.2
 - HTML dashboard or GraphQL API — v2+
-- Signature verification and policy enforcement — owned by [00-overview.md](00-overview.md) trust platform
+- Signature verification and policy enforcement (v1.2+ / separate integrations)
 - Anomaly detection and alerting — v1.1+
 - Multi-repo federated graphs — v2.3+
 - Deployment nodes in the default ingest path — Should for v1.0, full automation Deferred
@@ -404,13 +402,11 @@ Edge:
 - [OCI Distribution Spec](https://github.com/opencontainers/distribution-spec) — digest format for artifacts
 - [Design & Roadmap](../lineagis_design.md)
 - [Architecture Overview](../lineagis_architecture_overview.md)
-- [Trust platform MVP](00-overview.md) — v0.3 scope (orthogonal)
 
 ## Dependencies
 
 - [lineagis_design.md](../lineagis_design.md) — product phasing v1.0–v1.2
 - [lineagis_architecture_overview.md](../lineagis_architecture_overview.md) — layers, repository layout
-- [05-developer-experience.md](05-developer-experience.md) — CLI conventions (extend, do not replace v0.3 commands)
 
 ## Implementation phases
 
@@ -545,7 +541,7 @@ lineagis visualize artifact@sha256:abc123 --format dot > graph.dot
 | OQ-LIN-001 | Single combined ingest session vs persistent graph file between CLI invocations?     | **Resolved:** in-memory store per process; default snapshot `.lineagis/graph.json` with `--graph-in` / `--graph-out` and `LINEAGIS_GRAPH_FILE` |
 | OQ-LIN-002 | SPDX vs CycloneDX when both provided for same artifact?                              | **Merge if digests match; error on conflict**                                    |
 | OQ-LIN-003 | Use external SBOM library vs minimal custom parser?                                  | **Ask first** before adding dependency                                           |
-| OQ-LIN-004 | Coexist `lineagis ingest` graph mode with existing publish subcommand in one binary? | **Yes** — same binary, separate subcommands                                      |
+| OQ-LIN-004 | Single binary for all lineage commands?                                               | **Yes** — `lineagis` CLI only in this repository                                 |
 | OQ-LIN-005 | Minimum CycloneDX/SPDX fields required to create artifact node?                      | **Name + version or purl + at least one hash**                                   |
 
 

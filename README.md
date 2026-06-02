@@ -103,39 +103,15 @@ lineagis visualize artifact@sha256:abc123
 
 Planned v1.1–v1.2 commands include `impact`, `upstream`, and `downstream` for cross-source graphs and dependency blast-radius queries. See [Design & Roadmap](docs/lineagis_design.md).
 
----
-
-## Current release (v0.3)
-
-The repository today ships a **foundational trust platform** — OCI artifact publishing, Sigstore signing, provenance attestations, policy enforcement, and consumer workflows. This layer provides signed, policy-governed artifacts that will feed the lineage graph as ingestion sources mature.
-
-| Area | Capabilities |
-|------|----------------|
-| **Publishing** | OCI artifact push, immutable `sha256:` digests, semver tags |
-| **Signing** | Sigstore keyless signing (GitHub Actions), server-side verification |
-| **CLI** | `lineagis publish`, `lineagis inspect`, `lineagis verify`, `lineagis login`, `lineagis pull` |
-| **Policy** | Signature requirements, trusted publishers, digest-pin warnings |
-| **Integrations** | GitHub Actions composite actions, namespace webhooks |
-
-Detailed v0.3 scope: [mvp-v0.3-release.md](docs/sdlc/mvp-v0.3-release.md). Requirements and acceptance criteria: [docs/specs/](docs/specs/README.md).
-
-### Example: publish and verify (today)
+### Example: ingest and trace (v1.0)
 
 ```bash
-# Publish from CI or local dev (see guides for token/signing setup)
-lineagis publish dist/* --namespace gh/org/app --artifact app --tag v1.0.0
-
-# Inspect trust status
-lineagis inspect sha256:<digest> --namespace gh/org/app --artifact app
-
-# Consume with verification (v0.3)
-lineagis login
-lineagis pull gh/org/app/app@sha256:<digest> -o ./out --verify
+lineagis ingest examples/sbom-cyclonedx.json examples/build-sidecar.json examples/commit-sidecar.json
+lineagis trace artifact@sha256:abc123
+lineagis why artifact@sha256:abc123
 ```
 
-Guides: [GitHub Actions publish](docs/guides/github-actions-publish.md) · [Consumer getting started](docs/guides/consumer-getting-started.md) · [Quickstart (local dev)](docs/guides/quickstart.md)
-
-**What inspect proves:** cryptographic signature validity, tamper evidence for the registered digest, and active namespace policy results. **What it does not prove:** that an artifact is safe or free of vulnerabilities. Pin releases by digest (`sha256:…`), not mutable tags alone.
+Graph state is stored in `.lineagis/graph.json` by default (override with `--graph-in` / `--graph-out` or `LINEAGIS_GRAPH_FILE`). See [lineage-engine-mvp.md](docs/specs/lineage-engine-mvp.md).
 
 ---
 
@@ -152,43 +128,20 @@ Full roadmap and integration plan: [docs/lineagis_design.md](docs/lineagis_desig
 
 ---
 
-## Architecture (current stack)
+## Architecture
 
-The v0.3 control plane and registry stack that exists today:
+v1.0 is a **CLI-only, offline-capable** graph engine: ingest → in-memory DAG → query. No API or database required for MVP.
 
-```text
-                +-------------------+
-                | Lineagis CLI      |
-                +-------------------+
-                         |
-                         v
-                +-------------------+
-                | Lineagis API      |
-                +-------------------+
-                    |          |
-                    v          v
-           +-------------+   +----------------+
-           | OCI Registry|   | Metadata DB    |
-           +-------------+   +----------------+
-                    |
-                    v
-           +------------------+
-           | Object Storage   |
-           +------------------+
-```
-
-Target repository layout for the graph engine: [docs/lineagis_architecture_overview.md#2-repository-structure](docs/lineagis_architecture_overview.md#2-repository-structure).
+Repository layout: [docs/lineagis_architecture_overview.md#2-repository-structure](docs/lineagis_architecture_overview.md#2-repository-structure).
 
 ### Technology
 
-| Layer | Choice |
-|-------|--------|
-| Backend | Go |
-| Graph store (MVP) | In-memory DAG |
-| Graph store (scale) | Postgres edge model, Neo4j / Dgraph (v2+) |
-| Artifacts | OCI Distribution Spec, S3-compatible storage |
-| Metadata | PostgreSQL |
-| Identity & signing | Sigstore, OIDC, GitHub Actions |
+| Layer | Choice (v1.0) |
+|-------|----------------|
+| Language | Go |
+| Graph store | In-memory DAG; snapshot file (`.lineagis/graph.json`) |
+| Ingest | CycloneDX / SPDX JSON, git/build sidecars |
+| Graph store (scale) | Postgres, Neo4j (v1.1+, per roadmap) |
 
 ---
 
@@ -200,14 +153,15 @@ Target repository layout for the graph engine: [docs/lineagis_architecture_overv
 
 * Go 1.23 or newer
 * [golangci-lint](https://golangci-lint.run/welcome/install/) v2 (for local linting)
-* Docker Engine and Compose v2 (for the local dev stack)
+* Bash (for `make smoke-lineage`; Git Bash on Windows)
 
 ### Build and test
 
 ```bash
-make build    # produces bin/lineagis and bin/lineagis-api
-make test     # unit tests + coverage.out
-make lint     # golangci-lint
+make build          # bin/lineagis
+make test-lineage   # graph engine + conformance tests
+make lint
+make smoke-lineage  # ingest → trace → why smoke
 ```
 
 Run the CLI:
@@ -216,50 +170,7 @@ Run the CLI:
 ./bin/lineagis --version
 ```
 
-Publish a release directory (requires stack up and tokens from `.env.example`):
-
-```bash
-export LINEAGIS_API_URL=http://localhost:8080
-export LINEAGIS_REGISTRY_URL=http://localhost:5000
-export LINEAGIS_TOKEN=dev-local-token
-./bin/lineagis publish dist/ --namespace gh/acme/widget --artifact widget --tag v1.0.0
-```
-
-CI runs on every pull request and push to `main`. Required checks: `lint`, `test`, `build`, and `keyless-publish`. See [.github/BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md).
-
-### Local development stack
-
-Start Postgres, MinIO, a [Zot](https://zotregistry.dev/) OCI registry, and the Lineagis API:
-
-```bash
-cp .env.example .env   # optional; defaults match .env.example
-make compose-up
-```
-
-| Service | URL | Purpose |
-|---------|-----|---------|
-| Lineagis API | http://localhost:8080 | Control plane (`/v1/...`) |
-| OCI Registry | http://localhost:5000 | Zot registry (S3 via MinIO) |
-| PostgreSQL | localhost:5432 | Metadata database |
-| MinIO | http://localhost:9000 | S3-compatible object storage |
-
-Environment variables: see [`.env.example`](.env.example).
-
-Verify health:
-
-```bash
-curl http://localhost:8080/healthz
-curl http://localhost:8080/readyz
-```
-
-Full operator smoke test:
-
-```bash
-make build          # optional
-make smoke          # compose-up + scripts/smoke-stack.sh
-```
-
-Stop the stack: `make compose-down`. Operator validation details: [docs/guides/operator-validation.md](docs/guides/operator-validation.md).
+CI runs on every pull request and push to `main`. Required checks: `lint`, `test`, `build`, `smoke-lineage`. See [.github/BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md).
 
 <details>
 <summary>Windows development notes</summary>
@@ -290,7 +201,8 @@ PowerShell 5.1 does not support `&&`. On Windows, run tests without `-race` (req
 |----------|-------------|
 | [Architecture Overview](docs/lineagis_architecture_overview.md) | Graph model, layers, queries, storage options |
 | [Design & Roadmap](docs/lineagis_design.md) | MVP v1.0–v1.2, integrations, strategic positioning |
-| [Specs index](docs/specs/README.md) | FR/NFR requirements for the current trust platform |
+| [Lineage MVP spec](docs/specs/lineage-engine-mvp.md) | FR-LIN / AC-LIN requirements and conformance fixtures |
+| [Specs index](docs/specs/README.md) | Specification index |
 | [Security](SECURITY.md) | Vulnerability reporting |
 
 ---

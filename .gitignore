@@ -1,6 +1,7 @@
 /bin/
 .lineagis/
 .lineagis-smoke/
+.lineagis-manual/
 /coverage.out
 /coverage
 .env

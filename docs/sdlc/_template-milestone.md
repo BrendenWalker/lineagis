@@ -12,7 +12,7 @@
 
 | Document | Sections / IDs |
 |----------|----------------|
-| [00-overview.md](../specs/00-overview.md) | Phase 1 Must, … |
+| [lineage-engine-mvp.md](../specs/lineage-engine-mvp.md) | v1.0 Must, … |
 | [api.md](../specs/api.md) | FR-API-… |
 
 ## Stories

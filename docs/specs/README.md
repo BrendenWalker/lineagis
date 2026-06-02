@@ -6,6 +6,14 @@ For how specs connect to milestones, stories, and pull requests (human + AI work
 
 ## Reading order
 
+### Lineage graph engine (v1.0 target)
+
+1. [lineage-engine-mvp.md](lineage-engine-mvp.md) — **v1.0 graph MVP**: ingest, trace, why, data model, agent context, conformance fixtures
+2. [lineagis_design.md](../lineagis_design.md) — Product roadmap v1.0–v1.2 (informative)
+3. [lineagis_architecture_overview.md](../lineagis_architecture_overview.md) — Layers, repository layout (informative)
+
+### Trust platform (v0.3 shipped)
+
 1. [00-overview.md](00-overview.md) — MVP boundaries, delivery matrix, glossary, end-to-end flows
 2. [architecture.md](architecture.md) — Components, trust boundaries, deployment assumptions
 3. [metadata-model.md](metadata-model.md) — Entities and storage placement
@@ -112,6 +120,7 @@ Inspect output line ownership:
 
 | Document | FR prefix |
 |----------|-----------|
+| [lineage-engine-mvp.md](lineage-engine-mvp.md) | FR-LIN |
 | [00-overview.md](00-overview.md) | FR-OV |
 | [architecture.md](architecture.md) | FR-ARCH |
 | [api.md](api.md) | FR-API |

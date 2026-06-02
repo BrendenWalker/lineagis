@@ -1,4 +1,4 @@
-.PHONY: build test test-integration lint compose-up compose-down smoke smoke-registry operator-stack-ci
+.PHONY: build test test-lineage test-integration lint compose-up compose-down smoke smoke-lineage smoke-registry operator-stack-ci
 
 # Override for CI (Linux): make test TEST_FLAGS=-race
 # On Windows, leave empty; -race requires CGO.
@@ -13,6 +13,8 @@ build:
 	go build -ldflags "$(LDFLAGS)" -o bin/lineagis-api ./cmd/lineagis-api
 test:
 	go test $(TEST_FLAGS) -coverprofile=coverage.out ./...
+test-lineage:
+	go test $(TEST_FLAGS) ./internal/core/... ./internal/ingest/... ./internal/normalize/... ./internal/lineage/... ./internal/storage/memory/... ./tests/conformance/...
 test-integration:
 	go test -p 1 $(TEST_FLAGS) -tags=integration -coverprofile=coverage-integration.out ./internal/metadata/... ./internal/db/... ./internal/registry/... ./internal/api/...
 lint:
@@ -27,3 +29,5 @@ smoke: compose-up
 	bash scripts/smoke-stack.sh
 operator-stack-ci:
 	bash scripts/operator-stack-ci.sh
+smoke-lineage: build
+	bash scripts/smoke-lineage.sh

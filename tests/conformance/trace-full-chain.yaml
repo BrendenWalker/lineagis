@@ -1,0 +1,12 @@
+name: trace-full-chain
+ingest:
+  - examples/sbom-cyclonedx.json
+  - examples/build-sidecar.json
+  - examples/commit-sidecar.json
+command: trace artifact@sha256:abc123
+expect:
+  exit_code: 0
+  path_contains:
+    - commit:def456
+    - build:ci-789
+    - artifact:sha256:abc123

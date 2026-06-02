@@ -1,0 +1,30 @@
+{
+  "schema_version": "lineage-graph/v1",
+  "nodes": [
+    {
+      "id": "artifact:sha256:abc123",
+      "type": "artifact",
+      "metadata": { "digest": "artifact:sha256:abc123", "name": "lineagis-demo" }
+    },
+    {
+      "id": "build:ci-789",
+      "type": "build",
+      "metadata": { "system": "github-actions", "pipeline": "release.yml" }
+    },
+    {
+      "id": "commit:def456",
+      "type": "commit",
+      "metadata": { "repo": "org/service", "sha": "def456" }
+    },
+    {
+      "id": "dependency:npm:lodash@4.17.21",
+      "type": "dependency",
+      "metadata": { "ecosystem": "npm", "name": "lodash", "version": "4.17.21" }
+    }
+  ],
+  "edges": [
+    { "from": "artifact:sha256:abc123", "to": "build:ci-789", "type": "produced_by" },
+    { "from": "build:ci-789", "to": "commit:def456", "type": "built_from" },
+    { "from": "artifact:sha256:abc123", "to": "dependency:npm:lodash@4.17.21", "type": "depends_on" }
+  ]
+}

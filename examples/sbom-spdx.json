@@ -1,0 +1,31 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "lineagis-demo-spdx",
+  "documentNamespace": "https://lineagis.local/spdx/demo",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Root",
+      "name": "lineagis-demo",
+      "versionInfo": "1.0.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:generic/lineagis-demo@1.0.0"
+        },
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "advisory",
+          "referenceLocator": "sha256:abc123"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-lodash",
+      "name": "lodash",
+      "versionInfo": "4.17.21"
+    }
+  ]
+}

@@ -24,6 +24,14 @@ func run(args []string) int {
 		return runLogin(args[1:])
 	case len(args) > 0 && args[0] == "pull":
 		return runPull(args[1:])
+	case len(args) > 0 && args[0] == "ingest":
+		return runIngest(args[1:])
+	case len(args) > 0 && args[0] == "trace":
+		return runTrace(args[1:])
+	case len(args) > 0 && args[0] == "why":
+		return runWhy(args[1:])
+	case len(args) > 0 && args[0] == "visualize":
+		return runVisualize(args[1:])
 	}
 
 	fs := flag.NewFlagSet("lineagis", flag.ContinueOnError)
@@ -40,6 +48,6 @@ func run(args []string) int {
 		fmt.Fprintf(os.Stderr, "lineagis: unknown command %q\n", fs.Arg(0))
 		return 1
 	}
-	fmt.Fprintf(os.Stderr, "Usage: lineagis publish <path> | lineagis inspect <ref> | lineagis verify <digest> | lineagis login | lineagis pull <ref> | lineagis [--version]\n")
+	fmt.Fprintf(os.Stderr, "Usage: lineagis publish <path> | lineagis inspect <ref> | lineagis ingest <files...> | lineagis trace <ref> | lineagis why <ref> | lineagis visualize <ref> --format dot | lineagis verify <digest> | lineagis login | lineagis pull <ref> | lineagis [--version]\n")
 	return 1
 }

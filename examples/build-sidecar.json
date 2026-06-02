@@ -1,0 +1,7 @@
+{
+  "id": "ci-789",
+  "system": "github-actions",
+  "pipeline": "release.yml",
+  "commit_sha": "def456",
+  "artifacts": ["sha256:abc123"]
+}

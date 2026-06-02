@@ -14,16 +14,6 @@ func main() {
 
 func run(args []string) int {
 	switch {
-	case len(args) > 0 && args[0] == "publish":
-		return runPublish(args[1:])
-	case len(args) > 0 && args[0] == "inspect":
-		return runInspect(args[1:])
-	case len(args) > 0 && args[0] == "verify":
-		return runVerify(args[1:])
-	case len(args) > 0 && args[0] == "login":
-		return runLogin(args[1:])
-	case len(args) > 0 && args[0] == "pull":
-		return runPull(args[1:])
 	case len(args) > 0 && args[0] == "ingest":
 		return runIngest(args[1:])
 	case len(args) > 0 && args[0] == "trace":
@@ -48,6 +38,10 @@ func run(args []string) int {
 		fmt.Fprintf(os.Stderr, "lineagis: unknown command %q\n", fs.Arg(0))
 		return 1
 	}
-	fmt.Fprintf(os.Stderr, "Usage: lineagis publish <path> | lineagis inspect <ref> | lineagis ingest <files...> | lineagis trace <ref> | lineagis why <ref> | lineagis visualize <ref> --format dot | lineagis verify <digest> | lineagis login | lineagis pull <ref> | lineagis [--version]\n")
+	printUsage()
 	return 1
+}
+
+func printUsage() {
+	fmt.Fprintf(os.Stderr, "Usage: lineagis ingest <files...> | lineagis trace <ref> | lineagis why <ref> | lineagis visualize <ref> --format dot | lineagis [--version]\n")
 }

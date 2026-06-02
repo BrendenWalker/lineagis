@@ -29,27 +29,6 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: lineagis
-          POSTGRES_PASSWORD: lineagis
-          POSTGRES_DB: lineagis
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U lineagis -d lineagis"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-      registry:
-        image: ghcr.io/project-zot/zot:v2.1.11
-        ports:
-          - 5000:5000
-    env:
-      LINEAGIS_TEST_DATABASE_URL: postgres://lineagis:lineagis@localhost:5432/lineagis?sslmode=disable
-      LINEAGIS_TEST_REGISTRY_URL: http://localhost:5000
     steps:
       - uses: actions/checkout@v4
 
@@ -59,21 +38,7 @@ jobs:
           cache: true
 
       - name: Test
-        run: make test TEST_FLAGS=-race
-
-      - name: Wait for registry
-        run: |
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:5000/v2/ >/dev/null; then
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "registry not ready" >&2
-          exit 1
-
-      - name: Integration test
-        run: make test-integration TEST_FLAGS=-race
+        run: make test-lineage TEST_FLAGS=-race
 
       - name: Upload coverage
         if: always()
@@ -94,34 +59,29 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Build Linux binaries
+      - name: Build Linux binary
         run: make build
 
-      - name: Build Windows binaries
+      - name: Build Windows binary
         run: |
-          GOOS=windows GOARCH=amd64 go build -o bin/lineagis.exe ./cmd/lineagis
-          GOOS=windows GOARCH=amd64 go build -o bin/lineagis-api.exe ./cmd/lineagis-api
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X github.com/BrendenWalker/lineagis/internal/version.Version=dev" -o bin/lineagis.exe ./cmd/lineagis
 
-      - name: Upload Linux binaries
+      - name: Upload Linux binary
         uses: actions/upload-artifact@v4
         with:
           name: lineagis-binaries-linux-amd64
-          path: |
-            bin/lineagis
-            bin/lineagis-api
+          path: bin/lineagis
           if-no-files-found: error
 
-      - name: Upload Windows binaries
+      - name: Upload Windows binary
         uses: actions/upload-artifact@v4
         with:
           name: lineagis-binaries-windows-amd64
-          path: |
-            bin/lineagis.exe
-            bin/lineagis-api.exe
+          path: bin/lineagis.exe
           if-no-files-found: error
 
-  operator-stack:
-    name: operator-stack
+  smoke-lineage:
+    name: smoke-lineage
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -132,18 +92,11 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Download workflow-built binaries
+      - name: Download Linux binary
         uses: actions/download-artifact@v4
         with:
           name: lineagis-binaries-linux-amd64
           path: bin
 
-      - name: Install crane
-        run: |
-          go install github.com/google/go-containerregistry/cmd/crane@latest
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-
-      - name: Operator stack smoke (AC-ARCH-001)
-        run: |
-          export PATH="${{ github.workspace }}/bin:$PATH"
-          bash scripts/operator-stack-ci.sh
+      - name: Lineage smoke
+        run: bash scripts/smoke-lineage.sh

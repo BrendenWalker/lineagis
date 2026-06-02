@@ -20,24 +20,23 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Build Linux binaries
+      - name: Build Linux binary
         run: make build VERSION=${{ github.ref_name }}
 
-      - name: Build Windows binaries
+      - name: Build Windows binary
         run: |
           GOOS=windows GOARCH=amd64 go build -ldflags "-X github.com/BrendenWalker/lineagis/internal/version.Version=${{ github.ref_name }}" -o bin/lineagis.exe ./cmd/lineagis
-          GOOS=windows GOARCH=amd64 go build -ldflags "-X github.com/BrendenWalker/lineagis/internal/version.Version=${{ github.ref_name }}" -o bin/lineagis-api.exe ./cmd/lineagis-api
 
       - name: Package artifacts
         run: |
           mkdir -p dist
-          tar -czf dist/lineagis-binaries-linux-amd64.tar.gz -C bin lineagis lineagis-api
-          zip -j dist/lineagis-binaries-windows-amd64.zip bin/lineagis.exe bin/lineagis-api.exe
+          tar -czf dist/lineagis-linux-amd64.tar.gz -C bin lineagis
+          zip -j dist/lineagis-windows-amd64.zip bin/lineagis.exe
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
-            dist/lineagis-binaries-linux-amd64.tar.gz
-            dist/lineagis-binaries-windows-amd64.zip
+            dist/lineagis-linux-amd64.tar.gz
+            dist/lineagis-windows-amd64.zip

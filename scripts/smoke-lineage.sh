@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BIN="${ROOT}/bin/lineagis"
+# Use go env GOEXE so Windows MSYS/PowerShell builds share one binary name.
+GOEXE="$(go env GOEXE)"
+BIN="${ROOT}/bin/lineagis${GOEXE}"
 GRAPH="${ROOT}/.lineagis-smoke/graph.json"
 rm -rf "${ROOT}/.lineagis-smoke"
 export LINEAGIS_GRAPH_FILE="${GRAPH}"

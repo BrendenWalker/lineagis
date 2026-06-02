@@ -7,10 +7,13 @@ TEST_FLAGS ?=
 # Release version (default dev). Set VERSION=v0.2.0 for release builds.
 VERSION ?= dev
 LDFLAGS := -X github.com/BrendenWalker/lineagis/internal/version.Version=$(VERSION)
+GOEXE := $(shell go env GOEXE)
+LINEAGIS_BIN := bin/lineagis$(GOEXE)
+LINEAGIS_API_BIN := bin/lineagis-api$(GOEXE)
 
 build:
-	go build -ldflags "$(LDFLAGS)" -o bin/lineagis ./cmd/lineagis
-	go build -ldflags "$(LDFLAGS)" -o bin/lineagis-api ./cmd/lineagis-api
+	go build -ldflags "$(LDFLAGS)" -o $(LINEAGIS_BIN) ./cmd/lineagis
+	go build -ldflags "$(LDFLAGS)" -o $(LINEAGIS_API_BIN) ./cmd/lineagis-api
 test:
 	go test $(TEST_FLAGS) -coverprofile=coverage.out ./...
 test-lineage:

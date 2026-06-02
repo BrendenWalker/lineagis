@@ -181,7 +181,7 @@ func parseLineageFlags(args []string, cmd string) (graphIn, graphOut string, pat
 			i++
 			graphOut = args[i]
 		default:
-			if strings.HasPrefix(args[i], "-") {
+			if strings.HasPrefix(args[i], "-") && cmd == "ingest" {
 				fmt.Fprintf(os.Stderr, "%s: unknown flag %q\n", cmd, args[i])
 				return "", "", nil, false
 			}

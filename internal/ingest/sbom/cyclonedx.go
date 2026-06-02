@@ -10,9 +10,9 @@ import (
 )
 
 type cycloneDXBOM struct {
-	BOMFormat   string              `json:"bomFormat"`
-	SpecVersion string              `json:"specVersion"`
-	Metadata    cycloneDXMetadata   `json:"metadata"`
+	BOMFormat   string               `json:"bomFormat"`
+	SpecVersion string               `json:"specVersion"`
+	Metadata    cycloneDXMetadata    `json:"metadata"`
 	Components  []cycloneDXComponent `json:"components"`
 }
 
@@ -21,12 +21,12 @@ type cycloneDXMetadata struct {
 }
 
 type cycloneDXComponent struct {
-	Type    string            `json:"type"`
-	Name    string            `json:"name"`
-	Version string            `json:"version"`
-	PURL    string            `json:"purl"`
-	Hashes  []cycloneDXHash   `json:"hashes"`
-	BOMRef  string            `json:"bom-ref"`
+	Type    string          `json:"type"`
+	Name    string          `json:"name"`
+	Version string          `json:"version"`
+	PURL    string          `json:"purl"`
+	Hashes  []cycloneDXHash `json:"hashes"`
+	BOMRef  string          `json:"bom-ref"`
 }
 
 type cycloneDXHash struct {

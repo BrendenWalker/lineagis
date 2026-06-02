@@ -22,10 +22,10 @@ func ToDOT(g *graph.Graph, rootID string) string {
 		if name := n.Metadata["name"]; name != "" {
 			label = name
 		}
-		b.WriteString(fmt.Sprintf("  %q [label=%q];\n", dotID(n.ID), label))
+		fmt.Fprintf(&b, "  %q [label=%q];\n", dotID(n.ID), label)
 	}
 	for _, e := range edges {
-		b.WriteString(fmt.Sprintf("  %q -> %q [label=%q];\n", dotID(e.From), dotID(e.To), e.Type))
+		fmt.Fprintf(&b, "  %q -> %q [label=%q];\n", dotID(e.From), dotID(e.To), e.Type)
 	}
 	b.WriteString("}\n")
 	return b.String()

@@ -9,15 +9,15 @@ import (
 )
 
 type spdxDoc struct {
-	SPDXVersion string       `json:"spdxVersion"`
+	SPDXVersion string        `json:"spdxVersion"`
 	Packages    []spdxPackage `json:"packages"`
 }
 
 type spdxPackage struct {
-	SPDXID           string        `json:"SPDXID"`
-	Name             string        `json:"name"`
-	VersionInfo      string        `json:"versionInfo"`
-	ExternalRefs     []spdxExtRef  `json:"externalRefs"`
+	SPDXID       string       `json:"SPDXID"`
+	Name         string       `json:"name"`
+	VersionInfo  string       `json:"versionInfo"`
+	ExternalRefs []spdxExtRef `json:"externalRefs"`
 }
 
 type spdxExtRef struct {

@@ -12,13 +12,13 @@ import (
 
 // BuildSidecar links a build to commit and artifacts (FR-LIN-004).
 type BuildSidecar struct {
-	ID         string   `json:"id"`
-	System     string   `json:"system"`
-	Pipeline   string   `json:"pipeline"`
-	CommitSHA  string   `json:"commit_sha"`
-	Artifacts  []string `json:"artifacts"`
-	Status     string   `json:"status,omitempty"`
-	Timestamp  string   `json:"timestamp,omitempty"`
+	ID        string   `json:"id"`
+	System    string   `json:"system"`
+	Pipeline  string   `json:"pipeline"`
+	CommitSHA string   `json:"commit_sha"`
+	Artifacts []string `json:"artifacts"`
+	Status    string   `json:"status,omitempty"`
+	Timestamp string   `json:"timestamp,omitempty"`
 }
 
 // IngestResult holds nodes and edges from build sidecar ingest.
@@ -86,10 +86,6 @@ func EnsureArtifactNodes(g interface {
 	GetNode(string) (model.Node, bool)
 	AddNode(model.Node) error
 }, digests []string) error {
-	type adder interface {
-		GetNode(string) (model.Node, bool)
-		AddNode(model.Node) error
-	}
 	for _, art := range digests {
 		hex := resolver.HexFromDigest(art)
 		id := model.ArtifactID(hex)

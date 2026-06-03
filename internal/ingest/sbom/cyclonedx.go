@@ -43,6 +43,9 @@ func ParseCycloneDX(data []byte) ([]model.Node, []model.Edge, error) {
 	if bom.BOMFormat != "CycloneDX" {
 		return nil, nil, fmt.Errorf("cyclonedx: missing bomFormat")
 	}
+	if err := checkCycloneDXSpecVersion(bom.SpecVersion); err != nil {
+		return nil, nil, err
+	}
 
 	var root cycloneDXComponent
 	if bom.Metadata.Component.Name != "" || len(bom.Metadata.Component.Hashes) > 0 {
@@ -114,36 +117,4 @@ func sha256FromHashes(hashes []cycloneDXHash) string {
 		}
 	}
 	return ""
-}
-
-func parsePURL(purl, name, version string) (eco, n, ver string) {
-	ver = version
-	n = name
-	eco = "generic"
-	if purl == "" {
-		return eco, n, ver
-	}
-	// pkg:npm/lodash@4.17.21
-	p := strings.TrimPrefix(purl, "pkg:")
-	parts := strings.SplitN(p, "/", 3)
-	if len(parts) >= 1 {
-		eco = parts[0]
-	}
-	if len(parts) >= 2 {
-		n = parts[1]
-		if idx := strings.LastIndex(n, "@"); idx > 0 {
-			ver = n[idx+1:]
-			n = n[:idx]
-		}
-	}
-	if len(parts) >= 3 && ver == "" {
-		rest := parts[2]
-		if idx := strings.LastIndex(rest, "@"); idx >= 0 {
-			ver = rest[idx+1:]
-		}
-	}
-	if ver == "" {
-		ver = "unknown"
-	}
-	return eco, n, ver
 }

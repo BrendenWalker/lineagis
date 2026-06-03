@@ -25,7 +25,14 @@
     {
       "SPDXID": "SPDXRef-lodash",
       "name": "lodash",
-      "versionInfo": "4.17.21"
+      "versionInfo": "4.17.21",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/lodash@4.17.21"
+        }
+      ]
     }
   ]
 }

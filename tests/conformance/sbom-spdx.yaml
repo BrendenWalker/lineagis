@@ -1,0 +1,11 @@
+name: sbom-spdx
+ingest:
+  - examples/sbom-spdx.json
+expect:
+  nodes_min: 2
+  artifact_id: artifact:sha256:abc123
+  dependency_id: dependency:npm:lodash@4.17.21
+  edge:
+    from: artifact:sha256:abc123
+    to: dependency:npm:lodash@4.17.21
+    type: depends_on

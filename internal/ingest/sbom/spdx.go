@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/BrendenWalker/lineagis/internal/core/model"
+	"github.com/BrendenWalker/lineagis/internal/normalize/resolver"
 )
 
 type spdxDoc struct {
@@ -26,14 +27,14 @@ type spdxExtRef struct {
 	ReferenceLocator  string `json:"referenceLocator"`
 }
 
-// ParseSPDX parses SPDX JSON into nodes and depends_on edges (root package + deps).
+// ParseSPDX parses SPDX JSON into nodes and depends_on edges (first package = root; rest = direct deps).
 func ParseSPDX(data []byte) ([]model.Node, []model.Edge, error) {
 	var doc spdxDoc
 	if err := json.Unmarshal(data, &doc); err != nil {
 		return nil, nil, fmt.Errorf("spdx: %w", err)
 	}
-	if doc.SPDXVersion == "" {
-		return nil, nil, fmt.Errorf("spdx: missing spdxVersion")
+	if err := checkSPDXVersion(doc.SPDXVersion); err != nil {
+		return nil, nil, err
 	}
 	if len(doc.Packages) == 0 {
 		return nil, nil, fmt.Errorf("spdx: no packages")
@@ -63,35 +64,44 @@ func ParseSPDX(data []byte) ([]model.Node, []model.Edge, error) {
 func spdxPackageToArtifact(p spdxPackage) (string, model.Node, error) {
 	hex := spdxSHA256(p)
 	if hex == "" {
-		// conformance fixtures use explicit hash in externalRefs or synthetic from name
-		hex = strings.ToLower(strings.ReplaceAll(p.Name, "-", ""))
-		if len(hex) < 6 {
-			return "", model.Node{}, fmt.Errorf("spdx: package %q missing sha256", p.Name)
-		}
+		return "", model.Node{}, fmt.Errorf("spdx: package %q missing sha256", p.Name)
 	}
 	id := model.ArtifactID(hex)
 	meta := map[string]string{"digest": id, "name": p.Name}
 	if p.VersionInfo != "" {
 		meta["version"] = p.VersionInfo
 	}
+	if purl := spdxPURL(p); purl != "" {
+		meta["purl"] = purl
+	}
 	return id, model.Node{ID: id, Type: model.NodeArtifact, Metadata: meta}, nil
 }
 
 func spdxPackageToDependency(p spdxPackage) (string, model.Node, error) {
-	ver := p.VersionInfo
-	if ver == "" {
-		ver = "unknown"
+	purl := spdxPURL(p)
+	eco, name, ver := parsePURL(purl, p.Name, p.VersionInfo)
+	id := model.DependencyID(eco, name, ver)
+	meta := map[string]string{"ecosystem": eco, "name": name, "version": ver}
+	if purl != "" {
+		meta["purl"] = purl
 	}
-	id := model.DependencyID("generic", p.Name, ver)
-	meta := map[string]string{"ecosystem": "generic", "name": p.Name, "version": ver}
 	return id, model.Node{ID: id, Type: model.NodeDependency, Metadata: meta}, nil
+}
+
+func spdxPURL(p spdxPackage) string {
+	for _, ref := range p.ExternalRefs {
+		if strings.EqualFold(ref.ReferenceType, "purl") {
+			return ref.ReferenceLocator
+		}
+	}
+	return ""
 }
 
 func spdxSHA256(p spdxPackage) string {
 	for _, ref := range p.ExternalRefs {
 		loc := strings.ToLower(ref.ReferenceLocator)
 		if strings.Contains(loc, "sha256:") {
-			return strings.TrimPrefix(loc[strings.Index(loc, "sha256:"):], "sha256:")
+			return resolver.HexFromDigest(loc[strings.Index(loc, "sha256:"):])
 		}
 	}
 	return ""

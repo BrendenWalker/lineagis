@@ -1,0 +1,11 @@
+name: ingest-order-determinism
+ingest_forward:
+  - examples/commit-sidecar.json
+  - examples/build-sidecar.json
+  - examples/sbom-cyclonedx.json
+ingest_reverse:
+  - examples/sbom-cyclonedx.json
+  - examples/build-sidecar.json
+  - examples/commit-sidecar.json
+expect:
+  graphs_equal: true

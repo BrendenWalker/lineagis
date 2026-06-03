@@ -1,9 +1,11 @@
 package conformance_test
 
 import (
+	"os/exec"
 	"path/filepath"
 	"testing"
 
+	"github.com/BrendenWalker/lineagis/internal/core/engine"
 	"github.com/BrendenWalker/lineagis/internal/core/graph"
 	"github.com/BrendenWalker/lineagis/internal/core/model"
 	"github.com/BrendenWalker/lineagis/internal/core/query"
@@ -105,17 +107,10 @@ func graphsEqual(a, b model.GraphSnapshot) bool {
 	return true
 }
 
-func TestTraceFullChain(t *testing.T) {
-	root := repoRoot(t)
-	g := graph.New()
-	files := []string{
-		filepath.Join(root, "examples", "sbom-cyclonedx.json"),
-		filepath.Join(root, "examples", "build-sidecar.json"),
-		filepath.Join(root, "examples", "commit-sidecar.json"),
-	}
-	if err := lineage.IngestFiles(g, files...); err != nil {
-		t.Fatal(err)
-	}
+// TestConformance_trace_full_chain mirrors tests/conformance/trace-full-chain.yaml (P3 exit).
+func TestConformance_trace_full_chain(t *testing.T) {
+	g := ingestFullChain(t)
+	assertProvenanceEdges(t, g)
 	res, err := query.Trace(g, "artifact@sha256:abc123")
 	if err != nil {
 		t.Fatal(err)
@@ -132,6 +127,65 @@ func TestTraceFullChain(t *testing.T) {
 		if !found {
 			t.Fatalf("trace missing %s in %+v", w, res.Nodes)
 		}
+	}
+	v := engine.VerifyGraph(g)
+	if !v.Complete {
+		t.Fatalf("expected complete lineage, findings: %v", v.Findings)
+	}
+}
+
+func ingestFullChain(t *testing.T) *graph.Graph {
+	t.Helper()
+	root := repoRoot(t)
+	g := graph.New()
+	files := []string{
+		filepath.Join(root, "examples", "sbom-cyclonedx.json"),
+		filepath.Join(root, "examples", "build-sidecar.json"),
+		filepath.Join(root, "examples", "commit-sidecar.json"),
+	}
+	if err := lineage.IngestFiles(g, files...); err != nil {
+		t.Fatal(err)
+	}
+	return g
+}
+
+func assertProvenanceEdges(t *testing.T, g *graph.Graph) {
+	t.Helper()
+	artID := model.ArtifactID("abc123")
+	buildID := model.BuildID("ci-789")
+	commitID := model.CommitID("def456")
+	var produced, built bool
+	for _, e := range g.Edges() {
+		if e.From == artID && e.To == buildID && e.Type == model.EdgeProducedBy {
+			produced = true
+		}
+		if e.From == buildID && e.To == commitID && e.Type == model.EdgeBuiltFrom {
+			built = true
+		}
+	}
+	if !produced || !built {
+		t.Fatalf("missing provenance edges produced=%v built=%v in %+v", produced, built, g.Edges())
+	}
+}
+
+// TestFullChainDoubleIngestDedupe (FR-LIN-005): re-ingesting sidecars does not duplicate edges.
+func TestFullChainDoubleIngestDedupe(t *testing.T) {
+	root := repoRoot(t)
+	files := []string{
+		filepath.Join(root, "examples", "sbom-cyclonedx.json"),
+		filepath.Join(root, "examples", "build-sidecar.json"),
+		filepath.Join(root, "examples", "commit-sidecar.json"),
+	}
+	g := graph.New()
+	if err := lineage.IngestFiles(g, files...); err != nil {
+		t.Fatal(err)
+	}
+	n1, e1 := g.NodeCount(), g.EdgeCount()
+	if err := lineage.IngestFiles(g, files...); err != nil {
+		t.Fatal(err)
+	}
+	if g.NodeCount() != n1 || g.EdgeCount() != e1 {
+		t.Fatalf("dedupe failed: nodes %d->%d edges %d->%d", n1, g.NodeCount(), e1, g.EdgeCount())
 	}
 }
 
@@ -155,7 +209,8 @@ func TestWhyMissingBuiltFrom(t *testing.T) {
 	}
 }
 
-func TestIngestOrderDeterminism(t *testing.T) {
+// TestConformance_ingest_order_determinism mirrors tests/conformance/ingest-order-determinism.yaml (AC-LIN-005).
+func TestConformance_ingest_order_determinism(t *testing.T) {
 	root := repoRoot(t)
 	files := []string{
 		filepath.Join(root, "examples", "commit-sidecar.json"),
@@ -177,10 +232,25 @@ func TestIngestOrderDeterminism(t *testing.T) {
 	if len(s1.Edges) != len(s2.Edges) {
 		t.Fatalf("edge count mismatch %d vs %d", len(s1.Edges), len(s2.Edges))
 	}
-	for i := range s1.Edges {
-		e1, e2 := s1.Edges[i], s2.Edges[i]
-		if e1.From != e2.From || e1.To != e2.To || e1.Type != e2.Type {
-			t.Fatalf("edge mismatch at %d: %+v vs %+v", i, e1, e2)
-		}
+	if !graphsEqual(s1, s2) {
+		t.Fatalf("graph export mismatch:\n%+v\n%+v", s1, s2)
+	}
+}
+
+// TestConformance_git_repo_ingest (FR-LIN-003): local git repo path yields a commit node.
+func TestConformance_git_repo_ingest(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not in PATH")
+	}
+	g := graph.New()
+	if err := lineage.IngestFiles(g, repoRoot(t)); err != nil {
+		t.Fatal(err)
+	}
+	commits := g.ListByType(model.NodeCommit)
+	if len(commits) != 1 {
+		t.Fatalf("expected 1 commit node, got %d: %+v", len(commits), commits)
+	}
+	if commits[0].Metadata["sha"] == "" {
+		t.Fatalf("commit missing sha metadata: %+v", commits[0])
 	}
 }

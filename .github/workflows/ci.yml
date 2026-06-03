@@ -99,4 +99,6 @@ jobs:
           path: bin
 
       - name: Lineage smoke
-        run: bash scripts/smoke-lineage.sh
+        run: |
+          chmod +x bin/lineagis
+          bash scripts/smoke-lineage.sh

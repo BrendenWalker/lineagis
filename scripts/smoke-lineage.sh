@@ -8,6 +8,10 @@ GRAPH="${ROOT}/.lineagis-smoke/graph.json"
 rm -rf "${ROOT}/.lineagis-smoke"
 export LINEAGIS_GRAPH_FILE="${GRAPH}"
 
+if [[ ! -x "${BIN}" ]]; then
+  chmod +x "${BIN}"
+fi
+
 "${BIN}" ingest \
   "${ROOT}/examples/sbom-cyclonedx.json" \
   "${ROOT}/examples/build-sidecar.json" \

@@ -364,3 +364,25 @@ func TestConformance_self_analysis_knowledge_graph(t *testing.T) {
 	artID := model.ArtifactID("abc123")
 	assertGraphEdge(t, g, artID, moduleID, model.EdgeContains)
 }
+
+// TestConformance_self_analysis_dependencies mirrors tests/conformance/self-analysis-dependencies.yaml (SA-P3).
+func TestConformance_self_analysis_dependencies(t *testing.T) {
+	g := graph.New()
+	if err := analyze.Path(g, repoRoot(t)); err != nil {
+		t.Fatal(err)
+	}
+	tools := model.ModuleID("golang.org/x/tools")
+	mod := model.ModuleID("golang.org/x/mod")
+	assertGraphNode(t, g, tools)
+	assertGraphNode(t, g, mod)
+	n, ok := g.GetNode(tools)
+	if !ok {
+		t.Fatal("missing tools module")
+	}
+	if n.Metadata["external"] != "true" {
+		t.Fatalf("tools module metadata: %+v", n.Metadata)
+	}
+	if n.Metadata["import_count"] == "" || n.Metadata["import_count"] == "0" {
+		t.Fatalf("expected import_count > 0, got %+v", n.Metadata)
+	}
+}

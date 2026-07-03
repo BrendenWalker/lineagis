@@ -7,6 +7,7 @@ import (
 	"github.com/BrendenWalker/lineagis/internal/core/model"
 	"github.com/BrendenWalker/lineagis/internal/ingest/docs"
 	goingest "github.com/BrendenWalker/lineagis/internal/ingest/go"
+	"github.com/BrendenWalker/lineagis/internal/ingest/moddeps"
 	"github.com/BrendenWalker/lineagis/internal/ingest/workflow"
 	"github.com/BrendenWalker/lineagis/internal/normalize/dedupe"
 )
@@ -28,6 +29,14 @@ func Path(g *graph.Graph, path string) error {
 	modPath, err := goingest.ModulePath(moduleRoot)
 	if err != nil {
 		return err
+	}
+
+	depRes, err := moddeps.Ingest(g, moduleRoot, modPath)
+	if err != nil {
+		return fmt.Errorf("analyze moddeps: %w", err)
+	}
+	if err := dedupe.Apply(g, depRes.Nodes, depRes.Edges); err != nil {
+		return fmt.Errorf("analyze moddeps merge: %w", err)
 	}
 
 	docRes, err := docs.Ingest(moduleRoot, modPath, packageIDs(g))

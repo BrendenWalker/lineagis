@@ -20,10 +20,13 @@ func Bridge(g *graph.Graph, modPath string) (nodes []model.Node, edges []model.E
 		}
 	}
 	modules := g.ListByType(model.NodeModule)
-	if len(modules) == 1 {
-		moduleID := modules[0].ID
-		for _, art := range g.ListByType(model.NodeArtifact) {
-			edges = append(edges, model.Edge{From: art.ID, To: moduleID, Type: model.EdgeContains})
+	moduleID := model.ModuleID(modPath)
+	for _, m := range modules {
+		if m.ID == moduleID {
+			for _, art := range g.ListByType(model.NodeArtifact) {
+				edges = append(edges, model.Edge{From: art.ID, To: moduleID, Type: model.EdgeContains})
+			}
+			break
 		}
 	}
 	return nodes, edges

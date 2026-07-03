@@ -1,0 +1,13 @@
+name: self-analysis-lineagis
+command: analyze .
+expect:
+  exit_code: 0
+  nodes_contain:
+    - package:github.com/BrendenWalker/lineagis/internal/core/graph
+    - package:github.com/BrendenWalker/lineagis/cmd/lineagis
+  edges_contain:
+    - from: package:github.com/BrendenWalker/lineagis/cmd/lineagis
+      to: package:github.com/BrendenWalker/lineagis/internal/core/query
+      type: imports
+  symbols_contain:
+    - symbol:github.com/BrendenWalker/lineagis/internal/core/graph#New

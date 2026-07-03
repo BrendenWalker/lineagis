@@ -200,15 +200,33 @@ func (g *Graph) wouldCreateProvenanceCycle(from, to string) bool {
 // Export returns a deterministic snapshot of the graph.
 func (g *Graph) Export() model.GraphSnapshot {
 	nodes := make([]model.Node, 0, len(g.nodes))
+	var hasProvenance, hasCode bool
 	for _, n := range g.nodes {
 		nodes = append(nodes, n)
+		if model.IsProvenanceNodeType(n.Type) {
+			hasProvenance = true
+		}
+		if model.IsCodeNodeType(n.Type) {
+			hasCode = true
+		}
 	}
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].ID < nodes[j].ID })
-	return model.GraphSnapshot{
-		SchemaVersion: model.SchemaGraphV1,
-		Nodes:         nodes,
-		Edges:         g.Edges(),
+
+	snap := model.GraphSnapshot{
+		Nodes: nodes,
+		Edges: g.Edges(),
 	}
+	if hasCode {
+		snap.SchemaVersion = model.SchemaGraphV2
+		if hasProvenance {
+			snap.Domains = []string{model.DomainProvenance, model.DomainCode}
+		} else {
+			snap.Domains = []string{model.DomainCode}
+		}
+	} else {
+		snap.SchemaVersion = model.SchemaGraphV1
+	}
+	return snap
 }
 
 // LoadSnapshot replaces graph contents from a snapshot.

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/BrendenWalker/lineagis/internal/analyze"
 	"github.com/BrendenWalker/lineagis/internal/core/engine"
 	"github.com/BrendenWalker/lineagis/internal/core/graph"
 	"github.com/BrendenWalker/lineagis/internal/core/model"
@@ -253,4 +254,79 @@ func TestConformance_git_repo_ingest(t *testing.T) {
 	if commits[0].Metadata["sha"] == "" {
 		t.Fatalf("commit missing sha metadata: %+v", commits[0])
 	}
+}
+
+// TestConformance_self_analysis_mini mirrors tests/conformance/self-analysis-mini.yaml (SA-P1).
+func TestConformance_self_analysis_mini(t *testing.T) {
+	g := graph.New()
+	path := filepath.Join(repoRoot(t), "examples", "self-analysis")
+	if err := analyze.Path(g, path); err != nil {
+		t.Fatal(err)
+	}
+	app := model.PackageID("github.com/BrendenWalker/lineagis/examples/self-analysis/app")
+	lib := model.PackageID("github.com/BrendenWalker/lineagis/examples/self-analysis/lib")
+	assertGraphNode(t, g, app)
+	assertGraphNode(t, g, lib)
+	assertGraphEdge(t, g, app, lib, model.EdgeImports)
+}
+
+// TestConformance_self_analysis_lineagis mirrors tests/conformance/self-analysis-lineagis.yaml (SA-P1).
+func TestConformance_self_analysis_lineagis(t *testing.T) {
+	g := graph.New()
+	if err := analyze.Path(g, repoRoot(t)); err != nil {
+		t.Fatal(err)
+	}
+	cmd := model.PackageID("github.com/BrendenWalker/lineagis/cmd/lineagis")
+	queryPkg := model.PackageID("github.com/BrendenWalker/lineagis/internal/core/query")
+	graphPkg := model.PackageID("github.com/BrendenWalker/lineagis/internal/core/graph")
+	assertGraphNode(t, g, graphPkg)
+	assertGraphNode(t, g, cmd)
+	assertGraphEdge(t, g, cmd, queryPkg, model.EdgeImports)
+	sym := model.SymbolID("github.com/BrendenWalker/lineagis/internal/core/graph", "New")
+	assertGraphNode(t, g, sym)
+	snap := g.Export()
+	if snap.SchemaVersion != model.SchemaGraphV2 {
+		t.Fatalf("schema %q want %q", snap.SchemaVersion, model.SchemaGraphV2)
+	}
+}
+
+// TestAnalyzeProvenanceMerge (AC-SA-005): analyze merges with provenance ingest without ID collision.
+func TestAnalyzeProvenanceMerge(t *testing.T) {
+	root := repoRoot(t)
+	g := graph.New()
+	if err := lineage.IngestFiles(g, filepath.Join(root, "examples", "sbom-cyclonedx.json")); err != nil {
+		t.Fatal(err)
+	}
+	artBefore := model.ArtifactID("abc123")
+	if err := analyze.Path(g, root); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := g.GetNode(artBefore); !ok {
+		t.Fatalf("provenance artifact %s lost after analyze", artBefore)
+	}
+	cmd := model.PackageID("github.com/BrendenWalker/lineagis/cmd/lineagis")
+	if _, ok := g.GetNode(cmd); !ok {
+		t.Fatalf("missing code node %s after merge", cmd)
+	}
+	snap := g.Export()
+	if len(snap.Domains) != 2 {
+		t.Fatalf("domains %+v want [provenance code]", snap.Domains)
+	}
+}
+
+func assertGraphNode(t *testing.T, g *graph.Graph, id string) {
+	t.Helper()
+	if _, ok := g.GetNode(id); !ok {
+		t.Fatalf("missing node %s", id)
+	}
+}
+
+func assertGraphEdge(t *testing.T, g *graph.Graph, from, to string, typ model.EdgeType) {
+	t.Helper()
+	for _, e := range g.Edges() {
+		if e.From == from && e.To == to && e.Type == typ {
+			return
+		}
+	}
+	t.Fatalf("missing edge %s -[%s]-> %s", from, typ, to)
 }

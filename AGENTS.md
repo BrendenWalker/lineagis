@@ -9,7 +9,7 @@ Instructions for humans and AI assistants working on this repository.
 ## Project context
 
 - **Product:** Open-source **software supply-chain lineage graph engine** — ingest SBOM/git/build signals, query provenance with `trace` and `why` (see [README.md](README.md)).
-- **Requirements:** [docs/specs/lineage-engine-mvp.md](docs/specs/lineage-engine-mvp.md) — authoritative for v1.0 (`FR-LIN-*`, `AC-LIN-*`, delivery matrix).
+- **Requirements:** [docs/specs/lineage-engine-mvp.md](docs/specs/lineage-engine-mvp.md) — authoritative for v1.0 (`FR-LIN-*`, `AC-LIN-*`); [docs/specs/self-analysis.md](docs/specs/self-analysis.md) — v1.1+ self-analysis (`FR-SA-*`, `AC-SA-*`).
 - **Implementation:** Go CLI under `cmd/lineagis/`; graph core under `internal/core/`, ingest under `internal/ingest/`, in-memory store under `internal/storage/memory/`.
 
 Before coding, read the lineage spec and stay within v1.0 Must scope unless the human expands it.
@@ -83,6 +83,7 @@ Plan → Spec → Build → Review (human) → Merge
 | Resource | Path |
 |----------|------|
 | Lineage MVP spec | [docs/specs/lineage-engine-mvp.md](docs/specs/lineage-engine-mvp.md) |
+| Self-analysis spec | [docs/specs/self-analysis.md](docs/specs/self-analysis.md) |
 | Architecture | [docs/lineagis_architecture_overview.md](docs/lineagis_architecture_overview.md) |
 | Design / roadmap | [docs/lineagis_design.md](docs/lineagis_design.md) |
 | SDLC | [docs/sdlc/README.md](docs/sdlc/README.md) |

@@ -1,0 +1,11 @@
+name: self-analysis-mini
+command: analyze examples/self-analysis
+expect:
+  exit_code: 0
+  nodes_contain:
+    - package:github.com/BrendenWalker/lineagis/examples/self-analysis/app
+    - package:github.com/BrendenWalker/lineagis/examples/self-analysis/lib
+  edges_contain:
+    - from: package:github.com/BrendenWalker/lineagis/examples/self-analysis/app
+      to: package:github.com/BrendenWalker/lineagis/examples/self-analysis/lib
+      type: imports

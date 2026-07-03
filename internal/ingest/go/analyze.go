@@ -110,6 +110,7 @@ func Analyze(path string) (Result, error) {
 			})
 			res.Edges = append(res.Edges, model.Edge{From: pkgID, To: fileID, Type: model.EdgeContains})
 		}
+		appendTestFiles(&res, moduleRoot, pkgID, pkg.Dir)
 
 		if pkg.Types != nil {
 			for _, name := range pkg.Types.Scope().Names() {
@@ -136,6 +137,29 @@ func Analyze(path string) (Result, error) {
 	}
 
 	return res, nil
+}
+
+func appendTestFiles(res *Result, moduleRoot, pkgID, dir string) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), "_test.go") {
+			continue
+		}
+		full := filepath.Join(dir, e.Name())
+		relFile := relToModule(moduleRoot, full)
+		fileID := model.FileID(relFile)
+		res.Nodes = append(res.Nodes, model.Node{
+			ID:   fileID,
+			Type: model.NodeFile,
+			Metadata: map[string]string{
+				"language": "go",
+			},
+		})
+		res.Edges = append(res.Edges, model.Edge{From: fileID, To: pkgID, Type: model.EdgeTests})
+	}
 }
 
 func findModuleRoot(dir string) (string, error) {
@@ -210,14 +234,14 @@ func uniqueFiles(pkg *packages.Package) []string {
 }
 
 func symbolKind(obj types.Object) string {
-	switch obj := obj.(type) {
+	switch o := obj.(type) {
 	case *types.Func:
-		if obj.Signature().Recv() != nil {
+		if o.Signature().Recv() != nil {
 			return "method"
 		}
 		return "func"
 	case *types.TypeName:
-		switch obj.Type().Underlying().(type) {
+		switch o.Type().Underlying().(type) {
 		case *types.Interface:
 			return "interface"
 		case *types.Struct:

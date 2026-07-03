@@ -18,17 +18,25 @@ const (
 	NodePackage    NodeType = "package"
 	NodeFile       NodeType = "file"
 	NodeSymbol     NodeType = "symbol"
+	NodeDoc        NodeType = "doc"
+	NodeWorkflow   NodeType = "workflow"
+	NodeTarget     NodeType = "target"
 )
 
 // EdgeType identifies a directed lineage edge.
 type EdgeType string
 
 const (
-	EdgeProducedBy EdgeType = "produced_by"
-	EdgeBuiltFrom  EdgeType = "built_from"
-	EdgeDependsOn  EdgeType = "depends_on"
-	EdgeContains   EdgeType = "contains"
-	EdgeImports    EdgeType = "imports"
+	EdgeProducedBy   EdgeType = "produced_by"
+	EdgeBuiltFrom    EdgeType = "built_from"
+	EdgeDependsOn    EdgeType = "depends_on"
+	EdgeContains     EdgeType = "contains"
+	EdgeImports      EdgeType = "imports"
+	EdgeDocuments    EdgeType = "documents"
+	EdgeTests        EdgeType = "tests"
+	EdgeRunsIn       EdgeType = "runs_in"
+	EdgeBuilds       EdgeType = "builds"
+	EdgeIntroducedBy EdgeType = "introduced_by"
 )
 
 // ProvenanceEdgeTypes are checked for cycles among commit/build/artifact nodes.
@@ -112,6 +120,23 @@ func SymbolID(importPath, name string) string {
 	return "symbol:" + strings.TrimSpace(importPath) + "#" + strings.TrimSpace(name)
 }
 
+// DocID returns canonical doc node ID.
+func DocID(repoRelPath string) string {
+	p := filepath.ToSlash(strings.TrimSpace(repoRelPath))
+	p = strings.TrimPrefix(p, "./")
+	return "doc:" + p
+}
+
+// WorkflowID returns canonical workflow node ID.
+func WorkflowID(name string) string {
+	return "workflow:" + strings.TrimSpace(name)
+}
+
+// TargetID returns canonical build target node ID.
+func TargetID(name string) string {
+	return "target:" + strings.TrimSpace(name)
+}
+
 // ParseRef resolves CLI refs like artifact@sha256:abc or artifact:artifact:sha256:abc.
 func ParseRef(ref string) (string, error) {
 	ref = strings.TrimSpace(ref)
@@ -160,7 +185,7 @@ func IsProvenanceNodeType(t NodeType) bool {
 // IsCodeNodeType returns true for repository self-analysis node kinds.
 func IsCodeNodeType(t NodeType) bool {
 	switch t {
-	case NodeModule, NodePackage, NodeFile, NodeSymbol:
+	case NodeModule, NodePackage, NodeFile, NodeSymbol, NodeDoc, NodeWorkflow, NodeTarget:
 		return true
 	default:
 		return false

@@ -1,4 +1,4 @@
-.PHONY: build test test-lineage lint smoke-lineage
+.PHONY: build test test-lineage lint smoke-lineage smoke-analyze
 
 # Override for CI (Linux): make test TEST_FLAGS=-race
 # On Windows, leave empty; -race requires CGO.
@@ -23,3 +23,6 @@ lint:
 
 smoke-lineage: build
 	bash scripts/smoke-lineage.sh
+
+smoke-analyze: build
+	bash scripts/smoke-analyze.sh

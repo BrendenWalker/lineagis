@@ -102,3 +102,26 @@ jobs:
         run: |
           chmod +x bin/lineagis
           bash scripts/smoke-lineage.sh
+
+  self-analysis:
+    name: self-analysis
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download Linux binary
+        uses: actions/download-artifact@v4
+        with:
+          name: lineagis-binaries-linux-amd64
+          path: bin
+
+      - name: Self-analysis smoke
+        run: |
+          chmod +x bin/lineagis
+          bash scripts/smoke-analyze.sh

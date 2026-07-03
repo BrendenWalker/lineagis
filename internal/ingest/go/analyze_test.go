@@ -4,9 +4,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/BrendenWalker/lineagis/internal/analyze"
 	"github.com/BrendenWalker/lineagis/internal/core/graph"
 	"github.com/BrendenWalker/lineagis/internal/core/model"
-	"github.com/BrendenWalker/lineagis/internal/analyze"
 )
 
 func repoRoot(t *testing.T) string {

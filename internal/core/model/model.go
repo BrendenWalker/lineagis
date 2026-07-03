@@ -58,8 +58,8 @@ type GraphSnapshot struct {
 }
 
 const (
-	SchemaGraphV1 = "lineage-graph/v1"
-	SchemaGraphV2 = "lineage-graph/v2"
+	SchemaGraphV1    = "lineage-graph/v1"
+	SchemaGraphV2    = "lineage-graph/v2"
 	DomainProvenance = "provenance"
 	DomainCode       = "code"
 )

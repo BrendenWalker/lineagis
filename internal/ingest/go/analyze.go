@@ -210,9 +210,9 @@ func uniqueFiles(pkg *packages.Package) []string {
 }
 
 func symbolKind(obj types.Object) string {
-	switch obj.(type) {
+	switch obj := obj.(type) {
 	case *types.Func:
-		if obj.(*types.Func).Signature().Recv() != nil {
+		if obj.Signature().Recv() != nil {
 			return "method"
 		}
 		return "func"

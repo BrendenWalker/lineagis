@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
@@ -13,6 +14,10 @@ const (
 	NodeBuild      NodeType = "build"
 	NodeArtifact   NodeType = "artifact"
 	NodeDependency NodeType = "dependency"
+	NodeModule     NodeType = "module"
+	NodePackage    NodeType = "package"
+	NodeFile       NodeType = "file"
+	NodeSymbol     NodeType = "symbol"
 )
 
 // EdgeType identifies a directed lineage edge.
@@ -22,6 +27,8 @@ const (
 	EdgeProducedBy EdgeType = "produced_by"
 	EdgeBuiltFrom  EdgeType = "built_from"
 	EdgeDependsOn  EdgeType = "depends_on"
+	EdgeContains   EdgeType = "contains"
+	EdgeImports    EdgeType = "imports"
 )
 
 // ProvenanceEdgeTypes are checked for cycles among commit/build/artifact nodes.
@@ -42,14 +49,20 @@ type Edge struct {
 	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
-// GraphSnapshot is the on-disk graph envelope (lineage-graph/v1).
+// GraphSnapshot is the on-disk graph envelope (lineage-graph/v1 or v2).
 type GraphSnapshot struct {
-	SchemaVersion string `json:"schema_version"`
-	Nodes         []Node `json:"nodes"`
-	Edges         []Edge `json:"edges"`
+	SchemaVersion string   `json:"schema_version"`
+	Domains       []string `json:"domains,omitempty"`
+	Nodes         []Node   `json:"nodes"`
+	Edges         []Edge   `json:"edges"`
 }
 
-const SchemaGraphV1 = "lineage-graph/v1"
+const (
+	SchemaGraphV1 = "lineage-graph/v1"
+	SchemaGraphV2 = "lineage-graph/v2"
+	DomainProvenance = "provenance"
+	DomainCode       = "code"
+)
 
 // CommitID returns canonical commit node ID.
 func CommitID(sha string) string {
@@ -75,6 +88,28 @@ func DependencyID(ecosystem, name, version string) string {
 		strings.TrimSpace(name),
 		strings.TrimSpace(version),
 	)
+}
+
+// ModuleID returns canonical module node ID.
+func ModuleID(path string) string {
+	return "module:" + strings.TrimSpace(path)
+}
+
+// PackageID returns canonical package node ID.
+func PackageID(importPath string) string {
+	return "package:" + strings.TrimSpace(importPath)
+}
+
+// FileID returns canonical file node ID from a repo-relative path.
+func FileID(repoRelPath string) string {
+	p := filepath.ToSlash(strings.TrimSpace(repoRelPath))
+	p = strings.TrimPrefix(p, "./")
+	return "file:" + p
+}
+
+// SymbolID returns canonical symbol node ID.
+func SymbolID(importPath, name string) string {
+	return "symbol:" + strings.TrimSpace(importPath) + "#" + strings.TrimSpace(name)
 }
 
 // ParseRef resolves CLI refs like artifact@sha256:abc or artifact:artifact:sha256:abc.
@@ -110,4 +145,24 @@ func IsProvenanceNode(t NodeType) bool {
 // IsProvenanceEdge returns true for edges that participate in provenance cycle checks.
 func IsProvenanceEdge(t EdgeType) bool {
 	return t == EdgeProducedBy || t == EdgeBuiltFrom
+}
+
+// IsProvenanceNodeType returns true for v1.0 supply-chain node kinds.
+func IsProvenanceNodeType(t NodeType) bool {
+	switch t {
+	case NodeCommit, NodeBuild, NodeArtifact, NodeDependency:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsCodeNodeType returns true for repository self-analysis node kinds.
+func IsCodeNodeType(t NodeType) bool {
+	switch t {
+	case NodeModule, NodePackage, NodeFile, NodeSymbol:
+		return true
+	default:
+		return false
+	}
 }

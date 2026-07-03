@@ -73,6 +73,7 @@ It builds a unified graph across pipelines, artifacts, and dependencies to help 
 
 ### V1.1 – Multi-Source Integration
 
+- Repository self-analysis (`lineagis analyze .`) — dogfood code + provenance graph ([self-analysis.md](specs/self-analysis.md))
 - GitHub Actions / GitLab CI ingestion
 - Container registry ingestion (Docker/OCI)
 - Basic anomaly detection:

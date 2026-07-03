@@ -22,6 +22,8 @@ func run(args []string) int {
 		return runWhy(args[1:])
 	case len(args) > 0 && args[0] == "visualize":
 		return runVisualize(args[1:])
+	case len(args) > 0 && args[0] == "analyze":
+		return runAnalyze(args[1:])
 	}
 
 	fs := flag.NewFlagSet("lineagis", flag.ContinueOnError)
@@ -43,5 +45,5 @@ func run(args []string) int {
 }
 
 func printUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: lineagis ingest <files...> | lineagis trace <ref> | lineagis why <ref> | lineagis visualize <ref> --format dot | lineagis [--version]\n")
+	fmt.Fprintf(os.Stderr, "Usage: lineagis ingest <files...> | lineagis analyze [path] | lineagis trace <ref> | lineagis why <ref> | lineagis visualize <ref> --format dot | lineagis [--version]\n")
 }

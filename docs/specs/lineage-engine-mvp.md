@@ -240,9 +240,13 @@ v1.0 explicitly excludes:
 | Edge types: `deployed_to`, `derived_from`              |           | ✓           |                |
 | Deployment node automation                             |           |             | ✓              |
 | CLI `impact`, `upstream`, `downstream`                 |           |             | ✓              |
+| Repository self-analysis (`lineagis analyze`)          |           | ✓           |                |
 | Sigstore attestation ingest                            |           |             | ✓              |
 | REST/GraphQL API                                       |           |             | ✓              |
 | Web UI                                                 |           |             | ✓              |
+
+
+v1.1 self-analysis (`lineagis analyze`) is specified in [self-analysis.md](self-analysis.md); it extends but does not replace v1.0 provenance ingest.
 
 
 ## Data model

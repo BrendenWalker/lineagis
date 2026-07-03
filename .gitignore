@@ -2,9 +2,13 @@
 .lineagis/
 .lineagis-smoke/
 .lineagis-manual/
+.lineagis-test/
 /coverage.out
 /coverage
 .env
 dist/
+/generated/
+dist/release-artifacts/
 testdata/
 coverage*
+lineagis.exe

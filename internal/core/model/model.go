@@ -137,6 +137,30 @@ func TargetID(name string) string {
 	return "target:" + strings.TrimSpace(name)
 }
 
+// ParsePackageRef resolves package import paths for CLI commands.
+func ParsePackageRef(ref string) (string, error) {
+	ref = strings.TrimSpace(ref)
+	if ref == "" {
+		return "", fmt.Errorf("empty package ref")
+	}
+	if strings.HasPrefix(ref, "package:") {
+		return ref, nil
+	}
+	return PackageID(ref), nil
+}
+
+// ParseModuleRef resolves module paths for CLI commands.
+func ParseModuleRef(ref string) (string, error) {
+	ref = strings.TrimSpace(ref)
+	if ref == "" {
+		return "", fmt.Errorf("empty module ref")
+	}
+	if strings.HasPrefix(ref, "module:") {
+		return strings.TrimPrefix(ref, "module:"), nil
+	}
+	return ref, nil
+}
+
 // ParseRef resolves CLI refs like artifact@sha256:abc or artifact:artifact:sha256:abc.
 func ParseRef(ref string) (string, error) {
 	ref = strings.TrimSpace(ref)

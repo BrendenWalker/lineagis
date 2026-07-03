@@ -19,7 +19,19 @@ func run(args []string) int {
 	case len(args) > 0 && args[0] == "trace":
 		return runTrace(args[1:])
 	case len(args) > 0 && args[0] == "why":
+		if len(args) > 1 && args[1] == "package" {
+			return runWhyPackage(args[2:])
+		}
 		return runWhy(args[1:])
+	case len(args) > 0 && args[0] == "impact":
+		return runImpact(args[1:])
+	case len(args) > 0 && args[0] == "explain":
+		return runExplain(args[1:])
+	case len(args) > 0 && args[0] == "report":
+		if len(args) > 1 && args[1] == "analyze" {
+			return runReportWithAnalyze(args[2:])
+		}
+		return runReport(args[1:])
 	case len(args) > 0 && args[0] == "visualize":
 		return runVisualize(args[1:])
 	case len(args) > 0 && args[0] == "analyze":
@@ -45,5 +57,5 @@ func run(args []string) int {
 }
 
 func printUsage() {
-	fmt.Fprintf(os.Stderr, "Usage: lineagis ingest <files...> | lineagis analyze [path] | lineagis trace <ref> | lineagis why <ref> | lineagis visualize <ref> --format dot | lineagis [--version]\n")
+	fmt.Fprintf(os.Stderr, "Usage: lineagis ingest <files...> | lineagis analyze [path] | lineagis report [--out dir] | lineagis impact package <path> | lineagis explain dependency <module> | lineagis why <ref> | lineagis why package <path> | lineagis trace <ref> | lineagis visualize <ref> --format dot | lineagis [--version]\n")
 }

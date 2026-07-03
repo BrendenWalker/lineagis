@@ -11,7 +11,7 @@ if [[ ! -x "${BIN}" ]]; then
   chmod +x "${BIN}"
 fi
 
-"${BIN}" analyze . --format json > "${OUT}"
+"${BIN}" analyze . --format json --validate-arch > "${OUT}"
 
 grep -q '"schema_version"' "${OUT}"
 grep -q '"lineage-graph/v2"' "${OUT}"

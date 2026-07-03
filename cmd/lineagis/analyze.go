@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/BrendenWalker/lineagis/internal/analyze"
+	goingest "github.com/BrendenWalker/lineagis/internal/ingest/go"
 	"github.com/BrendenWalker/lineagis/internal/report"
 	"github.com/BrendenWalker/lineagis/internal/storage/memory"
-	goingest "github.com/BrendenWalker/lineagis/internal/ingest/go"
 )
 
 func runAnalyze(args []string) int {

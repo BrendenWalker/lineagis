@@ -234,14 +234,14 @@ func uniqueFiles(pkg *packages.Package) []string {
 }
 
 func symbolKind(obj types.Object) string {
-	switch obj.(type) {
+	switch o := obj.(type) {
 	case *types.Func:
-		if obj.(*types.Func).Signature().Recv() != nil {
+		if o.Signature().Recv() != nil {
 			return "method"
 		}
 		return "func"
 	case *types.TypeName:
-		switch obj.Type().Underlying().(type) {
+		switch o.Type().Underlying().(type) {
 		case *types.Interface:
 			return "interface"
 		case *types.Struct:

@@ -1,0 +1,15 @@
+# Layer prefixes are relative to the module root (FR-SA-041).
+# Forbidden rules apply only between in-repo packages.
+layers:
+  cmd: cmd/
+  query: internal/core/query/
+  graph: internal/core/graph/
+  engine: internal/core/engine/
+  ingest: internal/ingest/
+  analyze: internal/analyze/
+  storage: internal/storage/
+forbidden:
+  - from: graph
+    to: cmd
+  - from: engine
+    to: cmd

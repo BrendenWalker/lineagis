@@ -1,0 +1,6 @@
+layers:
+  cmd: cmd/
+  storage: internal/storage/
+forbidden:
+  - from: cmd
+    to: storage

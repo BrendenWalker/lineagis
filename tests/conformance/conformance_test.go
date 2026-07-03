@@ -1,16 +1,20 @@
 package conformance_test
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/BrendenWalker/lineagis/internal/analyze"
+	"github.com/BrendenWalker/lineagis/internal/arch"
 	"github.com/BrendenWalker/lineagis/internal/core/engine"
 	"github.com/BrendenWalker/lineagis/internal/core/graph"
 	"github.com/BrendenWalker/lineagis/internal/core/model"
 	"github.com/BrendenWalker/lineagis/internal/core/query"
 	"github.com/BrendenWalker/lineagis/internal/lineage"
+	"github.com/BrendenWalker/lineagis/internal/report"
 )
 
 func repoRoot(t *testing.T) string {
@@ -384,5 +388,91 @@ func TestConformance_self_analysis_dependencies(t *testing.T) {
 	}
 	if n.Metadata["import_count"] == "" || n.Metadata["import_count"] == "0" {
 		t.Fatalf("expected import_count > 0, got %+v", n.Metadata)
+	}
+}
+
+// TestConformance_self_analysis_architecture_report (AC-SA-010, SA-P4).
+func TestConformance_self_analysis_architecture_report(t *testing.T) {
+	g := graph.New()
+	if err := analyze.Path(g, repoRoot(t)); err != nil {
+		t.Fatal(err)
+	}
+	m := report.ComputeMetrics(g)
+	if m.PackageCount != len(g.ListByType(model.NodePackage)) {
+		t.Fatalf("metrics package count %d != %d", m.PackageCount, len(g.ListByType(model.NodePackage)))
+	}
+	if m.ImportEdges == 0 {
+		t.Fatal("expected import edges in metrics")
+	}
+}
+
+// TestConformance_self_analysis_generated_tree (AC-SA-011, SA-P5).
+func TestConformance_self_analysis_generated_tree(t *testing.T) {
+	g := graph.New()
+	if err := analyze.Path(g, repoRoot(t)); err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	if err := report.WriteTree(g, dir); err != nil {
+		t.Fatal(err)
+	}
+	for _, rel := range []string{
+		"architecture/overview.md",
+		"lineage/lineage.json",
+		"diagrams/imports.dot",
+	} {
+		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
+			t.Fatalf("missing %s: %v", rel, err)
+		}
+	}
+}
+
+// TestConformance_self_analysis_arch_rules (AC-SA-012, SA-P7).
+func TestConformance_self_analysis_arch_rules(t *testing.T) {
+	modPath := "example.com/mod"
+	g := graph.New()
+	cmdPkg := model.PackageID(modPath + "/cmd/app")
+	storagePkg := model.PackageID(modPath + "/internal/storage/memory")
+	_ = g.AddNode(model.Node{ID: cmdPkg, Type: model.NodePackage})
+	_ = g.AddNode(model.Node{ID: storagePkg, Type: model.NodePackage})
+	_ = g.AddEdge(cmdPkg, storagePkg, model.EdgeImports)
+
+	rulesPath := filepath.Join(repoRoot(t), "tests", "conformance", "fixtures", "lineagis-arch-cmd-storage.yaml")
+	rules, err := arch.LoadRules(rulesPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	violations := arch.ValidateImports(g, modPath, rules)
+	if len(violations) != 1 {
+		t.Fatalf("expected 1 violation, got %d: %+v", len(violations), violations)
+	}
+	msg := arch.FormatViolations(violations)
+	if msg == "" || !strings.Contains(msg, "cmd") {
+		t.Fatalf("unexpected message: %q", msg)
+	}
+}
+
+// TestConformance_self_analysis_impact (AC-SA-013, SA-P8).
+func TestConformance_self_analysis_impact(t *testing.T) {
+	g := graph.New()
+	if err := analyze.Path(g, repoRoot(t)); err != nil {
+		t.Fatal(err)
+	}
+	graphPkg := model.PackageID("github.com/BrendenWalker/lineagis/internal/core/graph")
+	res, err := report.ImpactPackage(g, graphPkg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Packages) == 0 {
+		t.Fatal("expected downstream packages")
+	}
+	foundTest := false
+	for _, f := range res.Tests {
+		if f == model.FileID("internal/core/graph/graph_test.go") {
+			foundTest = true
+		}
+	}
+	if !foundTest {
+		t.Fatalf("expected graph_test.go, got %+v", res.Tests)
 	}
 }

@@ -1,4 +1,4 @@
-.PHONY: build test test-lineage lint smoke-lineage smoke-analyze
+.PHONY: build test test-lineage lint smoke-lineage smoke-analyze smoke-release-artifacts
 
 # Override for CI (Linux): make test TEST_FLAGS=-race
 # On Windows, leave empty; -race requires CGO.
@@ -16,7 +16,7 @@ test:
 	go test $(TEST_FLAGS) -coverprofile=coverage.out ./...
 
 test-lineage:
-	go test $(TEST_FLAGS) ./internal/core/... ./internal/ingest/... ./internal/analyze/... ./internal/normalize/... ./internal/lineage/... ./internal/storage/memory/... ./tests/conformance/... ./cmd/lineagis/...
+	go test $(TEST_FLAGS) ./internal/core/... ./internal/ingest/... ./internal/analyze/... ./internal/arch/... ./internal/report/... ./internal/normalize/... ./internal/lineage/... ./internal/storage/memory/... ./tests/conformance/... ./cmd/lineagis/...
 
 lint:
 	golangci-lint run ./...
@@ -26,3 +26,6 @@ smoke-lineage: build
 
 smoke-analyze: build
 	bash scripts/smoke-analyze.sh
+
+smoke-release-artifacts: build
+	bash scripts/smoke-release-artifacts.sh

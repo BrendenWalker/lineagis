@@ -12,10 +12,12 @@ func TestBridge_provenanceAndCode(t *testing.T) {
 	g := graph.New()
 	modPath := "example.com/mod"
 	moduleID := model.ModuleID(modPath)
+	extModuleID := model.ModuleID("golang.org/x/tools")
 	pkgID := model.PackageID(modPath + "/pkg")
 	commitID := model.CommitID("abc")
 	artID := model.ArtifactID("deadbeef")
 	_ = g.AddNode(model.Node{ID: moduleID, Type: model.NodeModule})
+	_ = g.AddNode(model.Node{ID: extModuleID, Type: model.NodeModule, Metadata: map[string]string{"external": "true"}})
 	_ = g.AddNode(model.Node{ID: pkgID, Type: model.NodePackage})
 	_ = g.AddNode(model.Node{ID: commitID, Type: model.NodeCommit})
 	_ = g.AddNode(model.Node{ID: artID, Type: model.NodeArtifact})

@@ -1,0 +1,11 @@
+name: self-analysis-dependencies
+command: analyze .
+expect:
+  exit_code: 0
+  nodes_contain:
+    - module:golang.org/x/tools
+    - module:golang.org/x/mod
+  node_metadata:
+    - id: module:golang.org/x/tools
+      external: "true"
+      import_count_min: 1

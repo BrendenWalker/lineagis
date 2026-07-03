@@ -1,0 +1,20 @@
+name: self-analysis-knowledge-graph
+command: analyze .
+ingest:
+  - examples/sbom-cyclonedx.json
+  - examples/commit-sidecar.json
+expect:
+  exit_code: 0
+  nodes_contain:
+    - doc:docs/specs/self-analysis.md
+    - workflow:CI
+  edges_contain:
+    - from: doc:docs/specs/self-analysis.md
+      to: package:github.com/BrendenWalker/lineagis/internal/core/graph
+      type: documents
+    - from: file:internal/core/graph/graph_test.go
+      to: package:github.com/BrendenWalker/lineagis/internal/core/graph
+      type: tests
+    - from: workflow:CI
+      to: target:test-lineage
+      type: runs_in

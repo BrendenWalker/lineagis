@@ -330,3 +330,37 @@ func assertGraphEdge(t *testing.T, g *graph.Graph, from, to string, typ model.Ed
 	}
 	t.Fatalf("missing edge %s -[%s]-> %s", from, typ, to)
 }
+
+// TestConformance_self_analysis_knowledge_graph (SA-P2): docs, tests, and workflow linkage.
+func TestConformance_self_analysis_knowledge_graph(t *testing.T) {
+	root := repoRoot(t)
+	g := graph.New()
+	if err := lineage.IngestFiles(g,
+		filepath.Join(root, "examples", "sbom-cyclonedx.json"),
+		filepath.Join(root, "examples", "commit-sidecar.json"),
+	); err != nil {
+		t.Fatal(err)
+	}
+	if err := analyze.Path(g, root); err != nil {
+		t.Fatal(err)
+	}
+	modPath := "github.com/BrendenWalker/lineagis"
+	graphPkg := model.PackageID(modPath + "/internal/core/graph")
+	specDoc := model.DocID("docs/specs/self-analysis.md")
+	assertGraphNode(t, g, specDoc)
+	assertGraphEdge(t, g, specDoc, graphPkg, model.EdgeDocuments)
+
+	testFile := model.FileID("internal/core/graph/graph_test.go")
+	assertGraphEdge(t, g, testFile, graphPkg, model.EdgeTests)
+
+	ciWF := model.WorkflowID("CI")
+	assertGraphNode(t, g, ciWF)
+	target := model.TargetID("test-lineage")
+	assertGraphEdge(t, g, ciWF, target, model.EdgeRunsIn)
+
+	commitID := model.CommitID("def456")
+	assertGraphEdge(t, g, graphPkg, commitID, model.EdgeIntroducedBy)
+	moduleID := model.ModuleID(modPath)
+	artID := model.ArtifactID("abc123")
+	assertGraphEdge(t, g, artID, moduleID, model.EdgeContains)
+}
